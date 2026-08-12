@@ -32,6 +32,7 @@ document, it wins. Build and working conventions live in `../CLAUDE.md`.
 | 10 | `10-design-system.md` | Palette, typography, components, a11y | 🟡 brand received |
 | 11 | `11-local-dev-setup.md` | Local dev environment, everyday commands | ⬜ |
 | 12 | `12-security.md` | OWASP ASVS L2 / Top-10 control map, abuse cases | ⬜ |
+| 13a | `13a-development-server-preparation.md` | Dev-server handbook — Part A (server once) + Part B (onboard a project) | ⬜ |
 | 14 | `14-production-deployment-handbook.md` | Empty-machine deployment, copy-paste | ⬜ |
 | 15 | `15-user-guide.md` | Customer guide | ⬜ |
 | 16 | `16-admin-guide.md` | Staff guide | ⬜ |
@@ -52,6 +53,7 @@ in the affected docs the same day.
 | D2 | 2026-08-12 | **`coding stop` / `coding start` is a hard gate.** `coding stop` means change nothing — no edits, files, commits, migrations, deploys or config — until `coding start`. It holds across turns, and a new request while it is on is a request to plan, not a licence to resume. | Steven's directive, 2026-08-12. | CLAUDE.md §6, 99 §1 |
 | D3 | 2026-08-12 | **Brand is Evermore**, from the guidelines supplied at `/home/aidev/asset/` and copied to `docs/design_guideline/`. Primary Nourish Green `#1C3D34`, secondary Restore Beige `#FFFAE0`, four tertiary accents; display **Erode**, body **Inter**, both self-hosted. **Four brand colours fail WCAG AA as text or button fills** — `#468973`, `#E0782D`, `#A36E50`, `#CC6883` — so `#1C3D34` carries green text and green fills, and orange is a highlight rather than a label. Calculated, not eyeballed, before any component exists. | Supplied brand; contrast checked on receipt so the build is not designed into a corner. | 10, design_guideline |
 | D4 | 2026-08-12 | **Assets were copied, not moved.** Steven asked for a move; the source is another user's home (`aidev`) and a move there is not reversible by this project. The originals remain at `/home/aidev/asset/`. | Reversible beats literal when the difference is destroying someone else's copy. Flagged for Steven to confirm. | 00, design_guideline |
+| D5 | 2026-08-12 | **Dark-surface and non-text contrast decided up front.** On `#1C3D34`: beige 11.32, blue light 8.15, orange light 7.27, beige deep 6.47 all pass; `#468973` (2.88) and `#CC6883` (3.33) are never text on it. `#CCBDAA` on beige is **1.75**, so it is *not* an input border, focus ring or any meaningful boundary — those use `#1C3D34`. Energize Orange as a button needs near-black ink at large size (`#1C3D34` on it = 3.90, `#000000` = 6.89), never white. Logo re-verified by decoding the PNG: 7582×1989, ink `rgba(28,61,52)`, **only the final `e` is mirrored** — both `r`s are normal. | The header is going to be Nourish Green and the canvas is going to be beige; deciding the legal inks and borders now costs one calculation, and rediscovering them in review costs a redesign. Closes the "verify before shipping" TODO left on the orange button. | 10 §1, §2.4–2.6 |
 
 ---
 

@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 time it passed.** That lesson cost real time on ruuma, where this file claimed a
 green quality gate for days after it had started failing.
 
-_Last updated: 2026-08-12._
+_Last updated: 2026-08-12 (doc read-through and brand re-verification)._
 
 ## M0 — Definition
 - ✅ Repo created, `git init`, `main`, remote `git@github.com:stevenwilliam/healthy_catering.git`
@@ -16,6 +16,10 @@ _Last updated: 2026-08-12._
 - ✅ Doc set index and decision log started (D1–D4)
 - ✅ Brand assets received and read: palette, typefaces, logo (`docs/design_guideline/`)
 - ✅ Palette contrast calculated — 4 colours fail AA as text/fills, recorded in `10` §2.4
+- ✅ Re-verified 2026-08-12 against the source PNGs: all 12 hexes match the
+      palette page, every §2.4 ratio reproduces, logo ink sampled `#1C3D34`
+      (7582×1989 RGBA), only the final `e` mirrored
+- ✅ Dark-surface inks and non-text/border contrast decided (`10` §2.5–2.6, D5)
 - ⬜ **Product brief — blocking everything below.** Domain, users, currency,
       timezone, languages, production domain. See `00` §3 Q1–Q6.
 
