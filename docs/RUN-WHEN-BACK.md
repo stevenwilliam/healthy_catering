@@ -73,11 +73,12 @@ To complete the move once you are happy the copies are right:
 sudo rm -rf /home/aidev/asset/Logo /home/aidev/asset/Color_Palette /home/aidev/asset/Font
 ```
 
-## 4. Database
+## 4. Database — already done here, kept for the next machine
 
-The database and role do not exist yet. Both extensions are **required**, not
-optional: `btree_gist` for the price-overlap exclusion constraints
-(`PROMPT.md` §5.3) and `postgis` for kitchen routing (§9).
+**This is done on `claudedev` (see §0).** It is kept because the production node
+and any second dev machine still need it, and because both extensions are
+**required**, not optional: `btree_gist` for the price-overlap exclusion
+constraints (`PROMPT.md` §5.3) and `postgis` for kitchen routing (§9).
 
 ```bash
 sudo -u postgres createuser --pwprompt healthy_catering
@@ -96,7 +97,7 @@ sudo -u postgres psql -d healthy_catering_test -c 'CREATE EXTENSION IF NOT EXIST
 sudo -u postgres psql -d healthy_catering -c '\dx'
 ```
 
-## 5. Redis satellite
+## 5. Redis satellite — already done here (§0), kept for the next machine
 
 Per `99-steven-preference.md` §9, Docker is for satellites. Redis carries the
 settings cache, rate limits and the notification queue — **not** idempotency
@@ -107,7 +108,7 @@ docker run -d --name redis-shared --restart unless-stopped \
   -p 127.0.0.1:6379:6379 redis:7-alpine
 ```
 
-## 6. Google Maps — keys, restrictions, quotas
+## 6. Google Maps — keys, restrictions, quotas · STILL NEEDED
 
 Needed before M3. **Two separate keys**, and neither goes in git:
 
@@ -120,7 +121,7 @@ Needed before M3. **Two separate keys**, and neither goes in git:
    scripted address form is an unbounded bill.
 6. Put both in `/etc/healthy_catering/healthy_catering.env`, never in the repo.
 
-## 7. Credentials still needed from you
+## 7. Credentials still needed from you · STILL NEEDED
 
 Each blocks a milestone — see `03-open-questions.md` Q-19…Q-29.
 
