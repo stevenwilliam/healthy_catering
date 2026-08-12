@@ -21,7 +21,40 @@ type Config struct {
 	Mail     Mail
 	WhatsApp WhatsApp
 	Payment  Payment
+	Redis    Redis
+	Maps     Maps
+	Locale   Locale
 }
+
+// Redis carries the settings cache, rate limits and the notification queue.
+// NOT idempotency keys: a key guarding an order that creates money must commit
+// with the write it protects and survive a cache restart (docs/02 D-4).
+type Redis struct {
+	URL       string
+	KeyPrefix string
+}
+
+// Maps holds the two Google keys. They are separate on purpose: the browser key
+// is referrer-restricted and public by nature, the server key is IP-restricted
+// and must never reach the client (PROMPT §8.2).
+type Maps struct {
+	BrowserKey string
+	ServerKey  string
+}
+
+// Locale is fixed by the brief but held here so a second market does not need a
+// code change (CLAUDE.md §10).
+type Locale struct {
+	Timezone       string
+	DefaultLang    string
+	SupportedLangs []string
+	Currency       string
+}
+
+// TZ returns the operating location, falling back to UTC with the caller
+// responsible for logging. Every business-date decision converts through this
+// explicitly rather than trusting the server clock.
+func (l Locale) TZ() (*time.Location, error) { return time.LoadLocation(l.Timezone) }
 
 type App struct {
 	Env             string
@@ -47,19 +80,12 @@ type Auth struct {
 	SigningKey  string
 	PreviousKey string
 	Issuer      string
-	Google      OAuthProvider
-	Instagram   OAuthProvider
+	// TOTPKey encrypts staff 2FA secrets at rest; the column stores ciphertext.
+	TOTPKey string
+	// Turnstile guards registration (docs/03 Q-15). Cloudflare rather than
+	// reCAPTCHA: no second Google dependency and no PII to another product.
+	TurnstileSecret string
 }
-
-type OAuthProvider struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
-}
-
-// Configured reports whether credentials exist. Providers without credentials
-// stay disabled at runtime (docs/00 Q8) rather than failing at startup.
-func (p OAuthProvider) Configured() bool { return p.ClientID != "" && p.ClientSecret != "" }
 
 type Storage struct {
 	Endpoint       string
@@ -112,19 +138,11 @@ func Load() (*Config, error) {
 			MaxIdleConns: getInt("DATABASE_MAX_IDLE_CONNS", 5),
 		},
 		Auth: Auth{
-			SigningKey:  getString("JWT_SIGNING_KEY", ""),
-			PreviousKey: getString("JWT_PREVIOUS_KEY", ""),
-			Issuer:      getString("JWT_ISSUER", "evermore"),
-			Google: OAuthProvider{
-				ClientID:     getString("GOOGLE_OAUTH_CLIENT_ID", ""),
-				ClientSecret: getString("GOOGLE_OAUTH_CLIENT_SECRET", ""),
-				RedirectURL:  getString("GOOGLE_OAUTH_REDIRECT_URL", ""),
-			},
-			Instagram: OAuthProvider{
-				ClientID:     getString("INSTAGRAM_OAUTH_CLIENT_ID", ""),
-				ClientSecret: getString("INSTAGRAM_OAUTH_CLIENT_SECRET", ""),
-				RedirectURL:  getString("INSTAGRAM_OAUTH_REDIRECT_URL", ""),
-			},
+			SigningKey:      getString("JWT_SIGNING_KEY", ""),
+			PreviousKey:     getString("JWT_PREVIOUS_KEY", ""),
+			Issuer:          getString("JWT_ISSUER", "evermore"),
+			TOTPKey:         getString("TOTP_ENCRYPTION_KEY", ""),
+			TurnstileSecret: getString("TURNSTILE_SECRET", ""),
 		},
 		Storage: Storage{
 			Endpoint:       getString("MINIO_ENDPOINT", "127.0.0.1:9002"),
@@ -153,6 +171,20 @@ func Load() (*Config, error) {
 		Payment: Payment{
 			WebhookSecret: getString("PAYMENT_WEBHOOK_SECRET", ""),
 		},
+		Redis: Redis{
+			URL:       getString("REDIS_URL", "redis://127.0.0.1:6379/0"),
+			KeyPrefix: getString("REDIS_KEY_PREFIX", "evermore:"),
+		},
+		Maps: Maps{
+			BrowserKey: getString("GOOGLE_MAPS_BROWSER_KEY", ""),
+			ServerKey:  getString("GOOGLE_MAPS_SERVER_KEY", ""),
+		},
+		Locale: Locale{
+			Timezone:       getString("APP_TIMEZONE", "Asia/Jakarta"),
+			DefaultLang:    getString("APP_DEFAULT_LANG", "id-ID"),
+			SupportedLangs: getList("APP_LANGS", []string{"id-ID", "en"}),
+			Currency:       getString("APP_CURRENCY", "IDR"),
+		},
 	}
 
 	if err := c.validate(); err != nil {
@@ -172,7 +204,13 @@ func (c *Config) validate() error {
 	if len(missing) > 0 {
 		return fmt.Errorf("config: missing required environment: %s", strings.Join(missing, ", "))
 	}
+	if _, err := time.LoadLocation(c.Locale.Timezone); err != nil {
+		return fmt.Errorf("config: APP_TIMEZONE %q is not a known location: %w", c.Locale.Timezone, err)
+	}
 	if c.App.IsProduction() {
+		if c.Maps.ServerKey == "" || c.Maps.BrowserKey == "" {
+			return fmt.Errorf("config: both Google Maps keys are required in production (PROMPT §8.2)")
+		}
 		if len(c.Auth.SigningKey) < 32 {
 			return fmt.Errorf("config: JWT_SIGNING_KEY must be at least 32 bytes in production")
 		}
@@ -198,8 +236,9 @@ func (c *Config) Redacted() map[string]any {
 		"storage_bucket":  c.Storage.Bucket,
 		"smtp_host":       c.Mail.Host,
 		"waha_url":        c.WhatsApp.WAHAURL,
-		"google_oauth":    c.Auth.Google.Configured(),
-		"instagram_oauth": c.Auth.Instagram.Configured(),
+		"timezone":        c.Locale.Timezone,
+		"maps_configured": c.Maps.ServerKey != "",
+		"redis":           redactDSN(c.Redis.URL),
 	}
 }
 

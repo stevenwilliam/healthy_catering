@@ -1,131 +1,72 @@
 package security
 
-import (
-	"github.com/google/uuid"
-)
+import "strings"
 
-// Role is a staff or customer role (BR-2.7.6).
-type Role string
-
-const (
-	RoleCustomer     Role = "customer"
-	RoleKitchen      Role = "kitchen"
-	RoleCounter      Role = "counter"
-	RoleFinance      Role = "finance"
-	RoleStoreManager Role = "store_manager"
-	RoleAdmin        Role = "admin"
-	RoleOwner        Role = "owner"
-)
-
-// Permission is a single capability a handler may require. Authorization is
-// deny-by-default: a route that declares no permission serves nobody
-// (BR-2.7.6, docs/12 A01).
+// Permission is a single capability a handler may require.
+//
+// Authorization is DENY BY DEFAULT (99 §7): a route that declares no permission
+// serves nobody. The constants below must match the codes seeded in
+// db/migrations/0011_reference_data.up.sql — a mismatch is caught by
+// TestPermissionConstantsMatchTheSeed.
 type Permission string
 
 const (
-	// Customer
-	PermOrderCreate        Permission = "order.create"
-	PermOrderViewOwn       Permission = "order.view.own"
-	PermOrderCancelOwn     Permission = "order.cancel.own"
-	PermPaymentProofUpload Permission = "payment.proof.upload"
-	PermProfileManage      Permission = "profile.manage"
+	PermCustomerRead       Permission = "customer.read"
+	PermCustomerWrite      Permission = "customer.write"
+	PermCustomerTypeChange Permission = "customer.type.change"
+	PermOrganisationManage Permission = "organisation.manage"
 
-	// Store-scoped operations
-	PermOrderViewStore      Permission = "order.view.store"
-	PermOrderCancelStaff    Permission = "order.cancel.staff"
-	PermOrderStatusKitchen  Permission = "order.status.kitchen"  // IN_KITCHEN, READY
-	PermOrderStatusHandover Permission = "order.status.handover" // PICKED_UP
-	PermKitchenBoard        Permission = "kitchen.board"
-	PermTicketPrint         Permission = "kitchen.ticket.print"
+	PermCatalogueRead  Permission = "catalogue.read"
+	PermCatalogueWrite Permission = "catalogue.write"
+	PermScheduleRead   Permission = "schedule.read"
+	PermScheduleWrite  Permission = "schedule.write"
 
-	// Finance
-	PermPaymentQueueView Permission = "payment.queue.view"
-	PermPaymentVerify    Permission = "payment.verify"
-	PermPaymentRefund    Permission = "payment.refund"
-	PermReconciliation   Permission = "finance.reconciliation"
+	PermPriceRead     Permission = "price.read"
+	PermPriceWrite    Permission = "price.write"
+	PermPackageManage Permission = "package.manage"
 
-	// Store master data
-	PermStoreScheduleManage Permission = "store.schedule.manage"
-	PermStoreCapacityManage Permission = "store.capacity.manage"
-	PermStoreManage         Permission = "store.manage"
-	PermStoreBankRead       Permission = "store.bank.read"
-	PermStoreBankManage     Permission = "store.bank.manage"
+	PermOrderRead     Permission = "order.read"
+	PermOrderWrite    Permission = "order.write"
+	PermOrderCancel   Permission = "order.cancel"
+	PermPaymentVerify Permission = "payment.verify"
+	PermPaymentRefund Permission = "payment.refund"
+	PermCreditAdjust  Permission = "credit.adjust"
 
-	// Menu
-	PermMenuManage        Permission = "menu.manage"
-	PermMenuAvailability  Permission = "menu.availability.manage"
-	PermMenu86            Permission = "menu.86"
-	PermMenuPriceOverride Permission = "menu.price.override"
+	PermDeliveryRead     Permission = "delivery.read"
+	PermDeliveryFulfil   Permission = "delivery.fulfil"
+	PermDeliveryReassign Permission = "delivery.reassign"
 
-	// Group administration
-	PermPromotionManage  Permission = "promotion.manage"
-	PermStaffManage      Permission = "staff.manage"
-	PermParametersManage Permission = "parameters.manage"
-	PermReportsStore     Permission = "reports.store"
-	PermReportsGroup     Permission = "reports.group"
-	PermAuditView        Permission = "audit.view"
+	PermKitchenRead  Permission = "kitchen.read"
+	PermKitchenWrite Permission = "kitchen.write"
+
+	PermReportRead      Permission = "report.read"
+	PermReportFinancial Permission = "report.financial"
+
+	PermSettingsRead  Permission = "settings.read"
+	PermSettingsWrite Permission = "settings.write"
+	PermUserManage    Permission = "user.manage"
+	PermAuditRead     Permission = "audit.read"
 )
 
-// rolePermissions is the permissions matrix from docs/02 §3, in code. It is the
-// single source of truth for authorization; handlers declare a permission and
-// never test a role directly.
-var rolePermissions = map[Role]map[Permission]bool{
-	RoleCustomer: set(
-		PermOrderCreate, PermOrderViewOwn, PermOrderCancelOwn,
-		PermPaymentProofUpload, PermProfileManage,
-	),
-	RoleKitchen: set(
-		PermOrderViewStore, PermKitchenBoard, PermTicketPrint,
-		PermOrderStatusKitchen, PermMenu86,
-	),
-	RoleCounter: set(
-		PermOrderViewStore, PermKitchenBoard, PermTicketPrint,
-		PermOrderStatusHandover, PermOrderCancelStaff,
-	),
-	RoleFinance: set(
-		PermOrderViewStore, PermPaymentQueueView, PermPaymentVerify,
-		PermPaymentRefund, PermReconciliation, PermReportsStore, PermStoreBankRead,
-	),
-	RoleStoreManager: set(
-		PermOrderViewStore, PermOrderCancelStaff, PermKitchenBoard, PermTicketPrint,
-		PermOrderStatusKitchen, PermOrderStatusHandover,
-		PermStoreScheduleManage, PermStoreCapacityManage,
-		PermMenuAvailability, PermMenu86,
-		PermPaymentQueueView, PermReconciliation, PermReportsStore, PermAuditView,
-	),
-	RoleAdmin: set(
-		PermOrderViewStore, PermOrderCancelStaff, PermKitchenBoard, PermTicketPrint,
-		PermOrderStatusKitchen, PermOrderStatusHandover,
-		PermPaymentQueueView, PermPaymentVerify, PermPaymentRefund, PermReconciliation,
-		PermStoreScheduleManage, PermStoreCapacityManage, PermStoreManage,
-		PermStoreBankRead, PermStoreBankManage,
-		PermMenuManage, PermMenuAvailability, PermMenu86, PermMenuPriceOverride,
-		PermPromotionManage, PermStaffManage, PermParametersManage,
-		PermReportsStore, PermReportsGroup, PermAuditView,
-	),
-	// Owner is admin plus owner-level parameters and store deactivation; both
-	// are covered by the same permissions, so the sets are equal by construction
-	// and RoleOwner is unscoped (see Principal.CanAccessStore).
-	RoleOwner: nil, // filled in init from RoleAdmin
-}
-
-func init() {
-	owner := make(map[Permission]bool, len(rolePermissions[RoleAdmin]))
-	for p := range rolePermissions[RoleAdmin] {
-		owner[p] = true
+// AllPermissions is every permission the code knows about, used to assert the
+// Go constants and the seeded rows have not drifted apart.
+func AllPermissions() []Permission {
+	return []Permission{
+		PermCustomerRead, PermCustomerWrite, PermCustomerTypeChange, PermOrganisationManage,
+		PermCatalogueRead, PermCatalogueWrite, PermScheduleRead, PermScheduleWrite,
+		PermPriceRead, PermPriceWrite, PermPackageManage,
+		PermOrderRead, PermOrderWrite, PermOrderCancel,
+		PermPaymentVerify, PermPaymentRefund, PermCreditAdjust,
+		PermDeliveryRead, PermDeliveryFulfil, PermDeliveryReassign,
+		PermKitchenRead, PermKitchenWrite,
+		PermReportRead, PermReportFinancial,
+		PermSettingsRead, PermSettingsWrite, PermUserManage, PermAuditRead,
 	}
-	rolePermissions[RoleOwner] = owner
 }
 
-func set(perms ...Permission) map[Permission]bool {
-	m := make(map[Permission]bool, len(perms))
-	for _, p := range perms {
-		m[p] = true
-	}
-	return m
-}
-
-// SubjectType distinguishes a customer account from a staff account.
+// SubjectType distinguishes a customer session from a staff one. It rides in
+// the token so a customer token can never be replayed against a staff route
+// even if the role claim were somehow wrong.
 type SubjectType string
 
 const (
@@ -133,85 +74,72 @@ const (
 	SubjectStaff    SubjectType = "staff"
 )
 
-// Principal is the authenticated caller. Stores is the set of stores a staff
-// member is assigned to (BR-2.7.7); it is resolved server-side from the
-// database and never from a client claim (BR-2.7.9).
-type Principal struct {
-	SubjectType SubjectType
-	ID          uuid.UUID
-	Role        Role
-	Stores      []uuid.UUID
-	GroupScope  bool // finance may be scoped to the whole group (BR-2.7.7)
-	TokenID     uuid.UUID
-}
+// Role is a role code, matching the seeded rows (PROMPT §3).
+type Role string
 
-// Can reports whether the principal holds a permission.
-func (p Principal) Can(perm Permission) bool {
-	if p.Role == "" {
-		return false // deny by default
-	}
-	return rolePermissions[p.Role][perm]
-}
+const (
+	RoleCustomer Role = "customer"
+	RoleStaff    Role = "staff"
+	RoleFinance  Role = "finance"
+	RoleKitchen  Role = "kitchen"
+	RoleCourier  Role = "courier"
+	RoleAdmin    Role = "admin"
+)
 
-// IsUnscoped reports whether the principal sees every store: admin, owner, or a
-// group-scoped finance user.
-func (p Principal) IsUnscoped() bool {
-	return p.Role == RoleAdmin || p.Role == RoleOwner || p.GroupScope
-}
+// IsStaff reports whether a role belongs in the back office.
+func (r Role) IsStaff() bool { return r != RoleCustomer && r != "" }
 
-// CanAccessStore reports whether the principal may act on a store. This is the
-// tenancy check behind every store-scoped request (BR-2.7.8/9).
-func (p Principal) CanAccessStore(storeID uuid.UUID) bool {
-	if p.IsUnscoped() {
+// RequiresTOTP reports whether 2FA is mandatory for the role (docs/03 Q-16).
+// Kitchen and courier are exempt: they work from shared or phone devices on a
+// service floor, and their accounts are read-mostly and kitchen-scoped.
+func (r Role) RequiresTOTP() bool {
+	switch r {
+	case RoleAdmin, RoleFinance, RoleStaff:
 		return true
 	}
-	for _, s := range p.Stores {
-		if s == storeID {
+	return false
+}
+
+// Set is a resolved permission set for one authenticated user.
+type Set map[Permission]struct{}
+
+// NewSet builds a set from permission codes loaded for the user's roles.
+func NewSet(codes []string) Set {
+	s := make(Set, len(codes))
+	for _, c := range codes {
+		if c = strings.TrimSpace(c); c != "" {
+			s[Permission(c)] = struct{}{}
+		}
+	}
+	return s
+}
+
+// Has reports whether the set grants a permission. An empty set grants nothing,
+// which is the deny-by-default rule expressed in one line.
+func (s Set) Has(p Permission) bool {
+	if s == nil {
+		return false
+	}
+	_, ok := s[p]
+	return ok
+}
+
+// HasAny reports whether the set grants at least one of the permissions.
+func (s Set) HasAny(ps ...Permission) bool {
+	for _, p := range ps {
+		if s.Has(p) {
 			return true
 		}
 	}
 	return false
 }
 
-// StoreScope returns the store filter for the repository layer: nil means
-// "every store" (admin, owner, group-scoped finance), otherwise the query must
-// be restricted to exactly these ids. Repositories take this value, so scope
-// cannot be forgotten in a handler (BR-2.7.8).
-func (p Principal) StoreScope() []uuid.UUID {
-	if p.IsUnscoped() {
-		return nil
-	}
-	out := make([]uuid.UUID, len(p.Stores))
-	copy(out, p.Stores)
-	return out
-}
-
-// PermissionsFor exposes a role's permission set (used by the admin UI and by
-// the authorization tests).
-func PermissionsFor(r Role) []Permission {
-	out := make([]Permission, 0, len(rolePermissions[r]))
-	for p := range rolePermissions[r] {
-		out = append(out, p)
-	}
-	return out
-}
-
-// AllRoles lists every role, for tests that must walk the whole matrix.
-func AllRoles() []Role {
-	return []Role{RoleCustomer, RoleKitchen, RoleCounter, RoleFinance, RoleStoreManager, RoleAdmin, RoleOwner}
-}
-
-// AllPermissions lists every permission, for the deny-by-default routing test.
-func AllPermissions() []Permission {
-	seen := map[Permission]bool{}
-	var out []Permission
-	for _, perms := range rolePermissions {
-		for p := range perms {
-			if !seen[p] {
-				seen[p] = true
-				out = append(out, p)
-			}
-		}
+// Codes returns the permissions as sorted-insertion-free strings, for a token
+// claim or a debug endpoint.
+func (s Set) Codes() []string {
+	out := make([]string, 0, len(s))
+	for p := range s {
+		out = append(out, string(p))
 	}
 	return out
 }

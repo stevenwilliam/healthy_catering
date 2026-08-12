@@ -1,0 +1,15 @@
+DELETE FROM kitchen_operating_day;
+DELETE FROM kitchen_slot;
+DELETE FROM kitchen WHERE code IN ('JKT-S','JKT-P');
+DELETE FROM sys_parameters;
+DELETE FROM bank_account;
+DELETE FROM package;
+DELETE FROM meal_price_tier;
+DELETE FROM delivery_time_slot;
+DELETE FROM allergen;
+DELETE FROM diet_subtype;
+DELETE FROM diet_type;
+DELETE FROM customer_type;
+DELETE FROM role_permission;
+DELETE FROM role;
+DELETE FROM permission;
