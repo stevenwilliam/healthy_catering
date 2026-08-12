@@ -3,7 +3,37 @@
 Steps needing an interactive terminal, a browser, or credentials that do not
 exist yet. Use `vi` for any edits.
 
-_Updated: 2026-08-12 (product brief received)._
+_Updated: 2026-08-12, after the first build session._
+
+## 0. What is already done — do NOT redo these
+
+The build session completed the environment setup that this file previously
+listed as pending. Verified on this server:
+
+- PostgreSQL 18.4 with `healthy_catering` + `healthy_catering_test`, owned by
+  the `healthy_catering` role; `postgis` 3.6.4, `btree_gist` and `citext`
+  created in both.
+- Redis satellite container `redis-shared` on 127.0.0.1:6379.
+- `/home/dev/projects/healthy_catering/.env` written, mode 0600, git-ignored,
+  with generated `JWT_SIGNING_KEY` and `TOTP_ENCRYPTION_KEY`.
+- Migrations 0001–0011 applied.
+
+To run it:
+
+```bash
+cd /home/dev/projects/healthy_catering
+go build -o bin/api ./cmd/api
+set -a && . ./.env && set +a
+./bin/api migrate status
+./bin/api serve
+# then, in another terminal:
+curl -s -X POST http://127.0.0.1:8081/api/v1/delivery-area/check \
+  -H 'Content-Type: application/json' \
+  -d '{"lat":-6.2200,"lng":106.8300}'
+```
+
+**The database password is only in `.env`.** If you need it:
+`sudo vi /home/dev/projects/healthy_catering/.env`
 
 ## 1. Confirm the planning documents — this is the gate
 
@@ -54,8 +84,9 @@ sudo -u postgres createuser --pwprompt healthy_catering
 sudo -u postgres createdb -O healthy_catering healthy_catering
 sudo -u postgres createdb -O healthy_catering healthy_catering_test
 
-# PostGIS is not in a default PostgreSQL install.
-sudo apt-get install -y postgresql-16-postgis-3
+# PostGIS is not in a default PostgreSQL install. This server runs PG 18,
+# not the 16 the brief assumed.
+sudo apt-get install -y postgresql-18-postgis-3
 
 # Extensions need superuser; do this once per database, before migration 0001.
 sudo -u postgres psql -d healthy_catering      -c 'CREATE EXTENSION IF NOT EXISTS btree_gist; CREATE EXTENSION IF NOT EXISTS postgis;'
