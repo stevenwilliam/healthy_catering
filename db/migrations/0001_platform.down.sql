@@ -1,0 +1,10 @@
+DROP TRIGGER IF EXISTS job_touch ON job;
+DROP TRIGGER IF EXISTS sys_parameters_touch ON sys_parameters;
+DROP TRIGGER IF EXISTS audit_log_append_only ON audit_log;
+DROP TABLE IF EXISTS notification_log;
+DROP TABLE IF EXISTS job;
+DROP TABLE IF EXISTS idempotency_key;
+DROP TABLE IF EXISTS audit_log;
+DROP TABLE IF EXISTS sys_parameters;
+DROP FUNCTION IF EXISTS touch_updated_at();
+DROP FUNCTION IF EXISTS reject_mutation();

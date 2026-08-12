@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS food_allergen;
+DROP TABLE IF EXISTS food_diet_type;
+DROP TABLE IF EXISTS food_nutrition;
+DROP TABLE IF EXISTS food_photo;
+DROP TABLE IF EXISTS food;
+DROP TABLE IF EXISTS allergen;
+DROP TABLE IF EXISTS diet_subtype;
+DROP TABLE IF EXISTS diet_type;

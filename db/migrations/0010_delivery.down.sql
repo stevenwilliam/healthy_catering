@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS delivery_line;
+DROP TABLE IF EXISTS delivery;
