@@ -8,14 +8,28 @@ Ambiguities in the master prompt, each with **the concrete answer I need**, a
 `CLAUDE.md` §6 every question carries a default — answer with `ven:` lines, or
 "all defaults" to take every assumption below as decided.
 
-Three of these (Q-1, Q-4, Q-13) cannot be defaulted safely and will block their
-milestones.
+**Steven answered Q-1, Q-2, Q-4 and Q-13 on 2026-08-12** — recorded as D-30…D-34
+in `02-decisions.md` and folded into the model. Their entries below are kept and
+marked ✅ with what still follows from them.
 
 ---
 
-## Blocking — no safe default
+## Answered
 
-### Q-1 — Is PPN charged, and are displayed prices tax-inclusive?
+### ✅ Q-1 — Is PPN charged, and are displayed prices tax-inclusive?
+
+**Answer: prices are tax-inclusive; the database splits base price and tax; the
+rate is editable in the back office.** → D-30. The split is snapshotted per
+order, not stored on the price row, so a rate change never rewrites the price
+tables. Formula and worked example in `01-domain-model.md` §3.11.
+
+**Q-1a still needed before M6 ships:** the **rate** to seed (11%? 12%?), whether
+Evermore is **PKP-registered**, and the **NPWP + legal entity name** a corporate
+invoice must carry. The engine is built and seeded from a parameter, so this is a
+settings value rather than a code change — but the first real invoice cannot go
+out without it.
+
+<details><summary>Original question</summary>
 
 The brief never mentions tax. Indonesian VAT on prepared food supplied by a
 PKP-registered caterer is a real question, and it decides whether
@@ -33,8 +47,36 @@ the invoice?
 *Recommendation if you want one:* store prices **tax-inclusive**, carry
 `tax_rate_bps` in `sys_parameters`, and compute the tax base by back-calculation
 on the invoice — that way a rate change never rewrites the price tables.
+</details>
 
-### Q-4 — The kitchens at launch
+### ✅ Q-13 — Refund policy in money terms
+
+**Answer: no refund.** → D-31. Compensation is in **credits**, never rupiah;
+unused credits are forfeited at expiry. `REFUNDED` remains admin-only for
+correcting an erroneous or duplicate transfer, which is returning money that was
+never owed rather than honouring a policy.
+
+**Follow-on:** forfeiture-at-expiry and no-refund must both be stated plainly on
+the terms page before launch (Q-27).
+
+### ✅ Q-2 — What is 1 credit?
+
+**Answer: 1 meal contains several foods; 1 credit buys 1 meal, even when that
+meal is a single dish.** → D-32, D-33. The meal became an entity
+(`scheduled_meal` + `scheduled_meal_item`), the customer picks meals rather than
+individual foods, and a meal's nutrition panel is aggregated from its foods.
+
+### 🟡 Q-4 — The kitchens at launch
+
+**Answer on the rule: "auto assign location customer to nearest kitchen."** →
+D-34, which is the router already specified. Every kitchen is seeded at equal
+`priority` so ranking collapses to nearest-first, with `priority` left as the
+manual override.
+
+**The data is still outstanding** and is now a launch-blocking input rather than
+a design question — see the table at the end of this document.
+
+<details><summary>Original question</summary>
 
 The entire routing design is theoretical until real kitchens exist.
 
@@ -45,8 +87,13 @@ phone.
 
 **Blocks:** kitchen routing (M3) can be *built* with seeded fake kitchens, but
 cannot be *verified* — and "is this address serviceable" is on the homepage.
+</details>
 
-### Q-13 — Refund policy in money terms
+---
+
+## Superseded
+
+<details><summary>Q-13, as originally asked</summary>
 
 §6.3 has `REFUNDED` and §7 has a `REFUND` ledger entry, but they are different
 things: one returns rupiah, the other returns a credit. The brief never states
@@ -59,12 +106,13 @@ Forfeiture is normal in this market but must be on the terms page before launch,
 not decided at the first complaint.
 
 **Blocks:** finance module (M7) and the terms page.
+</details>
 
 ---
 
 ## Rules the brief left ambiguous
 
-### Q-2 — What is 1 credit?
+<details><summary>Q-2, as originally asked — answered above by D-32</summary>
 
 `D-7` allows a set menu (main + side + dessert) for one date+diet+slot. §6.2.3
 says "each picked portion consumes 1 credit". So does 1 credit buy **the whole
@@ -76,9 +124,9 @@ makes a package's value depend on how many components staff scheduled that day.
 
 **Consequence, so it is not a surprise:** §6.1's "customer picks food(s)" for
 à-la-carte then does not mean picking individual dishes either — the customer
-picks a **date + slot + diet type**, and the set is what is scheduled. If you do
-want individual dishes selectable à la carte, that is a different cart, a
-different price basis, and it changes M6. **Please confirm this one explicitly.**
+picks a **date + slot + diet type**, and the set is what is scheduled.
+**Confirmed by Steven — this is exactly the model (D-32).**
+</details>
 
 ### Q-3 — Delivery fee real numbers
 
@@ -205,6 +253,8 @@ menus are how people end up with an empty box.
 
 | # | Need | Blocks |
 |---|---|---|
+| Q-4 | **The real kitchens** — name, code, address, map pin, slots served, operating days/hours, service radius, per-slot capacity, PIC and phone | Verifying routing (M3); the homepage serviceability widget |
+| Q-1a | PPN rate to seed, PKP status, NPWP, legal entity name | The first real invoice (M6/M8) |
 | Q-19 | Bank account details — bank, number, holder name, for each account | Payment instructions (M7) |
 | Q-20 | Legal entity name, address, NPWP, contact phone/email for invoices and the footer | Invoices, legal pages |
 | Q-21 | SMTP relay host, port 587 credentials, and the `From` domain with SPF/DKIM/DMARC set up | All email (M10) |

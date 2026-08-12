@@ -18,6 +18,21 @@ any item you want to change. Silence on an item = the recommendation stands.
 
 ---
 
+## Part 0 — Answered by Steven, 2026-08-12
+
+Four answers landed, and the last one changed the model. Recorded here as
+settled; the reasoning that follows from each is in `01-domain-model.md`.
+
+| # | Answer | What it settles |
+|---|---|---|
+| **D-30** | *"All price is included price, however in database split base price and tax; tax percentage can be changed via backend."* | **Prices are tax-inclusive.** The four price tables hold only the inclusive number. The **split is computed and snapshotted per order**, not stored on the price row — otherwise a rate change from 11% to 12% rewrites every price row, and old rows carry a rate they were never sold under. `tax_rate_bps` is a `sys_parameters` row. Integer half-up back-calculation on the **line total**, with tax taken as the residue so base + tax always equals the price exactly. Delivery fee is taxed the same way; the payment suffix is not taxable. (`01` §3.11) |
+| **D-31** | *"No refund."* | **No money goes back.** A staff-cancelled paid order and an unfulfilled delivery are compensated in **credits** (`ADJUSTMENT` with a reason), never rupiah. Unused credits are **forfeited at expiry** — which must be on the terms page before launch, not explained at the first complaint. `REFUNDED` stays on the machine for **admin-only correction of an erroneous or duplicate transfer**, because manual bank transfer guarantees that case and finance moving money with no record of it is worse than modelling it. |
+| **D-32** | *"1 meal contains several food. 1 credit is used for 1 meal (even 1 food delivery for package)."* | **The meal is the unit of sale**, not the food. `scheduled_meal` (date + diet type + slot) replaces the brief's flat `food_schedule`; `scheduled_meal_item` holds its foods with their roles. Capacity, publication and credit redemption all attach to the **meal**. One credit = one meal whatever it contains. Tier quantities count meals. Customers pick a meal, never individual dishes. |
+| **D-33** | *"Each food can have nutrition facts; meal nutrition will be aggregated from food."* | **Meal nutrition is computed, never typed** — `SUM` over the meal's foods, in pure domain code, snapshotted onto the order line at purchase. This is what makes D-24 (integers in milligrams) load-bearing rather than tidy: summing integers is exact, and a few mg of drift per dish is visible on the weekly intake chart. |
+| **D-34** | *"Auto assign location customer to nearest kitchen."* | Confirms the router. Reconciled with the brief's own §9.3 ranking by **seeding every kitchen at the same `priority`**, so ranking collapses to nearest-first exactly as asked, while `priority` remains the manual override for the "3 km away but across the toll road" case. **This answers the rule, not the data** — the real kitchen list (Q-4) is still needed before launch and has moved to the operational-inputs table in `03`. |
+
+---
+
 ## Part A — Stack. These five conflict with `CLAUDE.md` and must be settled first
 
 `CLAUDE.md` is the standing contract and says Go + gin + gorm, React 18 + Vite,

@@ -148,9 +148,10 @@ erDiagram
     allergen ||--o{ food_allergen : in
     food ||--o{ food_ingredient : "composed of (D-6, later)"
     ingredient ||--o{ food_ingredient : "used in (D-6, later)"
-    food ||--o{ food_schedule : scheduled
-    diet_type ||--o{ food_schedule : for
-    delivery_time_slot ||--o{ food_schedule : "meal slot"
+    scheduled_meal ||--o{ scheduled_meal_item : "composed of"
+    food ||--o{ scheduled_meal_item : scheduled
+    diet_type ||--o{ scheduled_meal : for
+    delivery_time_slot ||--o{ scheduled_meal : "meal slot"
 
     diet_type {
         uuid id PK
@@ -198,16 +199,21 @@ erDiagram
         int   sort_order
         bool  is_active
     }
-    food_schedule {
+    scheduled_meal {
         uuid id PK
         date  service_date
         uuid  diet_type_id FK
         uuid  slot_id FK
-        uuid  food_id FK
-        text  item_role "MAIN|SIDE|DESSERT|DRINK (D-7)"
-        int   qty_capacity "nullable"
+        int   qty_capacity "nullable - meals, not foods"
         text  status "DRAFT|PUBLISHED"
         timestamptz published_at
+    }
+    scheduled_meal_item {
+        uuid id PK
+        uuid scheduled_meal_id FK
+        uuid food_id FK
+        text item_role "MAIN|SIDE|DESSERT|DRINK (D-7)"
+        int  sort_order
     }
 ```
 
@@ -285,7 +291,7 @@ erDiagram
     customer_package ||--o{ delivery : "produces (credit redemption)"
     customer_address ||--o{ delivery : "shipped to (snapshotted)"
     delivery ||--o{ delivery_line : contains
-    food_schedule ||--o{ delivery_line : "fulfils"
+    scheduled_meal ||--o{ delivery_line : "fulfils (1 line = 1 meal)"
 
     meal_price_normal {
         uuid id PK
@@ -314,11 +320,15 @@ erDiagram
         uuid customer_id FK
         text order_type "MEAL|PACKAGE"
         text status
-        bigint subtotal_idr
-        bigint delivery_fee_idr
+        bigint subtotal_idr "tax-inclusive"
+        bigint delivery_fee_idr "tax-inclusive"
         bigint discount_idr
-        bigint total_idr
+        bigint total_idr "what the customer owes"
+        bigint tax_base_idr "SUM of line bases (D-30)"
+        bigint tax_idr "SUM of line taxes - never recomputed from total"
+        int    tax_rate_bps "snapshot of the rate in force"
         bigint payment_amount_idr "total + unique suffix (D-16)"
+        bigint payment_rounding_idr "suffix delta, so reports reconcile"
         timestamptz payment_deadline_at
         text idempotency_key
         jsonb price_resolution_trace "why this price"
@@ -326,15 +336,18 @@ erDiagram
     order_line {
         uuid id PK
         uuid order_id FK
-        uuid food_id FK "nullable for package lines"
+        uuid scheduled_meal_id FK "nullable for package lines"
         uuid package_id FK "nullable for meal lines"
-        int  qty
-        bigint unit_price_idr "snapshot"
-        bigint normal_price_idr "snapshot"
+        int  qty "meals, not foods (D-32)"
+        bigint unit_price_idr "snapshot, tax-inclusive"
+        bigint normal_price_idr "snapshot, tax-inclusive"
+        bigint line_total_idr "unit x qty"
+        bigint line_tax_base_idr "back-calculated on the line total"
+        bigint line_tax_idr "line_total - line_tax_base"
         bool  is_promo
         uuid  price_row_id "snapshot, no FK - history"
         text  price_table "meal_normal|meal_promo|pkg_normal|pkg_promo"
-        jsonb food_snapshot "name, portion, nutrition, allergens"
+        jsonb meal_snapshot "every food in the meal: name, role, portion, nutrition, allergens"
     }
     credit_ledger {
         uuid id PK
@@ -396,28 +409,56 @@ multiplying by subtype. **[Q-6]** confirms this is intended.
 
 ### 3.3 Food and nutrition (§4.3)
 
-Nutrition is stored as **integers in milligrams** (calories in whole kcal), not
-decimals — the same reason money is integers, and it makes the weekly-intake
-chart (§13.8) exact. Display divides by 1000 at the edge. `extras JSONB` takes
-anything the label needs that is not a column.
+**Nutrition lives on the food**, one row per food per portion, stored as
+**integers in milligrams** (calories in whole kcal), not decimals. That is not
+only the money rule applied to nutrition — it is what makes **D-33** work: a
+meal's panel is the *sum* of its foods' panels, and summing integers is exact
+where summing decimals drifts by a few mg per dish and visibly per week on the
+intake chart (§13.8). Display divides by 1000 at the edge. `extras JSONB` takes
+anything the label needs that is not a column; extras are summed by key when the
+key is numeric and dropped from the aggregate otherwise.
 
 `ingredient` + `food_ingredient` (per-100g nutrition, auto-computing the panel)
 is modelled but **not built in phase 1** — see **[D-6]**.
 
-### 3.4 Food schedule (§4.4)
+### 3.4 The menu calendar — foods compose meals, and the meal is what is sold
 
-`food_schedule` is the menu calendar. One row per
-(`service_date`, `diet_type`, `slot`, `food`), with `item_role` distinguishing
-main / side / dessert / drink so a composed set menu is one date+diet+slot with
-several rows — **[D-7]**, recommended.
+Confirmed by Steven, 2026-08-12 (**D-32**, **D-33**):
 
-Unique index on (`service_date`, `diet_type_id`, `slot_id`, `food_id`) stops the
-same dish being scheduled twice in one sitting. `status` is `DRAFT` until
-published; **customers only ever query `PUBLISHED`**, enforced in the repository,
-not the handler.
+```
+food  ──┐
+food  ──┼──►  meal  ◄── the customer picks this, and 1 credit buys one
+food  ──┘     (a date + diet type + slot)
+```
 
-The schedule is **global across kitchens** — **[D-8]**. `kitchen_id` is
-deliberately absent; adding it later is an additive migration.
+- **`scheduled_meal`** — one row per (`service_date`, `diet_type_id`, `slot_id`).
+  This is the unit of sale, the unit of capacity, and the thing that is
+  published. Unique on those three columns.
+- **`scheduled_meal_item`** — the foods in it, each with `item_role`
+  (`MAIN`, `SIDE`, `DESSERT`, `DRINK`) and a sort order. Unique on
+  (`scheduled_meal_id`, `food_id`), which preserves the brief's rule that a dish
+  cannot be scheduled twice in one sitting.
+
+This replaces the flat `food_schedule` table the brief sketched. The reason is
+Steven's rule that **one credit buys one meal even when that meal contains a
+single food**: if the schedule row is the *food*, then capacity, publication and
+redemption all attach to the wrong thing, and a meal's price would depend on how
+many components staff happened to schedule. Making the meal an entity puts
+`qty_capacity`, `status`/`published_at` and the credit boundary in one place.
+
+**Nutrition is aggregated, never typed at the meal level** — the panel a customer
+sees for a meal is `SUM` over its items' `food_nutrition`, computed in pure
+domain code and **snapshotted onto the order line at purchase** so a later recipe
+edit cannot rewrite what someone was told they ate.
+
+A meal carries an optional display `name` and `hero_photo_key`; when blank they
+fall back to the `MAIN` item's name and first photo, so staff scheduling a week
+do not have to name thirty-five meals.
+
+`status` is `DRAFT` until published; **customers only ever query `PUBLISHED`**,
+enforced in the repository, not the handler. The calendar is **global across
+kitchens** — **[D-8]**. `kitchen_id` is deliberately absent; adding it later is
+an additive migration.
 
 ### 3.5 Pricing (§5)
 
@@ -443,9 +484,54 @@ Every resolution writes a `price_resolution_trace` onto the order (which scope
 matched, which table, which row id, which tier) so "why did this customer pay
 that?" is answerable from the record without re-running the resolver.
 
-**Tiers** (`meal_price_tier`): `min_qty`, `max_qty` nullable = ∞. Validated on
-save to have no overlaps and no gaps from 1 up to the max order quantity from
-`sys_parameters` (999). Semantics are **flat** — **[D-10]**.
+**Tiers** (`meal_price_tier`): `min_qty`, `max_qty` nullable = ∞, **counted in
+meals** (D-32), not foods. Validated on save to have no overlaps and no gaps from
+1 up to the max order quantity from `sys_parameters` (999). Semantics are
+**flat** — **[D-10]**.
+
+**Every price in all four tables is tax-inclusive** — the number staff type is
+the number the customer pays. The split is computed and stored at order time,
+never on the price row. See §3.11.
+
+### 3.11 Tax (D-30)
+
+Steven, 2026-08-12: *"all price is included price, however in database split
+base price and tax; tax percentage can be changed via backend."*
+
+- `tax_rate_bps` is a **`sys_parameters` row** (11% = `1100`), editable in the
+  back office, audit-logged like any other parameter.
+- The four price tables hold **only the inclusive price**. The split is *not*
+  stored there, deliberately: a rate change from 11% to 12% would otherwise have
+  to rewrite every price row in every table, and historical rows would end up
+  carrying a rate they were never sold under. Instead the rate is snapshotted per
+  order.
+- The split is computed **on the line total, not the unit price** — computing per
+  unit and multiplying multiplies the rounding error by the quantity.
+
+Back-calculation, integer-only and half-up, in the same style as the basis-point
+rule in `CLAUDE.md` §4, with `D = 10000 + tax_rate_bps`:
+
+```
+base = (line_total * 10000 + D/2) / D      -- integer division
+tax  = line_total - base                    -- the residue, never recomputed
+```
+
+Worked: Rp 500.000 inclusive at 1100 bps → `base = 450.450`, `tax = 49.550`, and
+`450450 + 49550 = 500000` exactly. Taking the tax as the residue rather than
+computing it separately is what guarantees base + tax always equals the price.
+
+- **Order-level `tax_idr` is the `SUM` of the line taxes**, never re-derived from
+  the order total — re-deriving reintroduces a rounding difference between the
+  invoice and its own lines.
+- **The delivery fee is a taxable supply too** and is split the same way at the
+  same rate.
+- The **payment suffix (D-16) is not taxable** — it is a matching device, not
+  consideration. It lands in `payment_rounding_idr` and is excluded from the tax
+  base, which is the second reason that column exists.
+
+**Still needed before the pricing engine ships** (`03-open-questions.md` Q-1a):
+the PPN **rate** to seed, whether Evermore is **PKP-registered**, and the NPWP
+and legal entity name that a corporate invoice must show.
 
 ### 3.6 Packages and credits (§5.5, §7)
 
@@ -463,18 +549,36 @@ zero. A `CHECK` cannot express `SUM(...) >= 0` across rows, so the lock is the
 invariant's enforcement point and it ships with the concurrency test the house
 rules demand.
 
+**One credit buys one meal** (D-32), whatever that meal contains — a single dish
+and a four-component set both cost one credit. So a `REDEEM` entry is `−1` per
+meal, and a customer taking two portions of the same meal spends two credits.
+The credit is *never* per food; nothing in the ledger counts foods.
+
+**Credits are never money** (D-31). A `REFUND` ledger entry returns a *credit*
+— it is not a payment. No path in this system moves rupiah back to a customer
+except the erroneous-payment case in §4.4.
+
 ### 3.7 Orders, deliveries and the two flows (§6)
 
 An **order** is the commercial event. A **delivery** is the fulfilment event.
 They are separate because one package order produces N deliveries over weeks, to
 different addresses, through different kitchens.
 
-- **Flow A (meals):** order → order lines → deliveries created at checkout, one
-  per (date, slot, address) combination in the cart.
+- **Flow A (meals):** the customer picks a **meal** from the published calendar —
+  a date + slot + diet type — with a quantity, an address and a delivery slot.
+  One `order_line` per (meal, address); deliveries are created at checkout, one
+  per (date, slot, address) combination in the cart. The customer never picks
+  individual foods; the meal's composition is whatever staff scheduled, and it is
+  snapshotted onto the line.
 - **Flow B (packages):** order → payment verified → `customer_package` +
-  `PURCHASE` ledger entry → customer picks slots later; **each picked portion is
-  one `REDEEM` entry and one `delivery_line`**, grouped into a `delivery` per
+  `PURCHASE` ledger entry → customer picks meals later; **each meal taken is one
+  `REDEEM` entry (`−1`) and one `delivery_line`**, grouped into a `delivery` per
   (date, slot, address).
+
+`delivery_line` is therefore **one meal**, carrying its own `meal_snapshot` — the
+foods, their roles and their nutrition as at confirmation. That snapshot is what
+the packing label and the kitchen production sheet print from, so a menu
+substitution made after the fact cannot silently change what was cooked.
 
 Kitchen routing runs **per delivery** at the moment the delivery is created —
 for packages that is slot-pick time, not purchase time. Kitchen capacity is
@@ -548,9 +652,8 @@ stateDiagram-v2
     PAYMENT_SUBMITTED --> AWAITING_PAYMENT : finance rejects (reason)
     PAYMENT_SUBMITTED --> EXPIRED : deadline passed, unverified
     PAID --> COMPLETED : all deliveries DELIVERED / package expired
-    PAID --> CANCELLED : staff, before cut-off
-    PAID --> REFUNDED : finance
-    CANCELLED --> REFUNDED : finance
+    PAID --> CANCELLED : staff, before cut-off (compensated in credits)
+    PAID --> REFUNDED : admin only - erroneous payment, never a policy refund
     EXPIRED --> [*]
     COMPLETED --> [*]
     REFUNDED --> [*]
@@ -558,6 +661,19 @@ stateDiagram-v2
 
 Illegal transitions are rejected by the domain layer, not the handler, and the
 transition table is a unit test.
+
+**No refunds (D-31).** Steven's rule: money does not go back. Two consequences
+worth stating rather than discovering:
+
+1. A staff-cancelled `PAID` order is compensated in **credits**, via an
+   `ADJUSTMENT` ledger entry with a reason — not in rupiah. Same for a delivery
+   the kitchen could not fulfil.
+2. `REFUNDED` survives on the machine anyway, reachable **only by an admin**, for
+   the case manual bank transfer guarantees will happen: a customer transfers
+   twice, or transfers the wrong amount. That is returning money that was never
+   owed, not honouring a refund policy, and refusing to model it would leave
+   finance moving money with no record of it. It requires a reason, writes an
+   audit row, and is reported separately from sales.
 
 ### 4.2 Delivery — fulfilment lifecycle
 
@@ -571,7 +687,7 @@ stateDiagram-v2
     PREPARING --> OUT_FOR_DELIVERY : courier picks up
     OUT_FOR_DELIVERY --> DELIVERED : courier confirms
     OUT_FOR_DELIVERY --> FAILED : nobody home, wrong address
-    FAILED --> SCHEDULED : staff reschedules (credit decision, Q-8)
+    FAILED --> SCHEDULED : staff reschedules, no automatic credit (Q-8)
     DELIVERED --> [*]
 ```
 
@@ -605,7 +721,7 @@ stateDiagram-v2
     SUBMITTED --> REJECTED : finance, reason required
     REJECTED --> SUBMITTED : customer re-uploads
     PENDING --> EXPIRED : deadline
-    VERIFIED --> REFUNDED : finance
+    VERIFIED --> REFUNDED : admin only - erroneous or duplicate transfer (D-31)
 ```
 
 ---
@@ -624,13 +740,33 @@ beating a DEFAULT promo (D-9)** · tier boundary at min · at max · at max+1 ·
 -ended `max_qty` · validity boundary on `valid_from` · on `valid_to` (exclusive)
 · overlapping rows rejected by the constraint · qty above the configured max.
 
+**Tax split (D-30), tested with the resolver because it is the same money path:**
+base + tax always equals the inclusive price, at 0 bps · at 1100 · at 1200 ·
+on a line total of Rp 1 · on 999 × the maximum price without overflowing `int64`
+· order tax equals the sum of line taxes and is never re-derived from the total
+· the payment suffix is excluded from the tax base · a rate change does not move
+an already-placed order.
+
 ### 5.2 Credit ledger — pure rules + one locked transaction
 
 Test matrix: purchase posts +N · redeem posts −1 · balance never below zero ·
 two concurrent redemptions of the last credit, one wins (the concurrency test) ·
-skip before cut-off refunds · skip after cut-off does not · expiry posts the
-negative remainder · expiry racing a redemption · staff extension reverses an
+skip before cut-off returns a credit · skip after cut-off does not · **one credit
+per meal regardless of how many foods it contains (D-32)** · expiry posts the
+negative remainder and the remainder is forfeited, never refunded in money
+(D-31) · a delivery may not be scheduled after `expires_at` (D-27) · expiry racing a redemption · staff extension reverses an
 expiry with a compensating entry · adjustment requires a reason.
+
+### 5.2b Meal nutrition aggregation — pure (D-33)
+
+```
+aggregate(meal_items[]) -> NutritionPanel
+```
+
+Test matrix: one food · four foods · a food with a missing panel (the meal's
+panel is marked incomplete rather than under-reporting) · integer sums exact at
+every field · numeric `extras` keys summed by key, non-numeric dropped · the
+snapshot on an order line does not change when a food's recipe is later edited.
 
 ### 5.3 Kitchen router — pure, given candidates
 
@@ -651,7 +787,7 @@ after cut-off refused.
 
 ## 6. What this model deliberately does not do yet
 
-- No `kitchen_id` on `food_schedule` (**[D-8]**, global menu).
+- No `kitchen_id` on `scheduled_meal` (**[D-8]**, global menu).
 - No `ingredient` build (**[D-6]**), though the tables are designed.
 - No voucher/referral tables — §13.5 says they live in a **discount layer applied
   after price resolution**, so they never touch the four price tables. Modelled
