@@ -1,0 +1,21 @@
+# Secrets — the real one never enters git; .env.example is the documented surface.
+.env
+.env.*
+!.env.example
+
+# Build output
+/bin/
+/dist/
+web/dist/
+web/node_modules/
+node_modules/
+
+# Go
+*.test
+coverage.out
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
