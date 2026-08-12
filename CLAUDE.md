@@ -19,12 +19,20 @@ decision.
 **Brand:** Evermore (see §7 and `docs/design_guideline/`)
 **Owner:** stevenwilliam (itdept.sfg@gmail.com)
 **Repo:** https://github.com/stevenwilliam/healthy_catering
-**Status:** scaffolded. **The domain is not defined yet** — Steven supplies the
-product brief in a later prompt. Nothing below assumes what the product does
-beyond the name.
+**Product:** a **B2C healthy-catering ordering website** for Jakarta —
+`www.evermore.co.id`. Public marketing and menu pages, customer accounts,
+à-la-carte meal ordering and prepaid meal-credit packages, manual bank-transfer
+payment, automatic routing of every delivery to one of several kitchens by
+address coordinates, and a full staff back office. Phase 1 is web only, no PWA;
+phase 2 is native mobile against the same versioned REST API.
 
-**Do not invent the domain.** Until the brief lands, do not create business
-rules, a data model, or endpoints. Ask, or wait.
+**Status:** brief received 2026-08-12 (`docs/PROMPT.md`). Planning documents
+`01`–`04` are written and **awaiting Steven's confirmation**. **No application
+code until he approves them** — `docs/02-decisions.md` holds 23 open decisions,
+five of which (the stack) conflict with §3 below and must be settled first.
+
+**Do not invent business rules.** Anything the brief does not state goes to
+`docs/03-open-questions.md` with a proposed default, not into code.
 
 ---
 
@@ -189,7 +197,17 @@ whose docs are stale is not done.
 
 ## 10. Locale / environment
 
-**Not yet decided.** Currency, timezone, languages and the production domain
-come with the product brief. Until then, do not assume ruuma's answers — that
-project is IDR / Asia-Jakarta / ID+EN because it is an Indonesian restaurant,
-and this one has not said what it is.
+Settled by the brief, 2026-08-12:
+
+- **Currency: IDR**, stored as `BIGINT` **whole rupiah**. Sen is obsolete in
+  retail, so the rupiah *is* the minor unit here. Formatted `Rp 500.000`.
+- **Timezone: `Asia/Jakarta` (WIB).** Store UTC, render WIB. A business calendar
+  date (delivery date, price validity, menu date) is a `DATE`, and any comparison
+  against "now" — the 18:00 cut-off above all — converts through `Asia/Jakarta`
+  explicitly, never through the server's local time.
+- **Languages: `id-ID` (default) and `en`**, message catalogues from the first
+  string, never inline.
+- **Production domain: `www.evermore.co.id`**, hosted in the Jakarta region —
+  UU PDP data residency, and **coordinates are PII** under it.
+- **Evermore is the customer-facing brand**; `healthy_catering` is the repo
+  codename only. (Answers `00` §3 Q2.)
