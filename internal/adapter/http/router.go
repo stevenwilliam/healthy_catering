@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -13,7 +14,32 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/config"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 )
+
+// bindError distinguishes an over-sized body from malformed JSON. Both are
+// rejections, but "your request was too large" and "your JSON is wrong" send a
+// developer to different places, and a body killed by the size cap would
+// otherwise be reported as a field problem it never reached.
+func bindError(err error, msg string) error {
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		return apierror.New(http.StatusRequestEntityTooLarge, apierror.CodeValidation,
+			"That request is too large.")
+	}
+	return apierror.Validation(msg, nil)
+}
+
+// badInput turns a sanitize rejection into the standard validation error,
+// naming the field so the form can point at it.
+func badInput(err error) error {
+	var se *sanitize.Error
+	if errors.As(err, &se) {
+		return apierror.Validation("Please check the highlighted field.",
+			map[string]any{se.Field: se.Reason})
+	}
+	return apierror.Validation("Invalid input.", nil)
+}
 
 // Deps is everything the router needs, wired in cmd/api/main.go.
 type Deps struct {
@@ -37,7 +63,10 @@ func New(d Deps) *gin.Engine {
 
 	r.Use(RequestID(), Logger(d.Log), Recovery(d.Log),
 		SecurityHeaders(d.Config.App.IsProduction()),
-		CORS(d.Config.App.AllowedOrigins))
+		CORS(d.Config.App.AllowedOrigins),
+		// 1 MiB is generous for JSON; file uploads get their own limit on
+		// their own route.
+		MaxBody(1<<20))
 
 	r.NoRoute(func(c *gin.Context) { Fail(c, apierror.NotFound("No such endpoint.")) })
 
@@ -73,7 +102,7 @@ func registerPublic(g *gin.RouterGroup, d Deps) {
 			Source   string  `json:"source"`
 		}
 		if err := c.ShouldBindJSON(&body); err != nil {
-			Fail(c, apierror.Validation("Send lat and lng as numbers.", nil))
+			Fail(c, bindError(err, "Send lat and lng as numbers."))
 			return
 		}
 		if body.Lat == 0 && body.Lng == 0 {
@@ -83,9 +112,35 @@ func registerPublic(g *gin.RouterGroup, d Deps) {
 			return
 		}
 
+		// Free text is normalized and bounded server-side, and the enum is
+		// allow-listed. The browser checks these too, for feedback — but the
+		// browser can be bypassed, so nothing here trusts it (CLAUDE.md §4).
+		district, err := sanitize.Text("district", body.District, 120)
+		if err != nil {
+			Fail(c, badInput(err))
+			return
+		}
+		city, err := sanitize.Text("city", body.City, 120)
+		if err != nil {
+			Fail(c, badInput(err))
+			return
+		}
+		source := "WIDGET"
+		if body.Source != "" {
+			source, err = sanitize.Enum("source", body.Source, "WIDGET", "ADDRESS_FORM", "CHECKOUT")
+			if err != nil {
+				Fail(c, badInput(err))
+				return
+			}
+		}
+		if body.Qty < 0 || body.Qty > 999 {
+			Fail(c, apierror.Validation("qty must be between 1 and 999.", nil))
+			return
+		}
+
 		in := app.CheckInput{
 			Lat: body.Lat, Lng: body.Lng, Qty: body.Qty,
-			District: body.District, City: body.City, Source: body.Source,
+			District: district, City: city, Source: source,
 		}
 		if body.SlotID != "" {
 			id, err := uuid.Parse(body.SlotID)

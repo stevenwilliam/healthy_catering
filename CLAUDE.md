@@ -102,6 +102,14 @@ frameworks, CSS-in-JS.
   proves it cannot oversell.
 - **Timestamps are `timestamptz` in UTC.** Business-day logic converts to the
   operating timezone explicitly — never server-local.
+- **Every input is validated and sanitized on both sides — web and API.**
+  The frontend validates for *feedback*; the backend validates because the
+  frontend can be bypassed with `curl`. Same rules, one source: the server's
+  OpenAPI contract generates the web app's types and validation, so the two
+  cannot drift. Sanitize on the way in **and encode on the way out** for the
+  context — HTML, attribute, URL, CSV cell, log line, filename. **Reject, never
+  silently repair.** Normalize (trim, Unicode, case-fold) before validating.
+  A rule that exists only in the browser does not exist.
 - **Errors are typed** through `platform/apierror`; one JSON error model. Never
   leak driver errors to clients.
 - **Secrets only via config/env.** Nothing secret in git. `.env.example` is the

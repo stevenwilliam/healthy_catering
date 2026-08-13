@@ -200,6 +200,30 @@ it is implemented **and to the test that proves it**. Non-negotiables:
 - **Injection:** parameter binding everywhere, raw SQL only with placeholders,
   never string concatenation. Allow-list validation at the adapter edge; the
   domain assumes valid input. No `dangerouslySetInnerHTML`. No shell-outs.
+- **Validate and sanitize every input on BOTH sides — frontend and backend.**
+  They are two different jobs and neither replaces the other:
+  - The **frontend** validates for *feedback*: inline, immediate, in the user's
+    language, so nobody discovers a bad field after a round trip. It is a
+    convenience and it is **never** a control.
+  - The **backend** validates because **the frontend can be bypassed**. Anyone
+    with `curl` skips every rule the browser enforces, so the server re-checks
+    everything from scratch — presence, type, length, range, format, allow-listed
+    enum values, ownership and authorization — and treats the client as hostile.
+    A rule that exists only in the browser does not exist.
+  - **Same rules, one source.** The two sides must not drift: share the schema
+    where the languages allow it, and where they do not (a Go API with a TS
+    frontend), generate the client's validation from the server's contract —
+    OpenAPI → types + schema. Two hand-written copies of a rule become two
+    different rules within a month.
+  - **Sanitize on the way in *and* encode on the way out.** Store what the user
+    typed, escape it for the context it lands in — HTML, an attribute, a URL, a
+    CSV cell, a log line, a filename. Sanitizing input alone does not stop XSS;
+    encoding at the point of output does. A CSV export is a real attack surface:
+    a cell starting `=`, `+`, `-` or `@` is a formula in Excel.
+  - **Reject, do not repair.** Silently "fixing" input hides an attack and
+    surprises the user. Say what was wrong and which field.
+  - **Normalize before you validate** — trim, Unicode-normalize, case-fold an
+    email — or the same value passes one check and fails another.
 - **Rate limiting** per identifier and per IP on login, OTP, lookup and any
   brute-forceable endpoint, with progressive lockout and a documented unlock path.
 - **File uploads** are type-checked by **magic bytes** (not extension), size- and
@@ -309,6 +333,10 @@ naming the docs it touched; `PROGRESS.md` is updated as work lands.
 ## 11. Things I don't want to see
 
 - `nano` in a runbook, or relative paths in an OS guide.
+- **Validation on one side only** — a rule enforced in the browser and trusted
+  by the server, or a server that validates while the form lets the user find
+  out after a round trip.
+- User input rendered without output encoding for the context it lands in.
 - Floating point anywhere near money.
 - Secrets in git, or a default admin password.
 - A list screen without a search box.

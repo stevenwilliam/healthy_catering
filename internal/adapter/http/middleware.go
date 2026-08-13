@@ -143,6 +143,15 @@ func CORS(allowed []string) gin.HandlerFunc {
 	}
 }
 
+// MaxBody caps the request body. Without it, "validate every input" is still
+// beaten by a client that simply sends a gigabyte before any validation runs.
+func MaxBody(limit int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
+		c.Next()
+	}
+}
+
 // Fail renders an error through the single error model. Driver errors, causes
 // and stack traces never reach the client (99 §7).
 func Fail(c *gin.Context, err error) {
