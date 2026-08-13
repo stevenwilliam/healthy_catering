@@ -3,6 +3,7 @@ package http
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/ratelimit"
 )
 
 const (
@@ -174,4 +176,32 @@ func Fail(c *gin.Context, err error) {
 // OK renders a success payload.
 func OK(c *gin.Context, status int, data any) {
 	c.JSON(status, gin.H{"data": data})
+}
+
+// RateLimit throttles brute-forceable endpoints.
+//
+// Keyed on the IP AND, where present, the authenticated user (99 §7 —
+// "per identifier and per IP"). Limiting on IP alone lets one attacker behind
+// a rotating proxy through; limiting on identifier alone lets one attacker
+// spray a thousand accounts from one machine.
+func RateLimit(l *ratelimit.Limiter, name string, perMinute int) gin.HandlerFunc {
+	rule := ratelimit.Rule{Burst: perMinute, Window: time.Minute}
+	return func(c *gin.Context) {
+		if l == nil {
+			c.Next()
+			return
+		}
+		key := name + ":ip:" + c.ClientIP()
+		if ident, ok := Authenticated(c); ok {
+			key = name + ":user:" + ident.UserID.String()
+		}
+		res := l.Allow(key, rule)
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(res.Remaining))
+		if !res.Allowed {
+			c.Header("Retry-After", strconv.Itoa(int(res.RetryAfter.Seconds())+1))
+			Fail(c, apierror.TooManyRequests("Too many requests. Please slow down."))
+			return
+		}
+		c.Next()
+	}
 }

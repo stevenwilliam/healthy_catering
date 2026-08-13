@@ -42,6 +42,19 @@ const (
 	PermReportRead      Permission = "report.read"
 	PermReportFinancial Permission = "report.financial"
 
+	// Customer, own-scoped. Holding one of these says "you may act on your
+	// own X"; it never says which X is yours — ownership is a separate check
+	// in the repository, because IDOR is the top risk here (PROMPT §14).
+	PermProfileManage       Permission = "profile.manage"
+	PermAddressManage       Permission = "address.manage"
+	PermOrderCreate         Permission = "order.create"
+	PermOrderViewOwn        Permission = "order.view.own"
+	PermOrderCancelOwn      Permission = "order.cancel.own"
+	PermPaymentProofUpload  Permission = "payment.proof.upload"
+	PermPackageViewOwn      Permission = "package.view.own"
+	PermDeliveryViewOwn     Permission = "delivery.view.own"
+	PermDeliveryScheduleOwn Permission = "delivery.schedule.own"
+
 	PermSettingsRead  Permission = "settings.read"
 	PermSettingsWrite Permission = "settings.write"
 	PermUserManage    Permission = "user.manage"
@@ -61,6 +74,9 @@ func AllPermissions() []Permission {
 		PermKitchenRead, PermKitchenWrite,
 		PermReportRead, PermReportFinancial,
 		PermSettingsRead, PermSettingsWrite, PermUserManage, PermAuditRead,
+		PermProfileManage, PermAddressManage, PermOrderCreate, PermOrderViewOwn,
+		PermOrderCancelOwn, PermPaymentProofUpload, PermPackageViewOwn,
+		PermDeliveryViewOwn, PermDeliveryScheduleOwn,
 	}
 }
 

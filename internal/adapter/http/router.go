@@ -14,7 +14,9 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/config"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/ratelimit"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
 )
 
 // bindError distinguishes an over-sized body from malformed JSON. Both are
@@ -46,7 +48,14 @@ type Deps struct {
 	Config         *config.Config
 	Log            *slog.Logger
 	Serviceability *app.Serviceability
+	Auth           *app.Auth
+	Signer         *security.TokenSigner
+	Limiter        *ratelimit.Limiter
 	Health         func() error
+	// OnVerificationToken hands a freshly minted verification token to the
+	// caller to mail. The auth service does not know about the mailer, so a
+	// test can assert on the token without a mail server.
+	OnVerificationToken func(userID uuid.UUID, token string)
 }
 
 // New builds the router.
@@ -84,6 +93,7 @@ func New(d Deps) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	registerPublic(v1, d)
+	registerAuth(v1, d)
 	return r
 }
 

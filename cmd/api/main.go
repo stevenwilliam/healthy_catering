@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	adapterhttp "github.com/stevenwilliam/healthy_catering/internal/adapter/http"
@@ -28,6 +29,8 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/platform/database"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/logging"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/migrate"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/ratelimit"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
 
@@ -146,11 +149,34 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	params := sysparam.NewStore(sqlDB, 30*time.Second)
 
 	kitchens := postgres.NewKitchenRepo(gdb)
+	users := postgres.NewUserRepo(gdb)
+	audit := postgres.NewAuditRepo(gdb)
+
+	signer := security.NewTokenSigner(
+		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
+		15*time.Minute, time.Now)
+
+	auth := app.NewAuth(app.AuthDeps{
+		Users: users, Audit: audit, Params: params, Signer: signer,
+	})
+
+	limiter := ratelimit.New(time.Now)
 
 	router := adapterhttp.New(adapterhttp.Deps{
 		Config:         cfg,
 		Log:            log,
 		Serviceability: app.NewServiceability(kitchens, params, tz),
+		Auth:           auth,
+		Signer:         signer,
+		Limiter:        limiter,
+		// Until the mailer exists (M11), the verification link is logged at
+		// debug rather than silently dropped — so a developer can complete the
+		// flow, and so it is obvious this is not yet a real email.
+		OnVerificationToken: func(userID uuid.UUID, token string) {
+			log.Warn("email verification token issued but NOT emailed — mailer lands in M11",
+				"user_id", userID, "verify_url",
+				fmt.Sprintf("%s/verify-email?token=%s", cfg.App.BaseURL, token))
+		},
 		Health: func() error {
 			c, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()

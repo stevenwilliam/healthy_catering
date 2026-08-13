@@ -142,3 +142,21 @@ func isSequential(s string, step int) bool {
 	}
 	return true
 }
+
+// dummyHash is a real argon2id hash of a value nobody uses. It exists so that
+// VerifyPasswordDummy costs the same as a genuine verification.
+const dummyHash = "$argon2id$v=19$m=65536,t=3,p=2$" +
+	"ZG9lc25vdG1hdHRlcnNhbHQxMg$" +
+	"c2VudGluZWxrZXl0aGF0aXNuZXZlcmVxdWFsdG9hbnl0aGluZw"
+
+// VerifyPasswordDummy performs a throwaway verification so that a login for an
+// address that does not exist takes about as long as one for an address that
+// does.
+//
+// Without it, "no such user" returns in microseconds while a real user costs a
+// full argon2id derivation — and that timing difference is a working
+// account-enumeration oracle, which is exactly what the identical error
+// messages elsewhere are there to prevent.
+func VerifyPasswordDummy() {
+	_, _ = VerifyPassword("not-the-password", dummyHash)
+}
