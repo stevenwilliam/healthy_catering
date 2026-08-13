@@ -162,6 +162,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	orders := postgres.NewOrderRepo(gdb)
 	payments := postgres.NewPaymentRepo(gdb)
 	creditsRepo := postgres.NewCreditRepo(gdb)
+	reportsRepo := postgres.NewReportRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -191,6 +192,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Pricing:        pricingSvc,
 		Ordering:       ordering,
 		Finance:        app.NewFinance(payments, creditsRepo, audit, tz, time.Now),
+		Reports:        app.NewReports(reportsRepo, params, tz),
 		Packages: app.NewPackages(app.PackagesDeps{
 			Credits: creditsRepo, Orders: orders, Schedule: sched, Users: users,
 			Pricing: pricingSvc, Service: serviceability, Audit: audit,
