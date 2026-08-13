@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-beige text-ink font-sans antialiased;
+  }
+  h1, h2, h3 { @apply font-display font-semibold; }
+
+  /* Focus is always visible (docs/10 §4). Never remove an outline without a
+     replacement that measures at least 3:1 against its surroundings. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-nourish-deep ring-offset-2 ring-offset-beige;
+  }
+}
+
+@layer components {
+  /* Every interactive control clears the 44px touch target. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 min-h-touch px-5
+           rounded-full font-semibold transition-transform duration-200
+           disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply btn bg-nourish-deep text-beige hover:-translate-y-0.5; }
+  .btn-ghost   { @apply btn border border-nourish-deep/60 text-ink hover:bg-nourish-deep/5; }
+  .btn-danger  { @apply btn bg-berry-deep text-beige; }
+
+  .card { @apply bg-white border border-nourish-deep/60 rounded-xl p-4 shadow-sm; }
+
+  .field { @apply block w-full min-h-touch rounded-lg border border-nourish-deep/60
+                  bg-white px-3 py-2 text-ink placeholder:text-ink-muted/70; }
+  .label { @apply block text-sm font-medium mb-1; }
+
+  /* An error is announced, not just coloured — colour is never the only
+     signal (99 §8). */
+  .error { @apply text-berry-deep text-sm mt-1; }
+
+  .badge { @apply inline-flex items-center rounded-full border border-nourish-deep/60
+                  bg-beige px-3 py-1 text-xs; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

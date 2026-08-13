@@ -164,8 +164,10 @@ type OrderDetail struct {
 	BankAccount    string `json:"bank_account_number,omitempty"`
 	BankHolder     string `json:"bank_account_holder,omitempty"`
 
-	Lines      []OrderLineDetail `json:"lines"`
-	Deliveries []DeliveryDetail  `json:"deliveries"`
+	// gorm:"-" or gorm treats these as relations and refuses to scan the
+	// parent struct at all — they are filled by their own queries below.
+	Lines      []OrderLineDetail `json:"lines" gorm:"-"`
+	Deliveries []DeliveryDetail  `json:"deliveries" gorm:"-"`
 }
 
 // OrderLineDetail is one line, showing the snapshot rather than live data.

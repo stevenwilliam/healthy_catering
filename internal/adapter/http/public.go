@@ -3,6 +3,8 @@ package http
 import (
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -67,6 +69,40 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	// Static assets: fonts, tokens, images. Self-hosted, never a CDN (99 §7).
 	r.Static("/fonts", "./web/public/fonts")
 	r.Static("/css", "./web/public/css")
+
+	// The SPA, served by the same binary — one deploy unit, no Node in
+	// production (docs/02 D-2).
+	//
+	// ONE handler rather than a static mount plus a catch-all: gin's router
+	// refuses `/app/assets/*filepath` alongside `/app/*path` and panics at
+	// startup. A real file is served if it exists, and everything else falls
+	// through to index.html so a deep link like /app/orders/<id> survives a
+	// hard refresh.
+	const spaRoot = "./web/dist"
+	spa := func(c *gin.Context) {
+		// noindex on the transactional surface, belt and braces with robots.txt.
+		c.Header("X-Robots-Tag", "noindex, nofollow")
+
+		rel := strings.TrimPrefix(c.Param("path"), "/")
+		// Never join a client-supplied path without cleaning it: "../" is how a
+		// static handler serves /etc/passwd.
+		if rel != "" && !strings.Contains(rel, "..") {
+			full := filepath.Join(spaRoot, filepath.Clean("/"+rel))
+			if st, err := os.Stat(full); err == nil && !st.IsDir() {
+				// Hashed asset filenames change every build, so they are safe
+				// to cache hard.
+				if strings.HasPrefix(rel, "assets/") {
+					c.Header("Cache-Control", "public, max-age=31536000, immutable")
+				}
+				c.File(full)
+				return
+			}
+		}
+		c.Header("Cache-Control", "no-cache")
+		c.File(filepath.Join(spaRoot, "index.html"))
+	}
+	r.GET("/app", spa)
+	r.GET("/app/*path", spa)
 
 	base := func() string { return strings.TrimRight(d.Config.App.BaseURL, "/") }
 
