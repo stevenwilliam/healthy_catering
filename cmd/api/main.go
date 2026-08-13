@@ -193,6 +193,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Ordering:       ordering,
 		Finance:        app.NewFinance(payments, creditsRepo, audit, tz, time.Now),
 		Reports:        app.NewReports(reportsRepo, params, tz),
+		Params:         params,
 		Packages: app.NewPackages(app.PackagesDeps{
 			Credits: creditsRepo, Orders: orders, Schedule: sched, Users: users,
 			Pricing: pricingSvc, Service: serviceability, Audit: audit,

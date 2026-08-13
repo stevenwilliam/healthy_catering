@@ -17,6 +17,7 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/platform/ratelimit"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
 
 // bindError distinguishes an over-sized body from malformed JSON. Both are
@@ -56,6 +57,7 @@ type Deps struct {
 	Finance        *app.Finance
 	Packages       *app.Packages
 	Reports        *app.Reports
+	Params         *sysparam.Store
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -97,6 +99,10 @@ func New(d Deps) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "time": time.Now().UTC()})
 	})
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// The server-rendered public surface: home, one page per diet type, and
+	// the SEO plumbing (docs/02 D-2).
+	registerPublicPages(r, d)
 
 	v1 := r.Group("/api/v1")
 	registerPublic(v1, d)

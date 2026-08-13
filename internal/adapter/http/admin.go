@@ -34,6 +34,12 @@ func listParams(c *gin.Context) postgres.ListParams {
 	return p
 }
 
+// listParamsWithActive is the server-side equivalent for pages that have no
+// request query, such as the rendered public pages.
+func listParamsWithActive(active *bool) postgres.ListParams {
+	return postgres.ListParams{Page: 1, PageSize: 50, Active: active}
+}
+
 // actorFrom builds the audit actor from the authenticated request.
 func actorFrom(c *gin.Context) app.Actor {
 	ident, _ := Authenticated(c)

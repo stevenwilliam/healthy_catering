@@ -1,0 +1,104 @@
+/* Evermore public pages. Tokens come from tokens.css; every colour pairing
+ * used here has a measured ratio in that file. Mobile-first, designed at
+ * 360px (99 §8). */
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.2; margin: 0 0 var(--space-3); }
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-lg); }
+a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+/* The masthead is Nourish Green, so every ink on it is from the §2.5 table. */
+.masthead {
+  background: var(--nourish-deep);
+  color: var(--on-dark);
+  padding: var(--space-4);
+  display: flex; flex-wrap: wrap; gap: var(--space-4);
+  align-items: center; justify-content: space-between;
+}
+.masthead a { color: var(--on-dark); text-decoration: none; }
+.masthead nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.masthead nav a { font-size: var(--text-sm); }
+.masthead nav a:hover { text-decoration: underline; }
+.wordmark {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  letter-spacing: .02em;
+}
+
+main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4); }
+.hero { padding: var(--space-8) 0 var(--space-12); }
+.hero.compact { padding-bottom: var(--space-6); }
+.lede { font-size: var(--text-lg); max-width: 46rem; color: var(--ink-muted); }
+
+/* 44px minimum touch target (docs/10 §4). */
+.cta {
+  display: inline-block;
+  margin-top: var(--space-4);
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-6);
+  background: var(--primary);
+  color: var(--primary-ink);          /* 11.32:1 */
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform var(--duration) var(--ease);
+}
+.cta:hover { transform: translateY(-2px); }
+
+.grid {
+  display: grid; gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);     /* 3.56:1, not the 1.69 of --beige-deep */
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+.card h3 a { text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+
+.meal .when { font-size: var(--text-sm); color: var(--ink-muted); margin: 0 0 var(--space-2); }
+.items { margin: 0 0 var(--space-3); padding-left: 1.1rem; }
+.items li { margin-bottom: 2px; }
+
+/* Nutrition badges use --ink, never Energize Orange: #E0782D on beige is
+ * 2.90:1 and fails AA as a label (docs/10 §2.4). */
+.badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
+.badge {
+  font-size: var(--text-xs);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--beige);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.badge.est { background: var(--orange-light); }  /* deep ink on it = 7.27:1 */
+
+.empty { color: var(--ink-muted); }
+.check { margin-top: var(--space-12); }
+
+.foot {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-16);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--ink-muted);
+}
+.foot .small { font-size: var(--text-sm); }
+
+@media (min-width: 48rem) {
+  h1 { font-size: var(--text-4xl); }
+  main { padding: var(--space-12) var(--space-6); }
+}
