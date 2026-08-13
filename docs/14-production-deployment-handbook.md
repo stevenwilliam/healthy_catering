@@ -203,6 +203,42 @@ sudo certbot renew --dry-run
 Only after the certificate exists, uncomment the `return 301 https://…` line
 and the TLS server block. Doing it earlier breaks the ACME challenge.
 
+## 8a. Firewall — the port must be opened explicitly
+
+`ufw` defaults to `deny (incoming)`. nginx binding `0.0.0.0:8090` is **not**
+enough on its own: the listener is up, the host answers on `127.0.0.1` and on
+its own LAN address from a shell on the box, and every request from anywhere
+else is dropped before it reaches nginx. The symptom is a browser that hangs
+and then times out, with **nothing at all in the nginx access log** — no 403,
+no 404, no entry, because the packet never arrived.
+
+```bash
+sudo ufw status verbose          # is the port listed at all?
+sudo ss -tlnp | grep 8090        # is anything actually listening?
+```
+
+Open it scoped to the network that needs it, not to the world:
+
+```bash
+sudo ufw allow from 192.168.88.0/24 to any port 8090 proto tcp \
+     comment 'evermore dev (LAN only)'
+sudo ufw status numbered
+```
+
+In production this stage disappears: the site moves to 443, which the
+`Nginx Full` profile already allows, and 8090 should then be **removed**:
+
+```bash
+sudo ufw status numbered         # find the rule number
+sudo ufw delete <number>
+```
+
+⚠️ Check what else is open while you are here. On the dev host `5432/tcp` is
+allowed from **Anywhere** and Postgres listens on `0.0.0.0`, which puts the
+database on the network. That is fine for a lab box behind a router and is
+wrong on anything public — bind Postgres to `127.0.0.1` and drop the rule, or
+scope it to a single admin address.
+
 ## 9. Verify the deployment
 
 ```bash
