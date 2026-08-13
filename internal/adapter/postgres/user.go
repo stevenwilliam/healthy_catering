@@ -290,6 +290,37 @@ func (r *UserRepo) ConsumeVerificationToken(ctx context.Context, purpose, hash s
 	return row.UserID, nil
 }
 
+// ContactFor returns the address, name and locale to write to. Best-effort:
+// a notification is never worth failing the action that triggered it.
+func (r *UserRepo) ContactFor(ctx context.Context, userID uuid.UUID) (email, name, locale string) {
+	var row struct {
+		Email  string
+		Name   string
+		Locale string
+	}
+	_ = r.db.WithContext(ctx).Raw(`
+		SELECT u.email::text AS email, u.full_name AS name,
+		       COALESCE(c.preferred_locale, 'id-ID') AS locale
+		  FROM app_user u LEFT JOIN customer c ON c.user_id = u.id
+		 WHERE u.id = ?`, userID).Scan(&row).Error
+	return row.Email, row.Name, row.Locale
+}
+
+// ContactForCustomer is ContactFor keyed by customer rather than user.
+func (r *UserRepo) ContactForCustomer(ctx context.Context, customerID uuid.UUID) (email, name, locale string) {
+	var row struct {
+		Email  string
+		Name   string
+		Locale string
+	}
+	_ = r.db.WithContext(ctx).Raw(`
+		SELECT u.email::text AS email, u.full_name AS name,
+		       COALESCE(c.preferred_locale,'id-ID') AS locale
+		  FROM customer c JOIN app_user u ON u.id = c.user_id
+		 WHERE c.id = ?`, customerID).Scan(&row).Error
+	return row.Email, row.Name, row.Locale
+}
+
 // MarkEmailVerified stamps the verification.
 func (r *UserRepo) MarkEmailVerified(ctx context.Context, userID uuid.UUID) error {
 	return r.db.WithContext(ctx).Exec(

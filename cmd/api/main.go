@@ -24,7 +24,9 @@ import (
 	"gorm.io/gorm"
 
 	adapterhttp "github.com/stevenwilliam/healthy_catering/internal/adapter/http"
+	"github.com/stevenwilliam/healthy_catering/internal/adapter/notify"
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/postgres"
+	"github.com/stevenwilliam/healthy_catering/internal/adapter/storage"
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/config"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/database"
@@ -34,6 +36,18 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
+
+// firstNonEmpty prefers the environment over the database, so a production
+// secret can stay out of the database entirely while development reads the
+// back-office setting.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
 
 // version is set at build time: -ldflags "-X main.version=$(git rev-parse --short HEAD)".
 var version = "dev"
@@ -163,6 +177,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	payments := postgres.NewPaymentRepo(gdb)
 	creditsRepo := postgres.NewCreditRepo(gdb)
 	reportsRepo := postgres.NewReportRepo(gdb)
+	deliveriesRepo := postgres.NewDeliveryRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -174,10 +189,85 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 
 	limiter := ratelimit.New(time.Now)
 
+	// Notifications: mail settings come from sys_parameters so Steven can change
+	// the relay without a deploy (D14/B7); the env overrides for production.
+	mailCfg := notify.SMTPConfig{
+		Host:      firstNonEmpty(cfg.Mail.Host, params.String(ctx, sysparam.KeyMailHost, "127.0.0.1")),
+		Port:      cfg.Mail.Port,
+		Username:  firstNonEmpty(cfg.Mail.Username, params.String(ctx, sysparam.KeyMailUsername, "")),
+		Password:  firstNonEmpty(cfg.Mail.Password, params.String(ctx, sysparam.KeyMailPassword, "")),
+		FromEmail: firstNonEmpty(cfg.Mail.FromEmail, params.String(ctx, sysparam.KeyMailFromEmail, "no-reply@evermore.co.id")),
+		FromName:  firstNonEmpty(cfg.Mail.FromName, params.String(ctx, sysparam.KeyMailFromName, "Evermore")),
+		UseTLS:    cfg.Mail.TLS,
+	}
+	// Object storage. Payment proofs are photographs of bank accounts, so the
+	// bucket is private and served only by presigned URL (99 §7).
+	var objectStore *storage.Store
+	if cfg.Storage.AccessKey != "" {
+		objectStore, err = storage.New(ctx, storage.Config{
+			Endpoint: cfg.Storage.Endpoint, PublicEndpoint: cfg.Storage.PublicEndpoint,
+			AccessKey: cfg.Storage.AccessKey, SecretKey: cfg.Storage.SecretKey,
+			Bucket: cfg.Storage.Bucket, UseSSL: cfg.Storage.UseSSL,
+		})
+		if err != nil {
+			// In production this is fatal: an order that cannot take a proof
+			// cannot be paid.
+			if cfg.App.IsProduction() {
+				return fmt.Errorf("object storage: %w", err)
+			}
+			log.Warn("object storage unavailable; upload routes are disabled", "error", err)
+		} else {
+			log.Info("object storage ready", "bucket", cfg.Storage.Bucket)
+		}
+	} else {
+		log.Warn("no object storage credentials; upload routes are disabled")
+	}
+
+	jobsRepo := postgres.NewJobRepo(gdb)
+	notifier := app.NewNotifier(app.NotifierDeps{
+		Jobs:    jobsRepo,
+		Senders: notify.NewMulti(notify.NewSMTPSender(mailCfg)),
+		Params:  params, Log: log, TZ: tz, BaseURL: cfg.App.BaseURL,
+	})
+
+	// One worker in-process. A second node would need a shared lock; the
+	// FOR UPDATE SKIP LOCKED claim already makes that safe when it happens.
+	go notifier.Run(ctx, 5*time.Second)
+
+	// The expiry sweep is the only automated cancellation in the system, and it
+	// touches unpaid orders only (99 §8).
+	financeSvc := app.NewFinance(payments, creditsRepo, audit, tz, time.Now)
+	financeSvc.OnPaid = func(c context.Context, orderID, customerID uuid.UUID, orderType string) {
+		email, name, locale := users.ContactForCustomer(c, customerID)
+		code, _ := orders.OrderCodeOf(c, orderID)
+		extra := "Kami akan mengabari Anda menjelang pengiriman."
+		if orderType == "PACKAGE" {
+			extra = "Kredit Anda sudah aktif — silakan pilih jadwal makan Anda."
+		}
+		notifier.PaymentVerified(c, email, name, locale, orderID, code, extra)
+	}
+	go func() {
+		t := time.NewTicker(time.Minute)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if n, err := financeSvc.ExpireUnpaid(ctx); err != nil {
+					log.Error("expiry sweep", "error", err)
+				} else if n > 0 {
+					log.Info("unpaid orders expired, capacity released", "count", n)
+				}
+			}
+		}
+	}()
+
 	serviceability := app.NewServiceability(kitchens, params, tz)
 	pricingSvc := app.NewPricing(pricingRepo, audit, params, tz)
 	ordering := app.NewOrdering(app.OrderingDeps{
-		Orders: orders, Payments: payments, Schedule: sched, Kitchens: kitchens, Users: users,
+		Orders: orders, Payments: payments, Deliveries: deliveriesRepo, Notifier: notifier,
+		Schedule: sched, Kitchens: kitchens, Users: users,
 		Pricing: pricingSvc, Service: serviceability, Audit: audit,
 		Params: params, TZ: tz,
 	})
@@ -191,7 +281,10 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Catalogue:      app.NewCatalogue(catalogue, sched, master, audit, params, tz),
 		Pricing:        pricingSvc,
 		Ordering:       ordering,
-		Finance:        app.NewFinance(payments, creditsRepo, audit, tz, time.Now),
+		Finance:        financeSvc,
+		Notifier:       notifier,
+		Storage:        objectStore,
+		Fulfilment:     app.NewFulfilment(deliveriesRepo, creditsRepo, audit, params, tz, time.Now),
 		Reports:        app.NewReports(reportsRepo, params, tz),
 		Params:         params,
 		Packages: app.NewPackages(app.PackagesDeps{
@@ -201,13 +294,9 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		}),
 		Signer:  signer,
 		Limiter: limiter,
-		// Until the mailer exists (M11), the verification link is logged at
-		// debug rather than silently dropped — so a developer can complete the
-		// flow, and so it is obvious this is not yet a real email.
 		OnVerificationToken: func(userID uuid.UUID, token string) {
-			log.Warn("email verification token issued but NOT emailed — mailer lands in M11",
-				"user_id", userID, "verify_url",
-				fmt.Sprintf("%s/verify-email?token=%s", cfg.App.BaseURL, token))
+			email, name, locale := users.ContactFor(ctx, userID)
+			notifier.VerifyEmail(ctx, email, name, token, locale)
 		},
 		Health: func() error {
 			c, cancel := context.WithTimeout(ctx, 2*time.Second)

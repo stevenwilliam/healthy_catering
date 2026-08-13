@@ -128,6 +128,15 @@ func (f *Finance) ExpireUnpaid(ctx context.Context) (int, error) {
 	return n, nil
 }
 
+// ProofKeys returns the object keys for a payment's proofs, for presigning.
+func (f *Finance) ProofKeys(ctx context.Context, paymentID uuid.UUID) ([]string, error) {
+	keys, err := f.payments.ProofKeys(ctx, paymentID)
+	if err != nil {
+		return nil, apierror.Internal(err)
+	}
+	return keys, nil
+}
+
 // BankAccounts returns the accounts shown in payment instructions.
 func (f *Finance) BankAccounts(ctx context.Context) ([]postgres.BankAccount, error) {
 	list, err := f.payments.BankAccounts(ctx)

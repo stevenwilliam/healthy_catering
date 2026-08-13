@@ -143,6 +143,14 @@ func (r *OrderRepo) ListForCustomer(ctx context.Context, customerID uuid.UUID,
 	return NewPage(items, total, p), nil
 }
 
+// OrderCodeOf returns the human-facing code for an order.
+func (r *OrderRepo) OrderCodeOf(ctx context.Context, orderID uuid.UUID) (string, error) {
+	var code string
+	err := r.db.WithContext(ctx).Raw(
+		`SELECT order_code FROM customer_order WHERE id = ?`, orderID).Scan(&code).Error
+	return code, err
+}
+
 // OrderDetail is one order with its lines and deliveries.
 type OrderDetail struct {
 	OrderSummary

@@ -18,32 +18,36 @@ import (
 
 // Ordering is the cart and checkout use cases (PROMPT §6).
 type Ordering struct {
-	orders   *postgres.OrderRepo
-	payments *postgres.PaymentRepo
-	sched    *postgres.ScheduleRepo
-	kitchens *postgres.KitchenRepo
-	users    *postgres.UserRepo
-	pricing  *Pricing
-	service  *Serviceability
-	audit    *postgres.AuditRepo
-	params   *sysparam.Store
-	tz       *time.Location
-	now      func() time.Time
+	orders     *postgres.OrderRepo
+	payments   *postgres.PaymentRepo
+	deliveries *postgres.DeliveryRepo
+	notifier   *Notifier
+	sched      *postgres.ScheduleRepo
+	kitchens   *postgres.KitchenRepo
+	users      *postgres.UserRepo
+	pricing    *Pricing
+	service    *Serviceability
+	audit      *postgres.AuditRepo
+	params     *sysparam.Store
+	tz         *time.Location
+	now        func() time.Time
 }
 
 // OrderingDeps wires the service.
 type OrderingDeps struct {
-	Orders   *postgres.OrderRepo
-	Payments *postgres.PaymentRepo
-	Schedule *postgres.ScheduleRepo
-	Kitchens *postgres.KitchenRepo
-	Users    *postgres.UserRepo
-	Pricing  *Pricing
-	Service  *Serviceability
-	Audit    *postgres.AuditRepo
-	Params   *sysparam.Store
-	TZ       *time.Location
-	Now      func() time.Time
+	Orders     *postgres.OrderRepo
+	Payments   *postgres.PaymentRepo
+	Deliveries *postgres.DeliveryRepo
+	Notifier   *Notifier
+	Schedule   *postgres.ScheduleRepo
+	Kitchens   *postgres.KitchenRepo
+	Users      *postgres.UserRepo
+	Pricing    *Pricing
+	Service    *Serviceability
+	Audit      *postgres.AuditRepo
+	Params     *sysparam.Store
+	TZ         *time.Location
+	Now        func() time.Time
 }
 
 func NewOrdering(d OrderingDeps) *Ordering {
@@ -51,7 +55,8 @@ func NewOrdering(d OrderingDeps) *Ordering {
 		d.Now = time.Now
 	}
 	return &Ordering{
-		orders: d.Orders, payments: d.Payments, sched: d.Schedule, kitchens: d.Kitchens, users: d.Users,
+		orders: d.Orders, payments: d.Payments, deliveries: d.Deliveries,
+		notifier: d.Notifier, sched: d.Schedule, kitchens: d.Kitchens, users: d.Users,
 		pricing: d.Pricing, service: d.Service, audit: d.Audit, params: d.Params,
 		tz: d.TZ, now: d.Now,
 	}
@@ -328,6 +333,23 @@ func (o *Ordering) PlaceOrder(ctx context.Context, ident Identity, in PlaceOrder
 		After: map[string]any{"total_idr": res.TotalIDR, "lines": len(prepared)},
 		IP:    in.IP, UserAgent: in.UA,
 	})
+
+	// The customer is told how to pay. Queued, never sent inline: an SMTP
+	// timeout must not fail an order that already reserved capacity.
+	if o.notifier != nil {
+		email, name, locale := o.users.ContactForCustomer(ctx, *ident.CustomerID)
+		bank, _ := o.payments.BankAccounts(ctx)
+		bankName, bankNo, bankHolder := "", "", ""
+		if len(bank) > 0 {
+			bankName, bankNo, bankHolder = bank[0].BankName, bank[0].AccountNumber, bank[0].AccountHolder
+		}
+		o.notifier.OrderPlaced(ctx, email, name, locale, res.OrderID, map[string]any{
+			"Name": name, "OrderCode": res.OrderCode,
+			"PaymentAmount": money.Format(money.IDR(res.PaymentAmountIDR)),
+			"BankName":      bankName, "BankAccount": bankNo, "BankHolder": bankHolder,
+			"Deadline": deadline.In(o.tz).Format("2 January 2006, 15:04 WIB"),
+		})
+	}
 
 	out := PlacedOrder{
 		OrderID: res.OrderID, OrderCode: res.OrderCode, Status: string(order.AwaitingPayment),

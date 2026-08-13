@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/stevenwilliam/healthy_catering/internal/adapter/storage"
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/config"
@@ -58,6 +59,9 @@ type Deps struct {
 	Packages       *app.Packages
 	Reports        *app.Reports
 	Params         *sysparam.Store
+	Notifier       *app.Notifier
+	Storage        *storage.Store
+	Fulfilment     *app.Fulfilment
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -113,6 +117,8 @@ func New(d Deps) *gin.Engine {
 	registerOrders(v1, d)
 	registerFinance(v1, d)
 	registerReports(v1, d)
+	registerUploads(v1, d)
+	registerFulfilment(v1, d)
 	return r
 }
 

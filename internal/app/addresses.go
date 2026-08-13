@@ -185,6 +185,41 @@ func (o *Ordering) countdown(ctx context.Context, serviceDate time.Time) time.Du
 	return o.cutoffRule(ctx).TimeUntilCutoff(serviceDate, o.now())
 }
 
+// MyDeliveries returns the caller's own deliveries.
+func (o *Ordering) MyDeliveries(ctx context.Context, ident Identity,
+	p postgres.ListParams) (postgres.Page[postgres.DeliveryRow], error) {
+
+	if ident.CustomerID == nil {
+		return postgres.Page[postgres.DeliveryRow]{}, apierror.Forbidden(
+			apierror.CodeForbidden, "Only customers have deliveries.")
+	}
+	page, err := o.deliveries.ListForCustomer(ctx, *ident.CustomerID, p)
+	if err != nil {
+		return postgres.Page[postgres.DeliveryRow]{}, apierror.Internal(err)
+	}
+	return page, nil
+}
+
+// RecordProof records a proof the storage adapter has already accepted.
+//
+// The key comes from the server, so it needs no path validation here — the
+// validation that matters (magic bytes, size) happened at the bytes.
+func (o *Ordering) RecordProof(ctx context.Context, ident Identity, orderID uuid.UUID,
+	key, contentType string, bytes int64) error {
+
+	if ident.CustomerID == nil {
+		return apierror.Forbidden(apierror.CodeForbidden, "Only customers upload payment proof.")
+	}
+	if err := o.payments.SubmitProof(ctx, *ident.CustomerID, orderID,
+		key, contentType, bytes, ""); err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return apierror.NotFound("No such order awaiting payment.")
+		}
+		return apierror.Internal(err)
+	}
+	return nil
+}
+
 // ProofInput is a transfer proof reference.
 type ProofInput struct {
 	ObjectKey   string

@@ -253,6 +253,9 @@ func TestEveryOrderReconciles(t *testing.T) {
 				code, total, subtotal, fee, discount)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterating orders: %v", err)
+	}
 	if checked == 0 {
 		t.Skip("no orders to reconcile yet")
 	}
@@ -276,6 +279,9 @@ func TestNoNegativeCreditBalances(t *testing.T) {
 		_ = rows.Scan(&id, &balance)
 		t.Errorf("package %s has a NEGATIVE balance of %d — a credit was double-spent", id, balance)
 	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterating balances: %v", err)
+	}
 }
 
 // One REDEEM per delivery: a retry must not spend a second credit.
@@ -294,6 +300,9 @@ func TestOneRedeemPerDelivery(t *testing.T) {
 		var n int
 		_ = rows.Scan(&id, &n)
 		t.Errorf("delivery %s spent %d credits — the unique index is not holding", id, n)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterating redemptions: %v", err)
 	}
 }
 

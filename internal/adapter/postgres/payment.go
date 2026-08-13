@@ -280,6 +280,18 @@ func (r *PaymentRepo) ExpireUnpaid(ctx context.Context, now time.Time) (int, err
 	return expired, err
 }
 
+// ProofKeys returns the stored object keys for a payment.
+func (r *PaymentRepo) ProofKeys(ctx context.Context, paymentID uuid.UUID) ([]string, error) {
+	out := []string{}
+	err := r.db.WithContext(ctx).Raw(
+		`SELECT object_key FROM payment_proof WHERE payment_id = ? ORDER BY uploaded_at DESC`,
+		paymentID).Scan(&out).Error
+	if err != nil {
+		return nil, fmt.Errorf("postgres: proof keys: %w", err)
+	}
+	return out, nil
+}
+
 // BankAccounts returns the active accounts, for payment instructions.
 func (r *PaymentRepo) BankAccounts(ctx context.Context) ([]BankAccount, error) {
 	out := []BankAccount{}
