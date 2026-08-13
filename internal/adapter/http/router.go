@@ -53,6 +53,8 @@ type Deps struct {
 	Catalogue      *app.Catalogue
 	Pricing        *app.Pricing
 	Ordering       *app.Ordering
+	Finance        *app.Finance
+	Packages       *app.Packages
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -102,6 +104,7 @@ func New(d Deps) *gin.Engine {
 	registerCatalogue(v1, d)
 	registerPricing(v1, d)
 	registerOrders(v1, d)
+	registerFinance(v1, d)
 	return r
 }
 

@@ -19,6 +19,7 @@ import (
 // Ordering is the cart and checkout use cases (PROMPT §6).
 type Ordering struct {
 	orders   *postgres.OrderRepo
+	payments *postgres.PaymentRepo
 	sched    *postgres.ScheduleRepo
 	kitchens *postgres.KitchenRepo
 	users    *postgres.UserRepo
@@ -33,6 +34,7 @@ type Ordering struct {
 // OrderingDeps wires the service.
 type OrderingDeps struct {
 	Orders   *postgres.OrderRepo
+	Payments *postgres.PaymentRepo
 	Schedule *postgres.ScheduleRepo
 	Kitchens *postgres.KitchenRepo
 	Users    *postgres.UserRepo
@@ -49,7 +51,7 @@ func NewOrdering(d OrderingDeps) *Ordering {
 		d.Now = time.Now
 	}
 	return &Ordering{
-		orders: d.Orders, sched: d.Schedule, kitchens: d.Kitchens, users: d.Users,
+		orders: d.Orders, payments: d.Payments, sched: d.Schedule, kitchens: d.Kitchens, users: d.Users,
 		pricing: d.Pricing, service: d.Service, audit: d.Audit, params: d.Params,
 		tz: d.TZ, now: d.Now,
 	}

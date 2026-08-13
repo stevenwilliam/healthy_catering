@@ -73,12 +73,25 @@ func TestRedeemRefusesAtZero(t *testing.T) {
 	}
 }
 
-func TestRedeemRefusesInactivePackage(t *testing.T) {
-	for _, st := range []Status{Pending, Expired, Exhausted, Cancelled} {
+// Each non-Active status gets its OWN error, because each needs a different
+// message. A customer who just spent their last credit must not be told we are
+// still waiting for their bank transfer.
+func TestRedeemRefusesInactivePackageWithTheRightReason(t *testing.T) {
+	tests := []struct {
+		status Status
+		want   error
+	}{
+		{Pending, ErrNotActive},
+		{Cancelled, ErrNotActive},
+		{Exhausted, ErrInsufficient},
+		{Expired, ErrExpired},
+	}
+	for _, tc := range tests {
 		p := activePkg()
-		p.Status = st
-		if _, err := RedeemOne(p, purchase(20), delivA, day("2026-09-10"), day("2026-09-05")); !errors.Is(err, ErrNotActive) {
-			t.Errorf("status %s: err = %v, want ErrNotActive", st, err)
+		p.Status = tc.status
+		_, err := RedeemOne(p, purchase(20), delivA, day("2026-09-10"), day("2026-09-05"))
+		if !errors.Is(err, tc.want) {
+			t.Errorf("status %s: err = %v, want %v", tc.status, err, tc.want)
 		}
 	}
 }

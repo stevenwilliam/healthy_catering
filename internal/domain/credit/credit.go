@@ -117,7 +117,18 @@ func Balance(entries []Entry) int {
 // (reference_type, reference_id) WHERE entry_type='REDEEM' means a retry cannot
 // spend a second credit for the same meal.
 func RedeemOne(p Package, entries []Entry, deliveryID uuid.UUID, serviceDate time.Time, now time.Time) (Entry, error) {
-	if p.Status != Active {
+	// Each non-Active status has its own truthful answer. Collapsing them into
+	// one "not active" message told a customer who had just spent their last
+	// credit that we were still waiting for their transfer — which is both
+	// wrong and alarming.
+	switch p.Status {
+	case Active:
+		// carry on
+	case Exhausted:
+		return Entry{}, ErrInsufficient
+	case Expired:
+		return Entry{}, ErrExpired
+	default:
 		return Entry{}, fmt.Errorf("%w: status %s", ErrNotActive, p.Status)
 	}
 	if p.ExpiresAt != nil {

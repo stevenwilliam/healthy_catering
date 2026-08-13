@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -182,4 +183,57 @@ func (o *Ordering) GetMyOrder(ctx context.Context, ident Identity, id uuid.UUID)
 // countdown is the live cut-off timer the menu page shows (PROMPT §6).
 func (o *Ordering) countdown(ctx context.Context, serviceDate time.Time) time.Duration {
 	return o.cutoffRule(ctx).TimeUntilCutoff(serviceDate, o.now())
+}
+
+// ProofInput is a transfer proof reference.
+type ProofInput struct {
+	ObjectKey   string
+	ContentType string
+	Bytes       int64
+	Checksum    string
+}
+
+// SubmitPaymentProof records a customer's transfer proof against their own
+// order.
+func (o *Ordering) SubmitPaymentProof(ctx context.Context, ident Identity,
+	orderID uuid.UUID, in ProofInput) error {
+
+	if ident.CustomerID == nil {
+		return apierror.Forbidden(apierror.CodeForbidden, "Only customers upload payment proof.")
+	}
+
+	// The object key is validated as a KEY, never as a path: a client-supplied
+	// "../" is how an upload escapes its prefix (99 §7).
+	key, err := sanitize.Required("object_key", in.ObjectKey, 300)
+	if err != nil {
+		return validationFrom(err)
+	}
+	if strings.Contains(key, "..") || strings.HasPrefix(key, "/") {
+		return apierror.Validation("That object key is not valid.",
+			map[string]any{"object_key": "no leading slash and no .."})
+	}
+
+	// Magic-byte checking happens in the storage adapter on upload; the
+	// declared content type is still allow-listed here so a rejected type never
+	// reaches the finance queue (99 §7).
+	ct, err := sanitize.Enum("content_type", in.ContentType,
+		"image/jpeg", "image/png", "image/webp", "application/pdf")
+	if err != nil {
+		return apierror.Validation("Upload a JPEG, PNG, WebP or PDF.",
+			map[string]any{"content_type": "image/jpeg, image/png, image/webp or application/pdf"})
+	}
+	const maxProofBytes = 5 << 20 // PROMPT §10
+	if in.Bytes <= 0 || in.Bytes > maxProofBytes {
+		return apierror.Validation("The file must be 5 MB or smaller.",
+			map[string]any{"bytes": "1 byte to 5 MB"})
+	}
+
+	if err := o.payments.SubmitProof(ctx, *ident.CustomerID, orderID,
+		key, ct, in.Bytes, in.Checksum); err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return apierror.NotFound("No such order awaiting payment.")
+		}
+		return apierror.Internal(err)
+	}
+	return nil
 }

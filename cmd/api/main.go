@@ -160,6 +160,8 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	sched := postgres.NewScheduleRepo(gdb)
 	pricingRepo := postgres.NewPricingRepo(gdb)
 	orders := postgres.NewOrderRepo(gdb)
+	payments := postgres.NewPaymentRepo(gdb)
+	creditsRepo := postgres.NewCreditRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -174,7 +176,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	serviceability := app.NewServiceability(kitchens, params, tz)
 	pricingSvc := app.NewPricing(pricingRepo, audit, params, tz)
 	ordering := app.NewOrdering(app.OrderingDeps{
-		Orders: orders, Schedule: sched, Kitchens: kitchens, Users: users,
+		Orders: orders, Payments: payments, Schedule: sched, Kitchens: kitchens, Users: users,
 		Pricing: pricingSvc, Service: serviceability, Audit: audit,
 		Params: params, TZ: tz,
 	})
@@ -188,8 +190,14 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Catalogue:      app.NewCatalogue(catalogue, sched, master, audit, params, tz),
 		Pricing:        pricingSvc,
 		Ordering:       ordering,
-		Signer:         signer,
-		Limiter:        limiter,
+		Finance:        app.NewFinance(payments, creditsRepo, audit, tz, time.Now),
+		Packages: app.NewPackages(app.PackagesDeps{
+			Credits: creditsRepo, Orders: orders, Schedule: sched, Users: users,
+			Pricing: pricingSvc, Service: serviceability, Audit: audit,
+			Params: params, TZ: tz,
+		}),
+		Signer:  signer,
+		Limiter: limiter,
 		// Until the mailer exists (M11), the verification link is logged at
 		// debug rather than silently dropped — so a developer can complete the
 		// flow, and so it is obvious this is not yet a real email.
