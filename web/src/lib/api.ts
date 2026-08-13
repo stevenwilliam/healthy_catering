@@ -35,6 +35,12 @@ type Session = {
   roles: string[]
   permissions: string[]
   email_verified: boolean
+
+  // Set when the password was right but a second factor is still owed. The
+  // access_token is EMPTY in that case, so this is never a usable session.
+  mfa_required?: boolean
+  mfa_token?: string
+  mfa_hint?: string
 }
 
 export function loadSession(): Session | null {
@@ -130,9 +136,48 @@ async function refreshSession(): Promise<boolean> {
 
 export async function login(email: string, password: string): Promise<Session> {
   const s = await request<Session>('/auth/login', { method: 'POST', body: { email, password } })
+  // A challenge is NOT stored: saving it would put a token in localStorage that
+  // looks like a session to every other page but opens nothing.
+  if (!s.mfa_required) saveSession(s)
+  return s
+}
+
+// completeMfa exchanges a challenge plus a code for the real session.
+export async function completeMfa(mfaToken: string, code: string): Promise<Session> {
+  const s = await request<Session>('/auth/mfa', {
+    method: 'POST',
+    body: { mfa_token: mfaToken, code },
+  })
   saveSession(s)
   return s
 }
+
+export type MfaStatus = {
+  available: boolean
+  required: boolean
+  enabled: boolean
+  pending?: boolean
+  recovery_codes_left?: number
+}
+
+export const mfaStatus = () => request<MfaStatus>('/me/mfa')
+
+export const mfaStart = () =>
+  request<{ secret: string; otpauth_url: string; message: string }>('/me/mfa/start', {
+    method: 'POST',
+  })
+
+export const mfaConfirm = (code: string) =>
+  request<{ recovery_codes: string[]; message: string }>('/me/mfa/confirm', {
+    method: 'POST',
+    body: { code },
+  })
+
+export const mfaDisable = (password: string) =>
+  request<{ enabled: boolean; message: string }>('/me/mfa/disable', {
+    method: 'POST',
+    body: { password },
+  })
 
 export async function registerCustomer(input: {
   email: string

@@ -131,6 +131,37 @@ type-checked, so a cut-off of "6pm" is refused rather than silently ignored.
 Secret settings such as the mail password are masked everywhere, including in
 the audit log.
 
+## 7a. Two-factor authentication
+
+Your account needs a code from your phone as well as a password. For **admin,
+finance and staff** this is required and cannot be switched off. Kitchen and
+courier accounts do not need it — those sign-ins happen on shared phones on the
+service floor.
+
+**Setting it up.** Open **Keamanan** from the menu, press *Aktifkan verifikasi
+dua langkah*, and add the secret shown to Google Authenticator, Authy or a
+password manager that generates codes. Type the six-digit code back to finish.
+Nothing changes on your account until that code is correct — if you scanned it
+wrong, you simply try again.
+
+**Your recovery codes.** Confirming shows eight codes. Save them somewhere that
+is not the phone generating the codes. Each works once. This is the only time
+they are shown, and for a required role they are the only way back in if the
+phone is lost or wiped.
+
+**Signing in afterwards.** Enter your email and password as usual, then the
+six-digit code on the next screen. A recovery code can be typed into the same
+box instead.
+
+**Everyday problems.**
+
+| What you see | What it means |
+|---|---|
+| *Kode tidak dapat diverifikasi* | Usually the phone's clock. Set the phone's date and time to automatic and try the next code. |
+| *That code has already been used* | Each code works once. Wait for the next one to appear. |
+| *That sign-in attempt expired* | The code screen was left open too long. Sign in again from the start. |
+| Lost phone, out of recovery codes | Only another admin can help: they must clear the enrolment for your account directly in the database (`DELETE FROM user_totp WHERE user_id = …`), after confirming by some other means that it is really you. |
+
 ## 8. Things the system will not let you do
 
 Not bugs — deliberate:

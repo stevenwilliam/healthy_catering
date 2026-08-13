@@ -1,0 +1,99 @@
+name: CI
+
+# The gate a green ✅ in docs/PROGRESS.md has to re-earn (CLAUDE.md §5).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # PostGIS, because the routing tests are not optional and a plain
+        # Postgres image fails at migration 0001 with a confusing error.
+        image: postgis/postgis:18-3.5
+        env:
+          POSTGRES_USER: evermore
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: evermore_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://evermore:ci@127.0.0.1:5432/evermore_test?sslmode=disable
+      DATABASE_URL: postgres://evermore:ci@127.0.0.1:5432/evermore_test?sslmode=disable
+      JWT_SIGNING_KEY: ci-only-signing-key-at-least-32-bytes-long
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Extensions
+        run: |
+          PGPASSWORD=ci psql -h 127.0.0.1 -U evermore -d evermore_test \
+            -c 'CREATE EXTENSION IF NOT EXISTS btree_gist;
+                CREATE EXTENSION IF NOT EXISTS postgis;
+                CREATE EXTENSION IF NOT EXISTS citext;'
+
+      - name: gofmt
+        run: |
+          # Formatting is not a matter of taste here; a diff fails the build.
+          unformatted=$(gofmt -l . | grep -v node_modules || true)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt'd:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Migrate up, down and up again
+        # Down is exercised in CI precisely because production is forward-only:
+        # this is the only place a broken .down.sql is ever caught.
+        run: |
+          go build -o bin/api ./cmd/api
+          ./bin/api migrate up
+          ./bin/api migrate down 13
+          ./bin/api migrate up
+
+      - name: Tests
+        run: go test ./... -count=1
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
+      - name: gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -quiet -exclude-generated ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --audit-level=high

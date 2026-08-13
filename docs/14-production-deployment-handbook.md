@@ -79,6 +79,20 @@ go build -ldflags "-X main.version=$(git rev-parse --short HEAD)" -o /srv/evermo
 /srv/evermore/bin/api version
 ```
 
+The single-page app is built separately and served by the Go binary from
+`web/dist`. **Skipping this step leaves `/app` serving nothing**, which looks
+like a routing bug and is not one:
+
+```bash
+cd /srv/evermore/web
+npm ci
+npm run build
+ls -l /srv/evermore/web/dist/index.html
+```
+
+Rebuild it on every deploy that touches `web/` — the binary serves whatever is
+on disk, so a stale `dist` silently ships the previous UI.
+
 ## 5. Configuration and secrets
 
 Nothing secret is in the repository. The service reads one root-owned file.
@@ -103,6 +117,16 @@ TEST_DATABASE_URL=postgres://evermore:REPLACE@127.0.0.1:5432/evermore_test?sslmo
 
 # openssl rand -base64 48
 JWT_SIGNING_KEY=REPLACE
+
+# openssl rand -base64 32 — encrypts staff 2FA secrets at rest.
+#
+# Leave it EMPTY and two-factor authentication is switched off entirely: the
+# routes disappear and the boot log says so. That is deliberate — storing TOTP
+# secrets in the clear would be worse than not offering the feature.
+#
+# CHANGING IT MAKES EVERY EXISTING ENROLMENT UNREADABLE, and admin/finance/staff
+# have no way back in except a recovery code. Treat it like the database
+# password, not like a rotatable token.
 TOTP_ENCRYPTION_KEY=REPLACE
 
 REDIS_URL=redis://127.0.0.1:6379/0
@@ -145,6 +169,20 @@ set -a; . /etc/evermore/evermore.env; set +a
 # The password is typed, never echoed, and never reaches the shell history.
 ```
 
+### 7.1 Enrol two-factor immediately
+
+Two-factor authentication is **mandatory for admin, finance and staff** and
+cannot be switched off from those accounts. Sign in at
+`https://www.evermore.co.id/app/login`, open **Keamanan**, scan the secret into
+an authenticator app and confirm with a code.
+
+**Write the eight recovery codes down before leaving that screen.** They are
+shown once, each works once, and for a mandatory role they are the only way
+back in after a lost phone.
+
+Kitchen and courier roles are exempt by design — they sign in from shared
+phones on a service floor (docs/03 Q-16).
+
 ## 8. nginx and TLS
 
 ```bash
@@ -178,25 +216,51 @@ curl -s https://www.evermore.co.id/ | grep -i 'og:\|<title'
 
 ## 10. Backups
 
-⚠️ **Not yet written, and an untested restore is not a backup.**
+The script ships in the repository and **has been run**, including the restore
+drill — which is the only part that proves anything.
 
 ```bash
 sudo mkdir -p /var/backups/evermore
-sudo vi /usr/local/bin/evermore-backup.sh
+sudo install -m 0755 /srv/evermore/scripts/backup.sh /usr/local/bin/evermore-backup.sh
+sudo install -m 0755 /srv/evermore/scripts/restore-check.sh /usr/local/bin/evermore-restore-check.sh
 ```
+
+Nightly, as root:
 
 ```bash
-#!/bin/bash
-set -euo pipefail
-STAMP=$(date +%Y%m%d-%H%M)
-pg_dump "$DATABASE_URL" | gzip > /var/backups/evermore/evermore-$STAMP.sql.gz
-find /var/backups/evermore -name '*.sql.gz' -mtime +14 -delete
-# Then copy off the machine — a backup on the same disk is not a backup.
+sudo vi /etc/cron.d/evermore-backup
 ```
 
-**Before trusting it, restore into `evermore_test` and run the security suite
-against the restored copy.** That is the only thing that proves the dump is
-usable.
+```
+15 2 * * * root . /etc/evermore/evermore.env; /usr/local/bin/evermore-backup.sh >> /var/log/evermore-backup.log 2>&1
+```
+
+The script refuses to leave a broken dump behind: it verifies the gzip stream
+and checks the dump ends with the `PostgreSQL database dump complete` marker,
+because a truncated file still *looks* like a backup in a directory listing.
+
+⚠️ **The copy still lands on the same machine as the database.** Uncomment the
+`aws s3 cp` or `rclone copy` line at the bottom of the script once a bucket
+exists. A backup that burns with the server is not a backup.
+
+### 10.1 The restore drill — run this monthly
+
+```bash
+sudo -E /usr/local/bin/evermore-restore-check.sh
+```
+
+It drops and recreates `healthy_catering_test`, restores the newest dump into
+it, prints the row counts, and runs the security suite **against the restored
+copy**. A dump nobody has restored is a hypothesis, and the moment you need it
+is the worst possible time to find that out.
+
+Two things to know:
+
+- It runs as the **database superuser** (`sudo -u postgres`), because a
+  `--clean` dump recreates extensions and only a superuser may do that. This is
+  normal for a restore and is exactly why the application role is not one.
+- It **destroys** `healthy_catering_test`. That database exists for this and for
+  the test suite; never point `RESTORE_DB` at production.
 
 ## 11. Rollback
 

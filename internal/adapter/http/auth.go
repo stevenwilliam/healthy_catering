@@ -43,6 +43,14 @@ func RequireAuth(auth *app.Auth, signer *security.TokenSigner) gin.HandlerFunc {
 			Fail(c, apierror.Unauthorized("Please sign in again."))
 			return
 		}
+		// A purpose-bound token — the half-authenticated one handed out between
+		// a correct password and a correct 2FA code — is NOT a session. Without
+		// this check the challenge token would open every endpoint the account
+		// can reach, and the second factor would be decorative.
+		if claims.Purpose != "" {
+			Fail(c, apierror.Unauthorized("Finish signing in first."))
+			return
+		}
 		userID, err := uuid.Parse(claims.Subject)
 		if err != nil {
 			Fail(c, apierror.Unauthorized("Please sign in again."))

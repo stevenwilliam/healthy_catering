@@ -187,6 +187,19 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Users: users, Audit: audit, Params: params, Signer: signer,
 	})
 
+	// Staff second factor. Without TOTP_ENCRYPTION_KEY the secrets could only
+	// be stored in the clear, so the feature stays OFF rather than storing them
+	// badly — the routes are simply absent and the log says why.
+	var mfa *app.MFA
+	if totpCipher, err := security.NewTOTPCipher(cfg.Auth.TOTPKey); err != nil {
+		log.Warn("two-factor authentication is disabled",
+			"reason", "TOTP_ENCRYPTION_KEY is not set")
+	} else {
+		mfa = app.NewMFA(postgres.NewTOTPRepo(gdb), users, audit, totpCipher,
+			cfg.Auth.Issuer, time.Now)
+		auth.AttachMFA(mfa)
+	}
+
 	limiter := ratelimit.New(time.Now)
 
 	// Notifications: mail settings come from sys_parameters so Steven can change
@@ -285,6 +298,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Notifier:       notifier,
 		Storage:        objectStore,
 		Fulfilment:     app.NewFulfilment(deliveriesRepo, creditsRepo, audit, params, tz, time.Now),
+		MFA:            mfa,
 		Reports:        app.NewReports(reportsRepo, params, tz),
 		Params:         params,
 		Packages: app.NewPackages(app.PackagesDeps{

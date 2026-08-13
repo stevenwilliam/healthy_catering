@@ -10,6 +10,7 @@ import Packages from './pages/Packages'
 import AdminPayments from './pages/AdminPayments'
 import AdminDeliveries from './pages/AdminDeliveries'
 import AdminSettings from './pages/AdminSettings'
+import Security from './pages/Security'
 
 /** RequireAuth gates a route in the UI.
  *
@@ -38,6 +39,7 @@ function Nav() {
             <Link to="/orders">Pesanan</Link>
             <Link to="/packages">Paket</Link>
             <Link to="/addresses">Alamat</Link>
+            <Link to="/keamanan">Keamanan</Link>
             {staff && <Link to="/admin/payments">Pembayaran</Link>}
             {staff && <Link to="/admin/deliveries">Pengiriman</Link>}
             {staff && <Link to="/admin/settings">Pengaturan</Link>}
@@ -80,6 +82,7 @@ export default function App() {
           <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
           <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
           <Route path="/packages" element={<RequireAuth><Packages /></RequireAuth>} />
+          <Route path="/keamanan" element={<RequireAuth><Security /></RequireAuth>} />
           <Route path="/admin/payments" element={<RequireAuth><AdminPayments /></RequireAuth>} />
           <Route path="/admin/deliveries" element={<RequireAuth><AdminDeliveries /></RequireAuth>} />
           <Route path="/admin/settings" element={<RequireAuth><AdminSettings /></RequireAuth>} />

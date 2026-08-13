@@ -23,3 +23,6 @@ web/.vite/
 # The SPA build output is produced by `npm run build` and served from disk;
 # the deployment handbook builds it rather than shipping it in git.
 web/dist/
+
+# TypeScript incremental build cache — a build artifact, not source.
+web/tsconfig.tsbuildinfo

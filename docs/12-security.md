@@ -30,7 +30,7 @@ yet done, the row says so rather than being omitted.
 | argon2id password hashing, tuned | `platform/security/password.go` | `security_test.go` (platform) |
 | Refresh tokens stored **hashed**; a database leak hands over no live session | `postgres/user.go` `StoreRefreshToken` | — |
 | Verification tokens hashed, single-use, expiring | `postgres/user.go` `ConsumeVerificationToken` | Live probe |
-| TOTP secrets stored as ciphertext | migration 0002 `user_totp.secret_cipher` | ⬜ enrolment flow not built |
+| TOTP secrets stored as ciphertext | migration 0002 `user_totp.secret_cipher`, AES-GCM under `TOTP_ENCRYPTION_KEY` | ✅ `TestStoredTOTPSecretIsNotPlaintext` |
 | TLS 1.2+ only, HSTS in production | `deploy/nginx/evermore.conf`, `middleware.go` | ⬜ needs the certificate |
 
 ### A03 — Injection
@@ -84,7 +84,10 @@ yet done, the row says so rather than being omitted.
 | Rate limiting per identifier **and** per IP | `middleware.RateLimit` | Applied to auth and order creation |
 | Email verification required before the first order | `RequireVerifiedEmail` | Live probe |
 | CAPTCHA on registration | ⬜ **Turnstile chosen, not wired** (needs a key) | — |
-| 2FA for admin/finance/staff | ⬜ **schema ready, enrolment not built** | `Role.RequiresTOTP` |
+| 2FA for admin/finance/staff | ✅ enrolment, challenge, recovery codes | `Role.RequiresTOTP`, `TestMFAChallengeTokenIsNotASession` |
+| A challenge token is not a session | ✅ `Claims.Purpose` + the `RequireAuth` refusal | `TestMFAChallengeTokenIsNotASession` |
+| A TOTP code is single-use | ✅ `last_used_step` guarded in SQL | `TestTOTPCodeCannotBeSpentTwiceConcurrently` |
+| A recovery code is single-use | ✅ removed from the JSONB set in one guarded UPDATE | `TestRecoveryCodeIsConsumedExactlyOnce` |
 
 ### A08 — Software and data integrity failures
 
@@ -140,16 +143,25 @@ yet done, the row says so rather than being omitted.
 These are **not** done, and are listed so nobody reads a green table as a
 finished audit:
 
-1. **TOTP enrolment** — the schema and the per-role requirement exist; the
-   enrolment and challenge flow does not.
-2. **Turnstile** — chosen (no second Google dependency), not wired; needs a key.
-3. **`govulncheck` / `gosec` / `staticcheck` in CI** — there is no CI pipeline
-   yet at all.
-4. **Magic-byte upload validation** — the storage adapter is not built; content
-   type is currently allow-listed by declaration only.
-5. **UU PDP data export and account deletion** — required before launch, not
+1. **Turnstile** — chosen (no second Google dependency), not wired; needs a key.
+   Registration and login are rate-limited in the meantime, which is weaker.
+2. **CI has never run on a runner** — `.github/workflows/ci.yml` exists and each
+   of its steps (`gofmt`, `go vet`, migrate up/down/up, tests, `govulncheck`,
+   `staticcheck`, `gosec`, `npm audit`) passes locally, but no push has yet
+   exercised it on GitHub Actions. Written is not the same as proven.
+3. **UU PDP data export and account deletion** — required before launch, not
    built. Note the tension to resolve: financial records must be retained for
    tax, so deletion should anonymise the customer and keep the order.
+4. **Backups are still on the same machine** — the script and a *tested* restore
+   drill both exist, but the off-machine copy is a commented-out line awaiting a
+   bucket. A backup that burns with the server is not a backup.
+5. **No 2FA rate limit distinct from login** — `/auth/mfa` shares the `auth`
+   limiter bucket (10/window). That bounds guessing at a six-digit code, but a
+   dedicated per-challenge attempt counter would be tighter.
+6. **`TOTP_ENCRYPTION_KEY` has no rotation path** — changing it makes every
+   existing enrolment undecryptable, and a required role has no way back in
+   except a recovery code. Documented in `.env.example`; a re-encrypting
+   migration would be the real fix.
 6. **Sentry-compatible reporting** and a **tested `pg_dump` restore** — the
    backup script is not written, and an untested restore is not a backup.
 7. **Load and lockout testing** — the rate limiter is in-memory and correct for

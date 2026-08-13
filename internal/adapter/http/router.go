@@ -62,6 +62,7 @@ type Deps struct {
 	Notifier       *app.Notifier
 	Storage        *storage.Store
 	Fulfilment     *app.Fulfilment
+	MFA            *app.MFA
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -119,6 +120,7 @@ func New(d Deps) *gin.Engine {
 	registerReports(v1, d)
 	registerUploads(v1, d)
 	registerFulfilment(v1, d)
+	registerMFA(v1, d)
 	return r
 }
 

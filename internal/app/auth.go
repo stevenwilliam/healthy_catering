@@ -31,6 +31,10 @@ type Auth struct {
 
 	refreshTTL time.Duration
 	verifyTTL  time.Duration
+
+	// mfa is optional: attached after construction, nil when the server has no
+	// TOTP key configured.
+	mfa *MFA
 }
 
 // AuthDeps wires the service.
@@ -76,6 +80,14 @@ type Session struct {
 	Roles         []string   `json:"roles"`
 	Permissions   []string   `json:"permissions"`
 	EmailVerified bool       `json:"email_verified"`
+
+	// MFARequired means this is NOT a session yet: the password was right and
+	// a second factor is still owed. AccessToken is empty in that case, so a
+	// client that ignores this field gets no working token rather than a
+	// half-authenticated one.
+	MFARequired bool   `json:"mfa_required,omitempty"`
+	MFAToken    string `json:"mfa_token,omitempty"`
+	MFAHint     string `json:"mfa_hint,omitempty"`
 }
 
 // RegisterInput is a customer registration. Every field is re-validated here
@@ -228,8 +240,66 @@ func (a *Auth) Login(ctx context.Context, in LoginInput) (Session, error) {
 	if err := a.users.RecordLoginSuccess(ctx, user.ID); err != nil {
 		return Session{}, apierror.Internal(err)
 	}
+
+	// A correct password is only STEP ONE for an account with a second factor.
+	// Nothing is issued here but a challenge token, which grants no permissions
+	// and expires in minutes.
+	if a.mfa != nil && a.mfa.Configured() {
+		enrolled, err := a.mfa.totp.Enrolled(ctx, user.ID)
+		if err != nil {
+			return Session{}, apierror.Internal(err)
+		}
+		if enrolled {
+			challenge, err := a.signer.IssueMFAChallenge(user.ID, mfaChallengeTTL)
+			if err != nil {
+				return Session{}, apierror.Internal(err)
+			}
+			return Session{
+				MFARequired:   true,
+				MFAToken:      challenge,
+				ExpiresIn:     int(mfaChallengeTTL.Seconds()),
+				UserID:        user.ID,
+				Email:         user.Email,
+				MFAHint:       "Enter the six-digit code from your authenticator app.",
+				EmailVerified: user.EmailVerifiedAt != nil,
+			}, nil
+		}
+	}
+
 	return a.issue(ctx, user, in.IP, in.UA, nil)
 }
+
+// CompleteMFA exchanges a verified challenge for a real session.
+func (a *Auth) CompleteMFA(ctx context.Context, challenge, code, ip, ua string) (Session, error) {
+	if a.mfa == nil || !a.mfa.Configured() {
+		return Session{}, apierror.Internal(security.ErrNoTOTPKey)
+	}
+
+	userID, err := a.signer.ParseMFAChallenge(challenge)
+	if err != nil {
+		// Expired or reused: send them back to the password step rather than
+		// leaving them guessing at a code that can never work.
+		return Session{}, apierror.Unauthorized("That sign-in attempt expired. Please sign in again.")
+	}
+
+	if err := a.mfa.Verify(ctx, userID, code); err != nil {
+		return Session{}, err
+	}
+
+	user, err := a.users.FindByID(ctx, userID)
+	if err != nil {
+		return Session{}, apierror.Unauthorized("Please sign in again.")
+	}
+	if !user.IsActive {
+		// The account may have been deactivated between the two steps.
+		return Session{}, apierror.Unauthorized("Email or password is incorrect.")
+	}
+	return a.issue(ctx, user, ip, ua, nil)
+}
+
+// AttachMFA wires the second-factor service after construction, since the two
+// services need each other.
+func (a *Auth) AttachMFA(m *MFA) { a.mfa = m }
 
 // Refresh rotates a refresh token and issues a new session.
 func (a *Auth) Refresh(ctx context.Context, raw, ip, ua string) (Session, error) {
@@ -285,6 +355,20 @@ type Identity struct {
 	Permissions   security.Set
 	KitchenID     *uuid.UUID
 	EmailVerified bool
+}
+
+// RequiresTOTP reports whether ANY of the caller's roles makes 2FA mandatory
+// (docs/03 Q-16).
+//
+// Any, not all: a user who is both a courier and an admin holds admin powers,
+// and the weaker role must not be a way to sign in without the second factor.
+func (i Identity) RequiresTOTP() bool {
+	for _, r := range i.Roles {
+		if security.Role(r).RequiresTOTP() {
+			return true
+		}
+	}
+	return false
 }
 
 // Resolve loads the caller's authorization from the database on every request.
