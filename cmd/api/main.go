@@ -3,6 +3,7 @@
 //
 //	api serve     run the HTTP server
 //	api migrate   apply pending migrations (up|down|status)
+//	api create-staff --email <a> --role <r>   first-run setup; no default admin
 //	api version   print the build version
 package main
 
@@ -83,8 +84,10 @@ func run() error {
 		return runMigrate(ctx, sqlDB, log)
 	case "serve":
 		return serve(ctx, cfg, gdb, log)
+	case "create-staff":
+		return runCreateStaff(ctx, gdb, log)
 	default:
-		return fmt.Errorf("unknown command %q (serve|migrate|version)", cmd)
+		return fmt.Errorf("unknown command %q (serve|migrate|create-staff|version)", cmd)
 	}
 }
 
@@ -151,6 +154,8 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	kitchens := postgres.NewKitchenRepo(gdb)
 	users := postgres.NewUserRepo(gdb)
 	audit := postgres.NewAuditRepo(gdb)
+	master := postgres.NewMasterDataRepo(gdb)
+	settings := postgres.NewSettingsRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -167,6 +172,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Log:            log,
 		Serviceability: app.NewServiceability(kitchens, params, tz),
 		Auth:           auth,
+		Admin:          app.NewAdmin(master, settings, audit, params),
 		Signer:         signer,
 		Limiter:        limiter,
 		// Until the mailer exists (M11), the verification link is logged at

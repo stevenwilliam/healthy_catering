@@ -62,6 +62,24 @@ If you are unsure whether the hold is still on, it is. Ask.
   proposed default so I can answer "yes" or "all defaults".
 - **Never stop partway.** If the plan says "build all modules A–Z", build all of
   them in one push. Do not deliver two modules and ask whether to continue.
+- **Once the documents, requirements and business rules are agreed, BUILD TO
+  THE END WITHOUT STOPPING.** The planning phase is where I answer questions;
+  the build phase is where you work. During the build:
+  - Do not stop to ask me to confirm a milestone, review an interim result, or
+    choose between two reasonable options. Pick the better one, write down why,
+    and keep going.
+  - **A blocker does not stop the build.** Work around it, note it, and carry
+    on with everything that does not depend on it — then hand me the whole list
+    at the end. One batch of blockers after a finished build beats five
+    interruptions during it.
+  - **Fine-tuning and correction come after, not during.** Something imperfect
+    that works is a note for the end; only something *wrong* gets fixed on the
+    spot.
+  - Report at the end: what was built, what was verified by running it, what is
+    still blocked and on whom. That is when I answer.
+  This is the single thing that most changes how much gets done in a session:
+  every stop costs a context switch for both of us, and I would rather read one
+  honest report than approve nine checkpoints.
 - **Auto-commit and push after every completed change**, without asking. Small,
   focused commits, conventional-commit messages (`feat(...)`, `fix(...)`,
   `docs(...)`). `main` is the working branch unless I say otherwise.

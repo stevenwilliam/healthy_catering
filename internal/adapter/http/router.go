@@ -49,6 +49,7 @@ type Deps struct {
 	Log            *slog.Logger
 	Serviceability *app.Serviceability
 	Auth           *app.Auth
+	Admin          *app.Admin
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -94,6 +95,7 @@ func New(d Deps) *gin.Engine {
 	v1 := r.Group("/api/v1")
 	registerPublic(v1, d)
 	registerAuth(v1, d)
+	registerAdmin(v1, d)
 	return r
 }
 

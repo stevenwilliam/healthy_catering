@@ -145,6 +145,13 @@ frameworks, CSS-in-JS.
   running service, or a remote. If unsure whether the hold is on, it is.
 - **Ask everything at once, up front, with a default per question.** One batch
   before starting, not a drip of questions mid-build.
+- **Once the docs and business rules are agreed, build to the end without
+  stopping.** Planning is when Steven answers questions; the build is when you
+  work. Do not pause for milestone approval, and **do not let a blocker stop the
+  build** — work around it, note it, keep going on everything that does not
+  depend on it, and hand him the whole list at the end. Fine-tuning and
+  correction are end-of-build items; only something *wrong* gets fixed on the
+  spot. Then report: built, verified by running, still blocked and on whom.
 - **Never stop partway.** If the plan says "build all modules A–Z", build all of
   them in one push.
 - **Update related documents on every interaction** — including talk-only turns
