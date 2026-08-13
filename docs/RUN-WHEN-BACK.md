@@ -256,7 +256,29 @@ curl -s -H "X-Api-Key: $WAHA_API_KEY" "$WAHA_URL/api/default/auth/qr" -o /tmp/wa
 ```
 
 Confirm with `status=WORKING`, then send one real message to yourself before
-trusting it.
+trusting it:
+
+```bash
+curl -s -X POST "$WAHA_URL/api/sendText" -H "X-Api-Key: $WAHA_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"session":"default","chatId":"628176315568@c.us","text":"Evermore test"}'
+```
+
+While the session is `FAILED` this returns `422 Session status is not as
+expected`, which is exactly what the app surfaces into the job row — so a
+failure here and a failure in the queue have the same cause and the same text.
+
+### Rotate the WAHA API key
+
+The key was briefly committed in migration `0014` (commit `112ef88`) before
+being moved to the environment. The gateway only listens on `127.0.0.1` and the
+repository is private, so the exposure is limited — but the key is in git
+history, and **rotating it is cheaper than rewriting published history**.
+
+After rotating, put the new value in `WAHA_API_KEY` in
+`/etc/evermore/evermore.env` and in ruuma's `.env` (the container is shared),
+then restart both services. Nothing else needs to change: the key is read from
+the environment, not from the database or a migration.
 
 ## 9. DNS for dev.evermore.co.id · STILL NEEDED
 
