@@ -217,7 +217,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	})
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.App.Port),
+		Addr:              fmt.Sprintf("%s:%d", cfg.App.Bind, cfg.App.Port),
 		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
@@ -228,7 +228,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	errCh := make(chan error, 1)
 	go func() {
 		log.Info("listening",
-			"port", cfg.App.Port, "env", cfg.App.Env, "version", version,
+			"bind", cfg.App.Bind, "port", cfg.App.Port, "env", cfg.App.Env, "version", version,
 			"timezone", cfg.Locale.Timezone)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err

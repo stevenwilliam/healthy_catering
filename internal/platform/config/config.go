@@ -57,7 +57,13 @@ type Locale struct {
 func (l Locale) TZ() (*time.Location, error) { return time.LoadLocation(l.Timezone) }
 
 type App struct {
-	Env             string
+	Env string
+	// Bind is the interface the server listens on. It defaults to 127.0.0.1
+	// because nginx reverse-proxies each project and only the proxy's ports
+	// are meant to be reachable (99 §9). Binding 0.0.0.0 exposes the API to
+	// the whole network, which in development also means unauthenticated
+	// endpoints and a permissive CORS list.
+	Bind            string
 	Port            int
 	BaseURL         string
 	AdminBaseURL    string
@@ -123,6 +129,7 @@ func Load() (*Config, error) {
 	c := &Config{
 		App: App{
 			Env:             getString("APP_ENV", "development"),
+			Bind:            getString("APP_BIND", "127.0.0.1"),
 			Port:            getInt("APP_PORT", 8080),
 			BaseURL:         getString("APP_BASE_URL", "http://127.0.0.1:8080"),
 			AdminBaseURL:    getString("APP_ADMIN_BASE_URL", ""),

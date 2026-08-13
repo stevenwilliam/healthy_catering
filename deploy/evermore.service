@@ -1,0 +1,49 @@
+# Evermore API — systemd unit.
+#
+# Install to /etc/systemd/system/evermore.service.
+# The binary is static, so there is no runtime to install beside it.
+[Unit]
+Description=Evermore API (healthy_catering)
+Documentation=https://github.com/stevenwilliam/healthy_catering
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/home/dev/projects/healthy_catering
+
+# Secrets live in a root-owned file readable only by the service user.
+# Nothing secret is in the repository (CLAUDE.md §4).
+EnvironmentFile=/etc/evermore/evermore.env
+
+ExecStartPre=/home/dev/projects/healthy_catering/bin/api migrate up
+ExecStart=/home/dev/projects/healthy_catering/bin/api serve
+
+Restart=always
+RestartSec=3
+# Give in-flight requests time to finish; the server shuts down gracefully.
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Hardening. The service needs no privileges beyond its own directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/dev/projects/healthy_catering
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=evermore
+
+[Install]
+WantedBy=multi-user.target
