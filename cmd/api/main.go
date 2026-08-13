@@ -156,6 +156,8 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	audit := postgres.NewAuditRepo(gdb)
 	master := postgres.NewMasterDataRepo(gdb)
 	settings := postgres.NewSettingsRepo(gdb)
+	catalogue := postgres.NewCatalogueRepo(gdb)
+	sched := postgres.NewScheduleRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -173,6 +175,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Serviceability: app.NewServiceability(kitchens, params, tz),
 		Auth:           auth,
 		Admin:          app.NewAdmin(master, settings, audit, params),
+		Catalogue:      app.NewCatalogue(catalogue, sched, master, audit, params, tz),
 		Signer:         signer,
 		Limiter:        limiter,
 		// Until the mailer exists (M11), the verification link is logged at

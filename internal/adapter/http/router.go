@@ -50,6 +50,7 @@ type Deps struct {
 	Serviceability *app.Serviceability
 	Auth           *app.Auth
 	Admin          *app.Admin
+	Catalogue      *app.Catalogue
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -96,6 +97,7 @@ func New(d Deps) *gin.Engine {
 	registerPublic(v1, d)
 	registerAuth(v1, d)
 	registerAdmin(v1, d)
+	registerCatalogue(v1, d)
 	return r
 }
 
