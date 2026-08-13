@@ -51,6 +51,8 @@ type Deps struct {
 	Auth           *app.Auth
 	Admin          *app.Admin
 	Catalogue      *app.Catalogue
+	Pricing        *app.Pricing
+	Ordering       *app.Ordering
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter
 	Health         func() error
@@ -98,6 +100,8 @@ func New(d Deps) *gin.Engine {
 	registerAuth(v1, d)
 	registerAdmin(v1, d)
 	registerCatalogue(v1, d)
+	registerPricing(v1, d)
+	registerOrders(v1, d)
 	return r
 }
 

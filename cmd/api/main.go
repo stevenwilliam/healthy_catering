@@ -158,6 +158,8 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	settings := postgres.NewSettingsRepo(gdb)
 	catalogue := postgres.NewCatalogueRepo(gdb)
 	sched := postgres.NewScheduleRepo(gdb)
+	pricingRepo := postgres.NewPricingRepo(gdb)
+	orders := postgres.NewOrderRepo(gdb)
 
 	signer := security.NewTokenSigner(
 		cfg.Auth.SigningKey, cfg.Auth.PreviousKey, cfg.Auth.Issuer,
@@ -169,13 +171,23 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 
 	limiter := ratelimit.New(time.Now)
 
+	serviceability := app.NewServiceability(kitchens, params, tz)
+	pricingSvc := app.NewPricing(pricingRepo, audit, params, tz)
+	ordering := app.NewOrdering(app.OrderingDeps{
+		Orders: orders, Schedule: sched, Kitchens: kitchens, Users: users,
+		Pricing: pricingSvc, Service: serviceability, Audit: audit,
+		Params: params, TZ: tz,
+	})
+
 	router := adapterhttp.New(adapterhttp.Deps{
 		Config:         cfg,
 		Log:            log,
-		Serviceability: app.NewServiceability(kitchens, params, tz),
+		Serviceability: serviceability,
 		Auth:           auth,
 		Admin:          app.NewAdmin(master, settings, audit, params),
 		Catalogue:      app.NewCatalogue(catalogue, sched, master, audit, params, tz),
+		Pricing:        pricingSvc,
+		Ordering:       ordering,
 		Signer:         signer,
 		Limiter:        limiter,
 		// Until the mailer exists (M11), the verification link is logged at
