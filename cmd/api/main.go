@@ -200,6 +200,25 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		auth.AttachMFA(mfa)
 	}
 
+	// WhatsApp, wired like mail: gateway settings live in sys_parameters so they
+	// change without a deploy, and the env wins for the API KEY so the secret
+	// never has to sit in a migration (CLAUDE.md §4).
+	//
+	// NewWAHA returns nil when it is not configured, and Multi simply has no
+	// WhatsApp sender then — messages are never queued rather than queued and
+	// permanently failing.
+	whatsapp := notify.NewWAHA(notify.WAHAConfig{
+		BaseURL: firstNonEmpty(cfg.WhatsApp.WAHAURL,
+			params.String(ctx, sysparam.KeyWAHAURL, "http://127.0.0.1:3000")),
+		Session: firstNonEmpty(cfg.WhatsApp.WAHASession,
+			params.String(ctx, sysparam.KeyWAHASession, "default")),
+		APIKey: firstNonEmpty(cfg.WhatsApp.WAHAAPIKey,
+			params.String(ctx, sysparam.KeyWAHAAPIKey, "")),
+	})
+	if whatsapp == nil {
+		log.Warn("whatsapp is disabled", "reason", "no WAHA gateway or API key configured")
+	}
+
 	limiter := ratelimit.New(time.Now)
 
 	// Notifications: mail settings come from sys_parameters so Steven can change
@@ -239,7 +258,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 	jobsRepo := postgres.NewJobRepo(gdb)
 	notifier := app.NewNotifier(app.NotifierDeps{
 		Jobs:    jobsRepo,
-		Senders: notify.NewMulti(notify.NewSMTPSender(mailCfg)),
+		Senders: notify.NewMulti(notify.NewSMTPSender(mailCfg), whatsapp),
 		Params:  params, Log: log, TZ: tz, BaseURL: cfg.App.BaseURL,
 	})
 

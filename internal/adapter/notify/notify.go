@@ -7,13 +7,19 @@
 package notify
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"net/smtp"
 	"strings"
 	"time"
+
+	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 )
 
 // Channel is one delivery route for a message.
@@ -182,4 +188,90 @@ func (m *Multi) Send(ctx context.Context, msg Message) error {
 func (m *Multi) Has(c Channel) bool {
 	_, ok := m.senders[c]
 	return ok
+}
+
+// WAHA sends WhatsApp messages through a self-hosted WAHA gateway.
+//
+// Unofficial channel: the number can be banned by WhatsApp, and the documented
+// alternative is the Meta Cloud API, which swaps this type and nothing else
+// (docs/02 D-11). The gateway on this host is SHARED with ruuma.
+type WAHA struct {
+	cfg    WAHAConfig
+	client *http.Client
+}
+
+// NewWAHA builds the sender, or returns nil when it is not configured.
+//
+// nil rather than an error on purpose: Multi skips a channel it has no sender
+// for, so an unconfigured gateway means WhatsApp messages are never queued
+// rather than queued and permanently failing.
+func NewWAHA(cfg WAHAConfig) *WAHA {
+	if strings.TrimSpace(cfg.BaseURL) == "" || strings.TrimSpace(cfg.APIKey) == "" {
+		return nil
+	}
+	if cfg.Session == "" {
+		cfg.Session = "default"
+	}
+	if cfg.Timeout <= 0 {
+		cfg.Timeout = 15 * time.Second
+	}
+	return &WAHA{cfg: cfg, client: &http.Client{Timeout: cfg.Timeout}}
+}
+
+func (w *WAHA) Channel() Channel { return WhatsApp }
+
+// Send posts one text message.
+func (w *WAHA) Send(ctx context.Context, m Message) error {
+	to, err := waChatID(m.Recipient)
+	if err != nil {
+		return err
+	}
+
+	// WAHA takes the whole message as one text field, so the HTML body is not
+	// used here — the plain-text body is the WhatsApp message.
+	payload, err := json.Marshal(map[string]string{
+		"session": w.cfg.Session,
+		"chatId":  to,
+		"text":    strings.TrimSpace(m.Body),
+	})
+	if err != nil {
+		return fmt.Errorf("notify: waha encode: %w", err)
+	}
+
+	endpoint := strings.TrimRight(w.cfg.BaseURL, "/") + "/api/sendText"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("notify: waha request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", w.cfg.APIKey)
+
+	res, err := w.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("notify: waha send: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode >= 200 && res.StatusCode < 300 {
+		return nil
+	}
+	// The body carries WAHA's reason — a dead session, an unknown chat id — and
+	// the job queue records it, so bounded is enough to be useful in a log
+	// without pasting an unbounded remote response into it.
+	reason, _ := io.ReadAll(io.LimitReader(res.Body, 512))
+	return fmt.Errorf("notify: waha refused with %d: %s",
+		res.StatusCode, strings.TrimSpace(string(reason)))
+}
+
+// waChatID turns a stored phone number into WAHA's chat identifier.
+//
+// sanitize.Phone is the single definition of a valid Indonesian number, so the
+// link, the stored contact and the message all agree — a "@c.us" suffix built
+// from a hand-trimmed zero is how a message goes to the wrong person.
+func waChatID(recipient string) (string, error) {
+	normalised, err := sanitize.Phone("recipient", recipient)
+	if err != nil {
+		return "", fmt.Errorf("notify: waha recipient %q is not a usable number", recipient)
+	}
+	return strings.TrimPrefix(normalised, "+") + "@c.us", nil
 }

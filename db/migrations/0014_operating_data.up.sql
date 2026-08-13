@@ -154,8 +154,10 @@ UPDATE sys_parameters SET value = 'http://127.0.0.1:3000', updated_at = now()
 UPDATE sys_parameters SET value = 'default', updated_at = now()
  WHERE key = 'whatsapp.waha_session';
 
-UPDATE sys_parameters SET value = 'a69cce02eb36426ca214de1a17a4ba86', updated_at = now()
- WHERE key = 'whatsapp.waha_api_key';
+-- The API KEY is deliberately NOT set here. A migration is a file in git, and
+-- secrets do not go in git (CLAUDE.md §4). It comes from WAHA_API_KEY in the
+-- environment, which wins over this parameter at boot — the same arrangement
+-- mail already uses for its relay password. See docs/RUN-WHEN-BACK.md §8.
 
 UPDATE sys_parameters SET value = 'true', updated_at = now()
  WHERE key = 'notify.whatsapp_enabled';
