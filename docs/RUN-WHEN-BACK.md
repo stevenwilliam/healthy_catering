@@ -110,16 +110,109 @@ docker run -d --name redis-shared --restart unless-stopped \
 
 ## 6. Google Maps — keys, restrictions, quotas · STILL NEEDED
 
-Needed before M3. **Two separate keys**, and neither goes in git:
+Browser work, not terminal work. **Two separate keys**, neither in git.
 
-1. In the Google Cloud console, create the project and attach a billing account.
-2. Enable **only** Maps JavaScript API, Places API, Geocoding API.
-3. **Browser key** — restrict by HTTP referrer: `https://*.evermore.co.id/*`
-   plus `http://127.0.0.1:*/*` for local work.
-4. **Server key** — restrict by IP, to the dev server and the production node.
-5. Set daily quota caps on all three APIs and a billing alert. Without a cap, a
-   scripted address form is an unbounded bill.
-6. Put both in `/etc/healthy_catering/healthy_catering.env`, never in the repo.
+The console's menu labels move between redesigns, so each step below says what
+the thing *does* as well as what it is currently called.
+
+### 6.1 Project and billing
+
+1. <https://console.cloud.google.com> → project picker (top bar) → **New
+   project**. Name it `evermore-maps`. Note the project ID.
+2. **Billing** → link a billing account. Maps returns
+   `BillingNotEnabledMapError` without one **even inside the free allowance** —
+   the card must be on file before any key works.
+3. Google has changed the Maps free-tier model more than once. Read the current
+   allowance in the console rather than trusting a remembered figure, then set
+   the caps in §6.4 regardless.
+
+### 6.2 Enable exactly three APIs
+
+**APIs & Services → Library**, enable only:
+
+| API | Used by | Why |
+|---|---|---|
+| Maps JavaScript API | browser key | renders the pin picker |
+| Places API | browser key | address autocomplete |
+| Geocoding API | server key | address → coordinates, server-side |
+
+**Not** Distance Matrix or Routes: routing ranks by straight-line distance
+(D-18), and travel time is a later resolver swap. Every extra enabled API is
+extra billable surface for a stolen key.
+
+If the library offers both *Places API* and *Places API (New)*, take the New
+one — the legacy service is on a deprecation path — and say which you enabled,
+because the client call differs.
+
+### 6.3 The two keys
+
+**APIs & Services → Credentials → Create credentials → API key**, twice. Rename
+them immediately (`evermore-browser`, `evermore-server`) — two keys called
+"API key 1" and "API key 2" is how the wrong one ends up in the wrong place.
+
+**Browser key** — it ships inside the HTML and is world-readable, so the
+referrer restriction is the *only* thing protecting it:
+
+- Application restrictions → **Websites**:
+  - `https://www.evermore.co.id/*`
+  - `https://evermore.co.id/*`
+  - `http://192.168.88.101:8090/*` (this dev host — remove at launch)
+- API restrictions → **Maps JavaScript API** and **Places API** only.
+
+**Server key** — never leaves the machine:
+
+- Application restrictions → **IP addresses**: the production node's public IP,
+  plus this dev host while building.
+- API restrictions → **Geocoding API** only.
+
+### 6.4 Caps and alerts — do not skip
+
+An address form is a loop an attacker can run. Without a ceiling the first
+symptom is the invoice.
+
+1. **APIs & Services → <each API> → Quotas** → set a daily request cap. Start
+   low (1 000/day); a real launch will tell you the real number.
+2. **Billing → Budgets & alerts** → a budget with alerts at 50/90/100%.
+3. A budget alert **notifies, it does not stop spending**. The quota caps in
+   step 1 are the thing that actually halts it.
+
+### 6.5 Install and verify
+
+```bash
+sudo vi /etc/evermore/evermore.env
+```
+
+```ini
+GOOGLE_MAPS_BROWSER_KEY=AIza...
+GOOGLE_MAPS_SERVER_KEY=AIza...
+```
+
+```bash
+sudo systemctl restart evermore
+systemctl is-active evermore
+```
+
+Verify the server key — run this **from the machine whose IP you allow-listed**,
+or the restriction correctly rejects it:
+
+```bash
+set -a; . /etc/evermore/evermore.env; set +a
+curl -s "https://maps.googleapis.com/maps/api/geocode/json?address=Kemang,+Jakarta+Selatan&key=$GOOGLE_MAPS_SERVER_KEY" \
+  | head -c 300
+```
+
+`"status" : "OK"` with a `location` is a working key. `REQUEST_DENIED` with an
+error message names the cause — usually the API not enabled, or the calling IP
+not in the allow-list.
+
+The browser key cannot be tested with `curl`: a referrer restriction only holds
+for a real browser request. It is exercised the first time the picker loads.
+
+### 6.6 Note on production boot
+
+Production **refuses to start** without both keys. That is deliberate — a
+misconfigured production node should fail loudly at boot rather than quietly at
+the first order — but it means these keys block deployment, not just the picker.
 
 ## 7. Credentials still needed from you · STILL NEEDED
 
@@ -127,7 +220,7 @@ Each blocks a milestone — see `03-open-questions.md` Q-19…Q-29.
 
 ```bash
 # Edit the real env file with vi; it is not in git.
-sudo vi /etc/healthy_catering/healthy_catering.env
+sudo vi /etc/evermore/evermore.env
 ```
 
 - **Bank accounts** for payment instructions — bank, number, holder (M8).
