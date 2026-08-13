@@ -1,7 +1,7 @@
 # 02 — Decisions awaiting confirmation
 
-**Version:** 0.1 — planning. **None of these is settled. No code is built until
-Steven confirms.**
+**Version:** 0.2 — **confirmed by Steven on 2026-08-13** (`code start`).
+Part A (the stack) is decided; the operational answers are in Part 0b.
 **Date:** 2026-08-12
 
 Every `[DECIDE]` in the master prompt, plus five conflicts between the prompt and
@@ -15,6 +15,26 @@ any item you want to change. Silence on an item = the recommendation stands.
 "all defaults" takes every recommendation below.
 
 **Legend — reversibility:** 🟢 a later migration · 🟡 a refactor · 🔴 a rebuild.
+
+---
+
+## Part 0b — Answered by Steven, 2026-08-13
+
+| # | Answer | Effect |
+|---|---|---|
+| **D-1…D-5** | **`code start`** — the stack is confirmed as recommended: Go + gin + gorm, numbered SQL migrations, Redis satellite, Go templates for public routes + React 18/Vite for the app. | Nothing to change. D10 in `00` moves from *decided by default* to decided. |
+| **B2** | Kitchens operate **every day**, temporary data for now. | `kitchen_operating_day` gains weekday 7 (migration 0012). The two placeholder kitchens stay until real data arrives — the homepage widget is still answering from fiction, which is fine in development and not at launch. |
+| **B3** | **PPN 11%**, changeable in the back office. | Already seeded at `1100` bps. PKP status and NPWP remain outstanding for the first real invoice. |
+| **B4** | Dummy bank account, changeable later. | Account holder now says `PT EVERMORE (DUMMY — REPLACE BEFORE LAUNCH)` so nobody mistakes it for real. |
+| **B5** | Google Maps keys deferred. | The address pin picker cannot be exercised end to end until they exist. Coordinates can still be set by staff, audit-logged, which is the documented escape hatch anyway (D-17). |
+| **B6** | **Free delivery, every distance, every order value** — but configurable. | One open-ended band at zero. The fee engine still runs on every order and every report, so turning charging on is a settings edit and not a code path that has never executed. |
+| **B7** | SMTP borrowed from ruuma, changeable in the back office. | ruuma's mailpit satellite on `127.0.0.1:1025`. Mail settings **moved from env into `sys_parameters`**; the password is secret-flagged and masked, and the env var still overrides so a production secret need never be in the database. |
+| **B8** | **WAHA.** | Matches 99 §9. The shared container on `127.0.0.1:3000` is already running. Left switched **off** until a sender number exists. The tradeoff is recorded: WAHA is free and unofficial, and a banned number takes the channel down mid-service. |
+| **B9** | Local, by IP, different port from ruuma. | ruuma is on 8080; Evermore is on 8081. No conflict. |
+| **B10** | Erode is free from Fontshare — self-host it. | Done, with Inter. **Not subset** — see D15 in `00`. The reversed-out logo question is still open. |
+| **B11** | A cart **may span several dates**, tier on the order's total. | Mon–Fri × 2 meals = 10 meals, reaching the 10–19 tier. More generous than per-date, and the interpretation customers assume. |
+| **B12** | **One cut-off** for both slots. | 18:00 on D-1. The per-slot override columns stay in the schema unused, so tuning dinner later is a settings change. |
+| **B13** | **No minimum order.** | Seeded `order.min_qty = 1`, `order.min_value_idr = 0`. |
 
 ---
 

@@ -1,0 +1,80 @@
+/* Evermore self-hosted webfonts.
+ *
+ * Never a font CDN (99 §7): a CDN sees every visitor's IP and the page they
+ * are on, which is a third party collecting data about Evermore's customers
+ * for no benefit to Evermore.
+ *
+ * Erode — Indian Type Foundry, via Fontshare, under the Fontshare Free Font
+ * EULA (bundled beside the files as LICENSE-Fontshare-FFL.txt). Confirmed by
+ * Steven, 2026-08-13. Two things the licence decides for us:
+ *
+ *   - Self-hosting is permitted and is in fact what ITF instructs: the download
+ *     ships a WEB kit with .woff2 and a README telling you to place the folder
+ *     in your own site and adapt the url() paths. §02's prohibition is on
+ *     running font-serving or font-replacement technology (EOT, Cufon, sIFR),
+ *     not on @font-face from your own origin.
+ *   - §05 forbids modifying the font software, so these files are NOT SUBSET.
+ *     The usual latin-subsetting trick would trim ~40% of the bytes and would
+ *     also be a modification. Do not do it. font-display: swap and preloading
+ *     the two faces the first screen needs cover the difference.
+ *
+ * Inter — SIL Open Font License 1.1 (LICENSE-SIL-OFL.txt). The variable file
+ * covers every weight in one 352 KB request, which is smaller than the four
+ * static cuts the brand guidelines show.
+ */
+
+/* ── Erode: display only — titles, headlines, subtitles ─────────────────── */
+
+@font-face {
+  font-family: 'Erode';
+  src: url('/fonts/erode/Erode-Regular.woff2') format('woff2'),
+       url('/fonts/erode/Erode-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Erode';
+  src: url('/fonts/erode/Erode-Medium.woff2') format('woff2'),
+       url('/fonts/erode/Erode-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Erode';
+  src: url('/fonts/erode/Erode-Semibold.woff2') format('woff2'),
+       url('/fonts/erode/Erode-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Erode';
+  src: url('/fonts/erode/Erode-Bold.woff2') format('woff2'),
+       url('/fonts/erode/Erode-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Inter: body and UI ─────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'InterVariable';
+  src: url('/fonts/inter/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Erode carries the wordmark's character; Inter carries everything a
+     customer actually reads (docs/10 §3). */
+  --font-display: 'Erode', Georgia, 'Times New Roman', serif;
+  --font-body: 'InterVariable', 'Inter', system-ui, -apple-system,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}

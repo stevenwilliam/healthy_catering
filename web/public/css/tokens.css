@@ -1,0 +1,119 @@
+/* Evermore design tokens.
+ *
+ * The engineering reading of docs/10-design-system.md, which is itself the
+ * engineering reading of the brand guidelines. Every colour pairing named here
+ * has a MEASURED contrast ratio in the comment — calculated, never eyeballed
+ * (CLAUDE.md §7).
+ *
+ * Four brand colours do not reach WCAG AA as text or as button fills. They are
+ * present as tokens because the brand uses them decoratively, and each carries
+ * the ratio that rules it out, so nobody rediscovers it in review.
+ */
+
+:root {
+  /* ── Primary: Nourish Green ──────────────────────────────────────────── */
+  --nourish-deep: #1C3D34;  /* 11.32 on beige · 11.89 on white · 11.89 as white-on */
+  --nourish: #468973;       /* ✗ 3.93 / 4.13 — DECORATION ONLY, never text or a fill */
+
+  /* ── Secondary: Restore Beige ────────────────────────────────────────── */
+  --beige: #FFFAE0;         /* the page canvas */
+  --beige-deep: #CCBDAA;    /* ✗ 1.75 on beige — a divider between filled
+                               surfaces, NEVER an input border or focus ring */
+
+  /* ── Tertiary ────────────────────────────────────────────────────────── */
+  --brown-deep: #613F37;    /* 8.79 on beige ✓ */
+  --brown-light: #A36E50;   /* ✗ 4.08 — background only */
+  --blue-deep: #2E55A3;     /* 6.79 ✓ — informational */
+  --blue-light: #B6DAFA;    /* background; 8.15 with deep ink on it ✓ */
+  --orange-deep: #E0782D;   /* ✗ 2.90 — highlight, never a label or a price */
+  --orange-light: #FFBC8F;  /* 7.27 on the dark green ✓ — this is how
+                               Energize Orange earns its place */
+  --berry-deep: #91253D;    /* 7.89 ✓ — destructive */
+  --berry-light: #CC6883;   /* ✗ 3.40 — background only */
+
+  /* ── Semantic roles ──────────────────────────────────────────────────── */
+  --bg: var(--beige);
+  --surface: #FFFFFF;
+  --ink: var(--nourish-deep);          /* 11.32 on the canvas */
+  --ink-muted: #4A5D56;                /* 6.69 on beige ✓ AA at body size */
+  /* 0.60 alpha composites to 3.56 on the canvas. It is this heavy on purpose:
+     the first draft used 0.28, which measures 1.69 — the SAME failure as
+     --beige-deep at 1.75, reintroduced with a transparent ink one line after
+     ruling it out. Anything below 0.55 alpha fails 1.4.11 here. Calculated,
+     not eyeballed, is the rule precisely because this is easy to get wrong. */
+  --border: rgba(28, 61, 52, 0.60);    /* 3.56 on beige ✓ */
+  --border-subtle: rgba(28, 61, 52, 0.28); /* 1.69 — DECORATIVE ONLY: a divider
+                                          between filled surfaces, never a
+                                          control boundary or a focus ring */
+  --focus: var(--nourish-deep);
+  --primary: var(--nourish-deep);
+  --primary-ink: var(--beige);         /* 11.32 ✓ */
+  --danger: var(--berry-deep);
+  --danger-ink: var(--beige);          /* 7.89 ✓ */
+  --info: var(--blue-deep);
+  --warning: var(--brown-deep);
+
+  /* On a Nourish-Green surface — the header, the footer, every dark panel */
+  --on-dark: var(--beige);             /* 11.32 ✓ */
+  --on-dark-muted: var(--beige-deep);  /* 6.47 ✓ */
+  --on-dark-link: var(--blue-light);   /* 8.15 ✓ */
+  --on-dark-accent: var(--orange-light); /* 7.27 ✓ */
+
+  /* ── Type scale ──────────────────────────────────────────────────────── */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+
+  /* ── Spacing, radius, elevation ──────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(28, 61, 52, 0.08);
+  --shadow: 0 4px 12px rgba(28, 61, 52, 0.10);
+
+  /* ── Motion: one subtle tier (docs/10 §4) ────────────────────────────── */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration: 240ms;
+
+  /* Minimum touch target (docs/10 §4) */
+  --touch-min: 44px;
+}
+
+/* prefers-reduced-motion zeroes DELAYS as well as durations — a zero duration
+   with a 300ms delay is still a 300ms wait staring at nothing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus is always visible (docs/10 §4). Never `outline: none` without a
+   replacement that measures ≥3:1 against its surroundings. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
