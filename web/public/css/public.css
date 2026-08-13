@@ -102,3 +102,46 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   h1 { font-size: var(--text-4xl); }
   main { padding: var(--space-12) var(--space-6); }
 }
+
+/* Floating WhatsApp contact (home page).
+ *
+ * NOT WhatsApp's usual #25D366: a white glyph on it measures 1.98:1 and the
+ * fill sits at 1.89:1 against our beige page, so it fails 1.4.11 twice over —
+ * once for the icon and once for the control being distinguishable at all.
+ * #128C7E is WhatsApp's own darker brand teal and measures 4.14:1 for the
+ * glyph and 3.94:1 against the page. Calculated, not eyeballed (CLAUDE.md §7).
+ */
+.wa-float {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Comfortably past the 44px minimum touch target (docs/10 §4). */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #128C7E;
+  color: #FFFFFF;
+  box-shadow: 0 2px 10px rgb(28 61 52 / 0.35);
+  transition: transform 0.2s ease;
+}
+
+.wa-float:hover,
+.wa-float:focus-visible {
+  transform: translateY(-2px);
+}
+
+/* The focus ring must be visible against the dark teal, so it is drawn in the
+   page background colour rather than the ink used elsewhere. */
+.wa-float:focus-visible {
+  outline: 3px solid var(--beige);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-float { transition: none; }
+  .wa-float:hover, .wa-float:focus-visible { transform: none; }
+}

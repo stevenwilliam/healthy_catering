@@ -253,16 +253,16 @@ menus are how people end up with an empty box.
 
 | # | Need | Blocks |
 |---|---|---|
-| Q-4 | **The real kitchens** — name, code, address, map pin, slots served, operating days/hours, service radius, per-slot capacity, PIC and phone | Verifying routing (M3); the homepage serviceability widget |
-| Q-1a | PPN rate to seed, PKP status, NPWP, legal entity name | The first real invoice (M6/M8) |
-| Q-19 | Bank account details — bank, number, holder name, for each account | Payment instructions (M7) |
-| Q-20 | Legal entity name, address, NPWP, contact phone/email for invoices and the footer | Invoices, legal pages |
+| ✅ Q-4 | **The real kitchens** | **Answered 2026-08-13.** Five kitchens, 20 km each, every day, no capacity, one shared phone. Migration `0014`. |
+| 🟡 Q-1a | PPN rate, **PKP status**, NPWP, legal entity | Entity and address answered. **PKP status still unanswered**, and the NPWP given (`123 123 123`) is not a valid number. Blocks the first faktur pajak; if not PKP, 11% PPN may not be charged at all. |
+| ✅ Q-19 | Bank account details | **Answered 2026-08-13.** Nobu · 16830226665 · PT Sunshine Food International · Menara Matahari. |
+| 🟡 Q-20 | Legal entity, address, NPWP, contact | Name, address and phone answered. NPWP is a placeholder — see Q-1a. |
 | Q-21 | SMTP relay host, port 587 credentials, and the `From` domain with SPF/DKIM/DMARC set up | All email (M10) |
-| Q-22 | Google Cloud billing account, and who owns the API keys and quota alarms | Maps, geocoding (M3) |
-| Q-23 | WhatsApp: Cloud API business verification, or WAHA on a spare number — plus the sender number | Notifications (M10) |
+| 🟡 Q-22 | Google Cloud billing, key ownership, quota alarms | A working key was supplied and the kitchens were geocoded with it. It is **unrestricted (`0.0.0.0/0`), shared between browser and server roles, and uncapped** — see `RUN-WHEN-BACK.md` §10. |
+| 🟡 Q-23 | WhatsApp provider and sender number | **Answered 2026-08-13:** WAHA, 08176315568. Wired to the container shared with ruuma, already bound to that number — but its session reports `FAILED`, so nothing sends until it is re-linked. |
 | Q-24 | Production host: provider and Jakarta region confirmation (UU PDP data residency) | Deploy (M12) |
 | Q-25 | Food photography — who shoots it, and is there a phase-1 set? | Public site (M11) |
 | Q-26 | Existing customer/order data to migrate, or a clean start? | M1 |
 | Q-27 | Terms of service, privacy policy and refund policy copy — I can draft, someone must approve | Legal pages, launch |
 | Q-28 | Erode font licence for web embedding (carried from `00` Q9) | Any public page |
-| Q-29 | Reversed-out Evermore logo for the dark green header (carried from `00` Q8) | First dark header |
+| 🟡 Q-29 | Reversed-out logo | **Deferred by Steven 2026-08-13** — the text wordmark stays for now, to be fine-tuned later. |

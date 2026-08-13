@@ -57,10 +57,21 @@ jobs:
       - name: Migrate up, down and up again
         # Down is exercised in CI precisely because production is forward-only:
         # this is the only place a broken .down.sql is ever caught.
+        #
+        # The step count is COUNTED, not hardcoded — `migrate down N` takes a
+        # number of steps, not a target version, so a literal here silently
+        # stops testing the newest migrations the moment another one lands.
+        #
+        # This only works because the database is empty. Rolling back reference
+        # data that live orders depend on is refused by RESTRICT foreign keys,
+        # and that refusal is correct — it is why this runs on a fresh service
+        # container and not against a database with data in it.
         run: |
           go build -o bin/api ./cmd/api
+          steps=$(ls db/migrations/*.up.sql | wc -l)
+          echo "rolling back $steps migrations"
           ./bin/api migrate up
-          ./bin/api migrate down 13
+          ./bin/api migrate down "$steps"
           ./bin/api migrate up
 
       - name: Tests

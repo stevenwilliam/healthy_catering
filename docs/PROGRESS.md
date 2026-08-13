@@ -142,13 +142,26 @@ misleading as a false ✅:
 
 ## Blocked on Steven
 
-| # | Needed | Blocks |
+Answered 2026-08-13 (second batch) — see `docs/02-decisions.md` Part 0c:
+
+| # | Needed | Status |
 |---|---|---|
-| 1 | **Real kitchens** — pins, radii, capacities | Routing is answering from two placeholders |
-| 2 | **Bank account** | Nothing can go public: instructions say DUMMY |
-| 3 | **Google Maps keys** | The address pin picker cannot be built or exercised |
-| 4 | **SMTP relay + SPF/DKIM/DMARC** | Real email |
-| 5 | **Domain + production host** | TLS, public deployment |
-| 6 | **PKP status, NPWP, legal entity** | The first real invoice |
-| 7 | **Reversed-out logo** | The green header uses a text wordmark today |
-| 8 | **WhatsApp sender number** | The WAHA channel stays off |
+| 1 | Real kitchens | ✅ five, geocoded from the real Maps key (migration 0014) |
+| 2 | Bank account | ✅ Nobu 16830226665, PT Sunshine Food International |
+| 3 | Google Maps keys | 🟡 one key supplied and working; **unrestricted and unsplit** — see below |
+| 4 | SMTP relay + SPF/DKIM/DMARC | ⬜ **still open** — the key given under this heading was the Maps key |
+| 5 | Domain + production host | 🟡 `dev.evermore.co.id` chosen; DNS does not resolve yet |
+| 6 | Legal entity, NPWP | 🟡 name and address landed; **NPWP is a placeholder**, PKP status unanswered |
+| 7 | Reversed-out logo | 🟡 deferred by Steven — text wordmark stays for now |
+| 8 | WhatsApp sender | 🟡 wired to the shared WAHA; **session is FAILED, must be re-linked** |
+
+### What is still genuinely blocking
+
+| | Why it matters |
+|---|---|
+| **SMTP relay** | Item 4 was never answered — the key pasted there was the Google Maps key. Real email still goes nowhere but the local trap. |
+| **PKP status** | If the company is not PKP, charging 11% PPN is not permitted. This is a legal answer, not a code change; the rate is already a setting. |
+| **A real NPWP** | `123 123 123` is stored because it was given, but a real NPWP is 15 digits (16 since the NIK migration). It must not reach a faktur pajak. |
+| **Maps key hygiene** | One key does both browser and server duty and allows `0.0.0.0/0`. It ships in page source, so anyone viewing source can spend against it. Split and cap before anything public. |
+| **DNS for `dev.evermore.co.id`** | nginx and `APP_BASE_URL` are set; the name does not resolve, so the host answers on its IP today. |
+| **WAHA session** | Bound to the right number (628176315568) but reporting `FAILED`. WhatsApp queues and retries; nothing sends until someone re-scans the QR. |

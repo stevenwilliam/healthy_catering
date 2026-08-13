@@ -7,7 +7,7 @@ import {
   mfaStart,
   mfaStatus,
 } from '../lib/api'
-import { FieldError, SubmitButton } from '../components/ui'
+import { CopyButton, FieldError, SubmitButton } from '../components/ui'
 
 // Security is where a signed-in user manages their second factor.
 export default function Security() {
@@ -120,13 +120,9 @@ export default function Security() {
               <li key={c} className="rounded bg-white border border-nourish-deep/60 px-3 py-2">{c}</li>
             ))}
           </ul>
-          <button
-            type="button"
-            className="btn-ghost mt-4"
-            onClick={() => void navigator.clipboard?.writeText(recovery.join('\n'))}
-          >
-            Salin semua
-          </button>
+          <div className="mt-4">
+            <CopyButton value={recovery.join('\n')} label="Salin semua" />
+          </div>
         </div>
       )}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/stevenwilliam/healthy_catering/internal/app"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
 
@@ -63,6 +64,11 @@ type mealCard struct {
 func registerPublicPages(r *gin.Engine, d Deps) {
 	tpl := template.Must(template.New("").Funcs(template.FuncMap{
 		"join": strings.Join,
+		// waNumber turns whatever is stored in sys_parameters into the digits
+		// wa.me expects. It returns "" when the number is not usable, and the
+		// template hides the button on empty — a floating action that opens a
+		// broken chat is worse than no button.
+		"waNumber": waNumber,
 	}).Parse(publicTemplates))
 	r.SetHTMLTemplate(tpl)
 
@@ -269,4 +275,20 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(b[i:])
+}
+
+// waNumber normalises an Indonesian number to the bare international digits
+// wa.me needs: 08176315568 -> 628176315568.
+//
+// It reuses sanitize.Phone rather than trimming a leading zero by hand, so the
+// link and the stored contact agree about what a valid number is.
+func waNumber(in string) string {
+	if strings.TrimSpace(in) == "" {
+		return ""
+	}
+	normalised, err := sanitize.Phone("whatsapp", in)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimPrefix(normalised, "+")
 }

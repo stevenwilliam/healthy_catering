@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApiFailure, request } from '../lib/api'
-import { State, SubmitButton } from '../components/ui'
+import { CopyButton, State, SubmitButton } from '../components/ui'
 
 type Detail = {
   id: string; order_code: string; status: string
@@ -63,9 +63,19 @@ export default function OrderDetail() {
                 Tiga digit terakhir adalah kode unik Anda. Mohon jangan dibulatkan —
                 angka itulah yang kami pakai untuk mencocokkan pembayaran Anda.
               </p>
-              <p className="mb-4">
-                {order.bank_name} · {order.bank_account_number} · a.n. {order.bank_account_holder}
-              </p>
+              <div className="mb-4">
+                <p className="text-sm text-ink-muted">Bank {order.bank_name}</p>
+                {/* The account number is the field customers mistype, so it is
+                    set large, spaced, and copyable rather than buried in a
+                    sentence. */}
+                <p className="font-mono text-xl tracking-wider my-1">
+                  {order.bank_account_number}
+                </p>
+                {order.bank_account_number && (
+                  <CopyButton value={order.bank_account_number} label="Salin nomor rekening" />
+                )}
+                <p className="text-sm mt-2">a.n. {order.bank_account_holder}</p>
+              </div>
 
               <label className="label" htmlFor="proof">Unggah bukti transfer</label>
               <input id="proof" ref={fileRef} type="file" className="field mb-3"

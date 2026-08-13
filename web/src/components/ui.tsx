@@ -142,3 +142,67 @@ export function ConfirmButton({
     </span>
   )
 }
+
+/** copyText copies a string, working outside a secure context too.
+ *
+ * navigator.clipboard is undefined on plain HTTP — the same trap that made
+ * crypto.randomUUID() break checkout. The dev host is HTTP today, so without
+ * the fallback the copy buttons would silently do nothing, which is worse than
+ * not offering them: the customer believes they hold the account number.
+ */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    if (globalThis.isSecureContext && navigator.clipboard) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Fall through — a permissions refusal is not a reason to give up.
+  }
+  try {
+    const el = document.createElement('textarea')
+    el.value = text
+    // Off-screen rather than hidden: display:none cannot be selected.
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(el)
+    return ok
+  } catch {
+    return false
+  }
+}
+
+/** CopyButton copies a value and confirms it in words, not just colour. */
+export function CopyButton({
+  value,
+  label = 'Salin',
+  className = '',
+}: {
+  value: string
+  label?: string
+  className?: string
+}) {
+  const [state, setState] = useState<'idle' | 'ok' | 'fail'>('idle')
+
+  async function run() {
+    const ok = await copyText(value)
+    setState(ok ? 'ok' : 'fail')
+    window.setTimeout(() => setState('idle'), 2000)
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button type="button" className={`btn-ghost ${className}`} onClick={() => void run()}>
+        {label}
+      </button>
+      {/* Announced, so the confirmation is not colour-only (99 §8). */}
+      <span role="status" aria-live="polite" className="text-xs text-ink-muted">
+        {state === 'ok' && 'Disalin'}
+        {state === 'fail' && 'Tidak dapat menyalin — salin manual'}
+      </span>
+    </span>
+  )
+}

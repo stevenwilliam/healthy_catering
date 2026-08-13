@@ -36,6 +36,46 @@ any item you want to change. Silence on an item = the recommendation stands.
 | **B12** | **One cut-off** for both slots. | 18:00 on D-1. The per-slot override columns stay in the schema unused, so tuning dinner later is a settings change. |
 | **B13** | **No minimum order.** | Seeded `order.min_qty = 1`, `order.min_value_idr = 0`. |
 
+
+## Part 0c — Steven's answers, 2026-08-13 (second batch)
+
+Recorded verbatim in intent, with what each one cost to implement. All of it is
+data or settings, not schema — which is the point of having put these in
+`sys_parameters` and seed rows in the first place. Landed as migration `0014`.
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Real kitchens | Siloam Lippo Village, Siloam MRCCC, Ruuma Cideng, Siloam TB Simatupang, Siloam Kebon Jeruk | Five kitchens replace the two placeholders, which are **deactivated not deleted** — nine deliveries reference them. Coordinates came from the Geocoding API using the real key, and each row records the address it resolved to. |
+| Service radius | 20 km, all the same | Bekasi is now genuinely served (17.6 km from MRCCC). Bogor and Bandung are correctly refused. |
+| Daily capacity | remove | `default_daily_capacity` stays NULL. It was never the oversell control — `scheduled_meal.qty_capacity` is, per date + diet + slot, and that is the row a booking locks. A number on the kitchen would have looked like a limit while enforcing nothing. |
+| Contact | single number 08176315568, plus a floating WhatsApp button on the home page | One `company.phone`/`company.whatsapp`. The button is a plain anchor — the CSP has no `unsafe-inline`, so an inline handler would not run. |
+| Opening hours | every day, no closing time | Seven `kitchen_operating_day` rows each, `00:00`–`23:59`. Nothing reads these columns yet; the 18:00 cut-off is a separate setting and is unaffected. |
+| Bank | Nobu · 16830226665 · PT Sunshine Food International · Menara Matahari, with a copy button | Dummy deactivated. The number is rendered large and monospaced with a copy control, because it is the field customers mistype. |
+| Legal entity | PT Sunshine Food International, Menara Matahari 2nd Floor, Lippo Karawaci | Evermore stays the customer-facing brand; the PT is the entity on the invoice and the bank account. |
+| NPWP | `123 123 123` | ⚠️ Stored as given and editable, but a real NPWP is 15 digits (16 since NIK). **Must not reach a faktur pajak.** PKP status was not answered, and without it the 11% PPN cannot be confirmed as permitted. |
+| Domain | `dev.evermore.co.id` now, production later | nginx `server_name` and `APP_BASE_URL` updated; `_` retained so the bare IP keeps working while DNS is unset. |
+| Logo | keep the wordmark, fine-tune later | No change. |
+| WhatsApp | use WAHA, 08176315568 | Wired to the WAHA container **shared with ruuma**, whose session is already bound to 628176315568. Channel switched on; the session reports `FAILED`, so messages queue and retry until it is re-linked. |
+
+### D-35 — the copy control had to carry its own fallback
+
+`navigator.clipboard` is undefined outside a secure context, and the dev host is
+plain HTTP. A copy button that silently does nothing is worse than no button:
+the customer believes they are holding the account number. `copyText` falls back
+to a `document.execCommand` path and the control **announces** the outcome
+through `role="status"`, so failure is stated rather than merely uncoloured.
+
+This is the third time this class of bug has appeared — after `crypto.randomUUID`
+in checkout. Anything reaching for a browser API guarded by secure context needs
+a fallback or an explicit refusal, not an optional chain.
+
+### D-36 — the WhatsApp button is not WhatsApp green
+
+`#25D366` measures **1.98:1** against a white glyph and **1.89:1** against our
+beige page: it fails WCAG 1.4.11 twice, once for the icon and once for the
+control being distinguishable at all. `#128C7E` — WhatsApp's own darker brand
+teal — measures 4.14:1 and 3.94:1 and is used instead. Calculated, not eyeballed.
+
 ---
 
 ## Part 0 — Answered by Steven, 2026-08-12

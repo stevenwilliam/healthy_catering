@@ -230,3 +230,58 @@ sudo vi /etc/evermore/evermore.env
   submitted ~1 week ahead, or a WAHA container on a spare number (M11).
 - **Legal entity** name, address, NPWP for invoices and the site footer.
 - **Production host** in the Jakarta region, for UU PDP data residency (M14).
+
+## 8. WhatsApp — re-link the WAHA session · STILL NEEDED
+
+Needs a phone and a QR scan, so it cannot be done from here.
+
+The channel is switched on and pointed at the WAHA container **shared with
+ruuma** (`http://127.0.0.1:3000`, session `default`), which is already bound to
+`628176315568` — the number Steven gave. But the session reported
+`status=FAILED` when it was wired, which means **nothing sends**. Messages queue
+and retry with backoff rather than vanishing, so they will flow once it is
+healthy.
+
+Note this is ruuma's container too: a failed session means ruuma's WhatsApp is
+down as well.
+
+```bash
+# What the session thinks it is doing:
+set -a; . /home/dev/projects/ruuma/.env; set +a
+curl -s -H "X-Api-Key: $WAHA_API_KEY" "$WAHA_URL/api/sessions" | python3 -m json.tool
+
+# Restart it, then fetch the QR and scan it with the WhatsApp app on that phone:
+curl -s -X POST -H "X-Api-Key: $WAHA_API_KEY" "$WAHA_URL/api/sessions/default/restart"
+curl -s -H "X-Api-Key: $WAHA_API_KEY" "$WAHA_URL/api/default/auth/qr" -o /tmp/waha-qr.png
+```
+
+Confirm with `status=WORKING`, then send one real message to yourself before
+trusting it.
+
+## 9. DNS for dev.evermore.co.id · STILL NEEDED
+
+nginx answers on `dev.evermore.co.id` and `APP_BASE_URL` points at it, but the
+name does not resolve, so everything is reached by IP today. Verification links
+in email already carry the hostname, so those links are dead until this lands.
+
+Point an A record at this host and confirm:
+
+```bash
+getent hosts dev.evermore.co.id
+curl -sI http://dev.evermore.co.id:8090/ | head -1
+```
+
+## 10. Google Maps key hygiene · STILL NEEDED
+
+The supplied key works — the five kitchens were geocoded with it. Two problems
+remain, and both are billing risks rather than bugs:
+
+1. **It is unrestricted** (`0.0.0.0/0`) and is used for both the browser and the
+   server role. The browser role ships the key in page source, so anyone who
+   views source can spend against it.
+2. **There are no quota caps.** An address form is a loop somebody can script.
+
+Follow §6.3 and §6.4 to split it into a referrer-restricted browser key and an
+IP-restricted server key, and set per-API daily caps. A budget alert notifies;
+only the quota cap stops the spending.
+
