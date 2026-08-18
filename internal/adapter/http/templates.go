@@ -74,16 +74,16 @@ const publicTemplates = `
          alt="Evermore">
   </a>
   <nav aria-label="{{t .L "nav.main"}}">
-    <a href="{{path .L "/price-list"}}">{{t .L "nav.pricelist"}}</a>
-    <a href="{{path .L "/contact"}}">{{t .L "nav.contact"}}</a>
-    <a href="{{path .L "/about"}}">{{t .L "nav.about"}}</a>
-    <a href="{{path .L "/career"}}">{{t .L "nav.career"}}</a>
+    <a href="{{path .L "/price-list"}}"{{if eq .Active "pricelist"}} aria-current="page"{{end}}>{{t .L "nav.pricelist"}}</a>
+    <a href="{{path .L "/contact"}}"{{if eq .Active "contact"}} aria-current="page"{{end}}>{{t .L "nav.contact"}}</a>
+    <a href="{{path .L "/about"}}"{{if eq .Active "about"}} aria-current="page"{{end}}>{{t .L "nav.about"}}</a>
+    <a href="{{path .L "/career"}}"{{if eq .Active "career"}} aria-current="page"{{end}}>{{t .L "nav.career"}}</a>
     <!-- Category is a submenu, same <details> disclosure as the language
          picker and for the same reason: no JavaScript on these pages, and the
          CSP would not run an inline handler anyway. The six diet types are
          still plain links inside it, so they remain crawlable and each one is
          still its own indexed page. -->
-    <details class="navdrop">
+    <details class="navdrop"{{if eq .Active "category"}} data-current="true"{{end}}>
       <summary>{{t .L "nav.category"}}
         <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
           <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"

@@ -59,6 +59,11 @@ type PageData struct {
 	// which case the template omits the attributes rather than guessing.
 	HeroW, HeroH int
 
+	// Active names the current section, so the masthead can mark which page
+	// you are on. Without it every nav item looks identical on every page,
+	// which is the one thing a visitor most wants the header to tell them.
+	Active string
+
 	// Prices is populated on the price-list route only.
 	Prices *app.PublicPriceList
 
@@ -252,6 +257,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			diets, _ := publicDiets(c, d)
 			page(c, "home", PageData{
 				L:           loc,
+				Active:      "home",
 				Title:       publicMessages.T(loc, "home.title"),
 				Description: publicMessages.T(loc, "home.description"),
 				Canonical:   base() + i18n.Path(loc, "/"),
@@ -328,6 +334,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			diets, _ := publicDiets(c, d)
 			page(c, "menu", PageData{
 				L:           lang,
+				Active:      "category",
 				Title:       title,
 				Description: desc,
 				Canonical:   base() + path,
@@ -350,6 +357,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			diets, _ := publicDiets(c, d)
 			page(c, tpl, PageData{
 				L:           lang,
+				Active:      tpl,
 				Title:       publicMessages.T(lang, titleKey),
 				Description: publicMessages.T(lang, descKey),
 				Canonical:   base() + i18n.Path(lang, path),
@@ -363,6 +371,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			diets, _ := publicDiets(c, d)
 			data := PageData{
 				L:           lang,
+				Active:      "pricelist",
 				Title:       publicMessages.T(lang, "price.title"),
 				Description: publicMessages.T(lang, "price.description"),
 				Canonical:   base() + i18n.Path(lang, "/price-list"),
