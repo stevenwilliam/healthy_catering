@@ -2,10 +2,14 @@ package http
 
 import (
 	"html/template"
+	"image"
+	_ "image/jpeg" // registers the JPEG decoder for image.DecodeConfig
+	_ "image/png"  // and the PNG one
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,6 +53,10 @@ type PageData struct {
 	// row, so swapping it never needs a deploy; empty hides the picture and
 	// lets the headline run full width.
 	HeroImage string
+	// HeroW/HeroH are its intrinsic pixels, so the browser can reserve the
+	// right box before the file arrives. Zero when they could not be read, in
+	// which case the template omits the attributes rather than guessing.
+	HeroW, HeroH int
 }
 
 // langLink is one entry in the language selector.
@@ -94,6 +102,9 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// a literal string, so adding a language is a catalogue edit rather
 		// than a template rewrite (CLAUDE.md §10).
 		"t": publicMessages.T,
+		// dietArt is the decorative corner mark on a diet-type card, chosen by
+		// slug. Returns a fallback rather than nothing for an unknown slug.
+		"dietArt": dietArt,
 		// path rewrites a locale-free path into the current locale, so a link
 		// written once in the template stays inside the language the reader
 		// chose. Without it every href would silently drop them back to
@@ -186,7 +197,8 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		}
 		data.MapsKey = d.Config.Maps.BrowserKey
 		data.HeroImage = d.Params.String(ctx, sysparam.KeyPublicHeroImage,
-			"/images/hero-meditation.svg")
+			defaultHeroImage)
+		data.HeroW, data.HeroH = heroSize(data.HeroImage)
 		c.HTML(status, name, data)
 	}
 
@@ -432,4 +444,46 @@ func waNumber(in string) string {
 		return ""
 	}
 	return strings.TrimPrefix(normalised, "+")
+}
+
+// defaultHeroImage is used only when the sys_parameters row is missing —
+// normally migration 0015/0016 has set it.
+const defaultHeroImage = "/images/hero-home.jpg"
+
+// heroSizes memoises intrinsic image dimensions by path.
+//
+// Note the consequence: replacing the FILE at an unchanged path needs a
+// restart to be re-measured. Pointing the parameter at a new path does not,
+// because the path is the cache key — and that is the normal way the picture
+// gets swapped.
+var heroSizes sync.Map // string -> [2]int
+
+// heroSize reads an image's intrinsic width and height.
+//
+// Without it the template had to hard-code a size, and it hard-coded 800x800
+// while the supplied photograph is 800x533. The browser then reserved a square
+// box, the image loaded into a 3:2 one, and everything below the hero jumped —
+// a layout shift on the largest element of the first screen, which is the
+// worst place to have one. image.DecodeConfig reads only the header, not the
+// pixels.
+//
+// Returns 0,0 for anything it cannot measure — a remote URL, or an SVG, which
+// the standard library does not decode. The template then omits the attributes
+// and an SVG's own viewBox carries the ratio instead.
+func heroSize(webPath string) (int, int) {
+	if v, ok := heroSizes.Load(webPath); ok {
+		d := v.([2]int)
+		return d[0], d[1]
+	}
+	var w, h int
+	if rel := strings.TrimPrefix(webPath, "/images/"); rel != webPath && !strings.Contains(rel, "..") {
+		if f, err := os.Open(filepath.Join("./web/public/images", filepath.Clean("/"+rel))); err == nil {
+			if cfg, _, err := image.DecodeConfig(f); err == nil {
+				w, h = cfg.Width, cfg.Height
+			}
+			_ = f.Close()
+		}
+	}
+	heroSizes.Store(webPath, [2]int{w, h})
+	return w, h
 }

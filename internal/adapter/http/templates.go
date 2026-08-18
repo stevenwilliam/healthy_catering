@@ -153,13 +153,16 @@ const publicTemplates = `
     </div>
     {{if .HeroImage}}
     <!-- The picture is a sys_parameters row, so it can be swapped without a
-         deploy. width/height are the intrinsic size so the column does not
-         collapse and reflow while it loads. Loaded eagerly and fetch-priority
-         high: it is the largest element on the first screen, which makes it
-         the LCP — lazy-loading it would delay the very metric it defines. -->
+         deploy. width/height are MEASURED from the file (heroSize) rather than
+         hard-coded: they were 800x800 against a 800x533 photograph, so the
+         browser reserved a square and everything below the hero jumped when it
+         loaded. Eager and fetch-priority high: it is the largest element on
+         the first screen, so it is the LCP, and lazy-loading it would delay
+         the very metric it defines. -->
     <div class="hero-art">
       <img src="{{.HeroImage}}" alt="{{t .L "home.hero_alt"}}"
-           width="800" height="800" fetchpriority="high" decoding="async">
+           {{if and .HeroW .HeroH}}width="{{.HeroW}}" height="{{.HeroH}}"{{end}}
+           fetchpriority="high" decoding="async">
     </div>
     {{end}}
   </section>
@@ -168,7 +171,13 @@ const publicTemplates = `
     <div class="section-head"><h2>{{t .L "home.diets_h2"}}</h2></div>
     <div class="grid">
       {{range .DietTypes}}
-      <article class="card">
+      <article class="card card-diet">
+        <!-- Contextual corner mark. Decoration only: aria-hidden, and it says
+             nothing the heading does not. currentColor so it tints from the
+             card's ink token rather than carrying a colour of its own. -->
+        <svg class="card-art" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          {{dietArt .Slug}}
+        </svg>
         <h3><a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a></h3>
         <p>{{.Description}}</p>
       </article>

@@ -190,11 +190,13 @@ function Shell() {
       {/* Fixed to the bottom, in the masthead's own fill, thin (Steven,
           2026-08-18). Its height is the --footer-h token, which is also what
           the wrapper above reserves as padding. */}
-      {/* Fixed, thin, and in the bar colour. text-bar because beige on
-          #468973 is 3.93 — AA for large text only (docs/10 §2.7). */}
+      {/* Fixed, thin, and in the bar colour. Reduced to text-sm on request
+          (Steven, 2026-08-18) — which puts it below AA, because beige on
+          #468973 is 3.93 and that is large-text-only. Kept in step with the
+          public footer; see the note in web/public/css/public.css. */}
       <footer
         className="fixed inset-x-0 bottom-0 z-40 flex h-[var(--footer-h)] items-center
-                   justify-center bg-bar text-bar font-bold text-beige"
+                   justify-center bg-bar text-sm font-semibold text-beige"
       >
         Evermore · Jakarta
       </footer>

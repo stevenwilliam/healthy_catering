@@ -82,10 +82,16 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "Choose what fits your goal",
 		i18n.ZH: "选择适合您的方案",
 	},
+	// Steven, 2026-08-18: use "evermore homepage" rather than a description of
+	// the picture. Worth knowing what that costs — alt text is what a screen
+	// reader announces IN PLACE of the image, so a reader who cannot see it now
+	// learns the name of the page they are already on rather than what is
+	// shown. Same string in all three languages because it is the brand name
+	// plus one English word, not a sentence to translate.
 	"home.hero_alt": {
-		i18n.ID: "Tiga orang bermeditasi dengan tenang di taman",
-		i18n.EN: "Three people meditating peacefully in a garden",
-		i18n.ZH: "三个人在花园里静心冥想",
+		i18n.ID: "Evermore homepage",
+		i18n.EN: "Evermore homepage",
+		i18n.ZH: "Evermore homepage",
 	},
 	"home.check_h2": {
 		i18n.ID: "Kami antar ke tempat Anda?",

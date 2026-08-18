@@ -318,6 +318,35 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   padding: var(--space-6);
   box-shadow: var(--shadow-lift);
 }
+/* Contextual corner mark on the diet cards.
+ *
+ * A positioned element paints ABOVE non-positioned siblings, so without the
+ * z-index pair below the mark would sit on top of the heading rather than
+ * behind it. z-index:-1 is not the fix either — the card has its own
+ * background, and a negative index would put the mark behind that and make it
+ * invisible.
+ *
+ * Opacity is 0.10 so the text keeps its contrast: deep ink on white is 11.89,
+ * and on the tint the mark leaves it is still above 9:1. It is decoration, and
+ * decoration never gets to cost legibility. */
+.card-diet { position: relative; overflow: hidden; }
+.card-art {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 0;
+  width: 104px;
+  height: 104px;
+  color: var(--ink);
+  fill: currentColor;
+  opacity: 0.10;
+  pointer-events: none;
+}
+.card-diet > h3,
+.card-diet > p { position: relative; z-index: 1; }
+/* The heading would otherwise run under the mark on a narrow card. */
+.card-diet > h3 { padding-right: 3.5rem; }
+
 .card h3 a { text-decoration: none; }
 .card h3 a:hover { text-decoration: underline; }
 .card p:last-child { margin-bottom: 0; }
@@ -368,8 +397,14 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   padding: 0 var(--space-4) env(safe-area-inset-bottom, 0px);
   background: var(--bar);
   color: var(--on-bar);
-  font-size: var(--text-bar);   /* large text: beige is only 3.93 on this fill */
-  font-weight: var(--w-eyebrow);
+  /* Steven, 2026-08-18: smaller. NOTE THE COST, recorded rather than hidden —
+     beige on this mid-green fill is 3.93:1, which is AA for LARGE text only,
+     so at 15px this line is BELOW AA. It was 19px/700 for exactly that reason.
+     Two one-line ways back to compliant if that matters more than the size:
+     darken both bars to #3D7A66 (beige reaches 4.79 there and the greens still
+     read as the same pair), or put this text back to var(--text-bar). */
+  font-size: var(--text-sm);
+  font-weight: var(--w-strong);
   line-height: 1;
   border-top: 1px solid rgba(11, 30, 25, 0.25);
   box-shadow: 0 -2px 12px rgba(11, 30, 25, 0.28);
