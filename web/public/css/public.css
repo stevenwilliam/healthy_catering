@@ -213,13 +213,6 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
    first. Never colour alone (99 §8). */
 .langpick-tick { width: 14px; height: 14px; margin-left: auto; }
 
-/* On the narrowest screens the current language's name would push the nav to a
-   third row; the flag alone still identifies it, and the full name is one tap
-   away inside the menu. */
-@media (max-width: 26rem) {
-  .langpick-name { display: none; }
-}
-
 /* ── Layout ──────────────────────────────────────────────────────────── */
 main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4); }
 

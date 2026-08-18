@@ -9,7 +9,10 @@
  *    flag is a country, not a language, and English is not the flag of one.
  *  - Every option is written in its own language, so someone who has landed in
  *    a language they cannot read can still find their way out.
- *  - Closed, it shows the CURRENT language, not a generic globe.
+ *  - Closed, it is the current language's flag alone (Steven, 2026-08-18); the
+ *    name took too much of the bar. aria-label still names the control, so
+ *    what a screen reader announces is unchanged — only the sighted label is
+ *    gone, and the open menu still spells every language out.
  */
 import { useEffect, useRef, useState } from 'react'
 import { LOCALES, LOCALE_INFO, useI18n, type Locale } from '../lib/i18n'
@@ -87,7 +90,6 @@ export default function LanguageSelector() {
         onClick={() => setOpen((v) => !v)}
       >
         {FLAGS[locale]}
-        <span className="hidden sm:inline">{LOCALE_INFO[locale].endonym}</span>
         <svg viewBox="0 0 10 6" aria-hidden="true" focusable="false"
              className={`h-1.5 w-2.5 transition-transform ${open ? 'rotate-180' : ''}`}>
           <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6"

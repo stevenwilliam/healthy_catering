@@ -83,18 +83,21 @@ const publicTemplates = `
 <!-- Language selector.
      <details> rather than a scripted menu: the CSP has no 'unsafe-inline', the
      public pages ship no JavaScript at all, and a disclosure widget is
-     keyboard-operable and screen-reader-announced for free. Closed, it shows
-     the CURRENT language — flag plus its own name — so a reader who has landed
-     in the wrong one can see what they are in before they open it.
-     Each option carries its endonym: someone who cannot read Indonesian must
-     still be able to find "English" and "中文" in a list.
+     keyboard-operable and screen-reader-announced for free. Closed it is the
+     current language's FLAG only (Steven, 2026-08-18) — the name took too much
+     of the bar. The control keeps its accessible name through aria-label, so
+     what a screen reader announces is unchanged; it is the sighted label that
+     is gone.
+     Each option in the open menu still carries its endonym: someone who cannot
+     read Indonesian must still be able to find "English" and "中文" in a list,
+     and a column of flags alone would not give them that.
      Flags are aria-hidden decoration. A flag is a country, not a language, so
      the name is what actually labels each option. -->
 {{define "langpicker"}}
 {{$current := .L}}
 <details class="langpick">
   <summary aria-label="{{t .L "lang.choose"}}">
-    {{range .Languages}}{{if .Active}}{{.Flag}}<span class="langpick-name">{{.Info.Endonym}}</span>{{end}}{{end}}
+    {{range .Languages}}{{if .Active}}{{.Flag}}{{end}}{{end}}
     <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
       <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
             stroke-linecap="round" stroke-linejoin="round"/>
