@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,6 +20,31 @@ func registerFinance(g *gin.RouterGroup, d Deps) {
 		page, err := d.Finance.Queue(c.Request.Context(), listParams(c), c.Query("status"))
 		if err != nil {
 			Fail(c, err)
+			return
+		}
+		// Every data grid exports (99 §8), honouring the search and status
+		// filter that produced it.
+		if c.Query("format") == "csv" {
+			rows := make([][]string, 0, len(page.Items))
+			for _, q := range page.Items {
+				code := ""
+				if q.UniqueCode != nil {
+					code = strconv.Itoa(*q.UniqueCode)
+				}
+				submitted := ""
+				if q.SubmittedAt != nil {
+					submitted = *q.SubmittedAt
+				}
+				rows = append(rows, []string{
+					q.OrderCode, q.CustomerName, q.CustomerEmail, q.Expected,
+					code, q.BankName, q.Status, submitted,
+					strconv.Itoa(q.WaitingMinutes), strconv.Itoa(q.ProofCount),
+				})
+			}
+			csvOut(c, "payment-queue",
+				[]string{"order", "customer", "email", "expected amount",
+					"unique code", "bank", "status", "submitted at",
+					"waiting minutes", "proofs"}, rows)
 			return
 		}
 		OK(c, http.StatusOK, page)

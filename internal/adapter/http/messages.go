@@ -325,6 +325,82 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "We have openings for cooks, kitchen staff, couriers and customer-service team members. Send us your CV with the role you are interested in, and a few words on why you want to join. We reply to every application we receive.",
 		i18n.ZH: "我们正在招聘厨师、厨房员工、配送员以及客服团队成员。请发送您的简历，注明意向职位，并简要说明您希望加入的原因。我们会回复每一份收到的申请。",
 	},
+	"nav.benefits": {i18n.ID: "Keunggulan", i18n.EN: "Benefits", i18n.ZH: "我们的优势"},
+
+	// ── Benefits page ───────────────────────────────────────────────────────
+	"benefits.title": {
+		i18n.ID: "Keunggulan — Evermore",
+		i18n.EN: "Benefits — Evermore",
+		i18n.ZH: "我们的优势 — Evermore",
+	},
+	"benefits.description": {
+		i18n.ID: "Kenapa memilih Evermore untuk katering sehat harian di Jakarta.",
+		i18n.EN: "Why choose Evermore for daily healthy catering in Jakarta.",
+		i18n.ZH: "为什么选择 Evermore 的雅加达每日健康餐。",
+	},
+
+	// ── Career form ─────────────────────────────────────────────────────────
+	"career.openings_h2": {
+		i18n.ID: "Posisi yang sedang dibuka", i18n.EN: "Open positions", i18n.ZH: "正在招聘的职位",
+	},
+	"career.no_openings": {
+		i18n.ID: "Belum ada posisi yang dibuka saat ini. Anda tetap boleh mengirim data — kami simpan untuk lowongan berikutnya.",
+		i18n.EN: "No positions are open at the moment. You are still welcome to write — we keep it on file for the next vacancy.",
+		i18n.ZH: "目前暂无空缺职位。您仍然可以提交信息，我们会保留至下次招聘。",
+	},
+	"career.form_h2": {
+		i18n.ID: "Kirim lamaran", i18n.EN: "Apply", i18n.ZH: "提交申请",
+	},
+	"career.f_name":     {i18n.ID: "Nama lengkap", i18n.EN: "Full name", i18n.ZH: "姓名"},
+	"career.f_email":    {i18n.ID: "Email", i18n.EN: "Email", i18n.ZH: "邮箱"},
+	"career.f_phone":    {i18n.ID: "Nomor HP (opsional)", i18n.EN: "Mobile number (optional)", i18n.ZH: "手机号码（选填）"},
+	"career.f_position": {i18n.ID: "Posisi yang dilamar", i18n.EN: "Position", i18n.ZH: "申请职位"},
+	"career.f_position_choose": {
+		i18n.ID: "Pilih posisi", i18n.EN: "Choose a position", i18n.ZH: "请选择职位",
+	},
+	"career.f_message": {
+		i18n.ID: "Ceritakan tentang Anda", i18n.EN: "Tell us about yourself", i18n.ZH: "请介绍一下您自己",
+	},
+	"career.submit": {i18n.ID: "Kirim", i18n.EN: "Send", i18n.ZH: "提交"},
+	"career.no_file_note": {
+		i18n.ID: "Formulir ini tidak menerima lampiran. Bila kami tertarik, kami akan membalas email Anda dan meminta CV di sana.",
+		i18n.EN: "This form does not accept attachments. If we are interested we will reply to your email and ask for your CV there.",
+		i18n.ZH: "本表单不接受附件。如果我们感兴趣，会回复您的邮件并在邮件中索取简历。",
+	},
+	"career.thanks": {
+		i18n.ID: "Terima kasih — lamaran Anda sudah kami terima. Kami membalas setiap lamaran yang masuk.",
+		i18n.EN: "Thank you — we have your application. We reply to every one we receive.",
+		i18n.ZH: "感谢您——我们已收到您的申请。我们会回复每一份申请。",
+	},
+	"career.e_required": {i18n.ID: "Wajib diisi.", i18n.EN: "Required.", i18n.ZH: "此项必填。"},
+	"career.e_email": {
+		i18n.ID: "Alamat email tidak valid.", i18n.EN: "That email address is not valid.", i18n.ZH: "邮箱地址无效。",
+	},
+	"career.e_phone": {
+		i18n.ID: "Nomor HP tidak valid.", i18n.EN: "That mobile number is not valid.", i18n.ZH: "手机号码无效。",
+	},
+	"career.e_position": {
+		i18n.ID: "Pilih salah satu posisi yang dibuka.", i18n.EN: "Choose one of the open positions.", i18n.ZH: "请选择一个正在招聘的职位。",
+	},
+	"career.err_toomany": {
+		i18n.ID: "Terlalu banyak pengiriman dari koneksi ini. Coba lagi nanti.",
+		i18n.EN: "Too many submissions from this connection. Please try again later.",
+		i18n.ZH: "此连接提交次数过多，请稍后再试。",
+	},
+	"career.err_toolarge": {
+		i18n.ID: "Isian terlalu panjang.", i18n.EN: "That submission is too long.", i18n.ZH: "提交内容过长。",
+	},
+	"career.err_unsupported": {
+		i18n.ID: "Formulir ini hanya menerima teks, tanpa lampiran.",
+		i18n.EN: "This form accepts text only, with no attachments.",
+		i18n.ZH: "本表单仅接受文本，不接受附件。",
+	},
+	"career.err_failed": {
+		i18n.ID: "Lamaran gagal terkirim. Silakan coba lagi.",
+		i18n.EN: "The application could not be sent. Please try again.",
+		i18n.ZH: "申请提交失败，请重试。",
+	},
+
 	"career.apply": {
 		i18n.ID: "Kirim lamaran", i18n.EN: "Send an application", i18n.ZH: "投递简历",
 	},

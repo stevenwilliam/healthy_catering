@@ -63,6 +63,7 @@ type Deps struct {
 	Storage        *storage.Store
 	Fulfilment     *app.Fulfilment
 	Content        *app.Content
+	Career         *app.Career
 	MFA            *app.MFA
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter

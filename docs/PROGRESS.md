@@ -97,6 +97,24 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**CSV exports, career form, Benefits page, 2026-08-18 (Steven).** New standing
+rule in `99` §8 and CLAUDE.md §7: every report and data grid exports to CSV,
+**pipe-delimited**. Audited and fixed — the delimiter was a comma everywhere,
+and `/coverage` and `/unpaid` had no export at all. All 8 reports export now,
+plus the payment queue, the deliveries grid and both career grids, each
+honouring the search and filters on screen. Still missing and worth knowing:
+**there is no reports SCREEN in the app at all** — the eight reports are
+API-only, so there is no button to put an export button on yet.
+
+Career is a real form (migration 0022): open positions listed at the top from
+`job_opening` and editable in the back office, the position field populated
+from those same rows so nobody can apply for a closed role, every field
+sanitised server-side, rate-limited per IP, and **no file uploads** — multipart
+is refused with 415 and the multipart parser is never reached. Verified end to
+end: valid submission stored, a `curl -F` upload attempt rejected, per-field
+errors on bad input. A Benefits page joins the header beside Price list, and
+the price list leads with packages.
+
 **Benefit section and rich text, 2026-08-18 (Steven).** A Benefit block after
 the price list, editable in the back office with a WYSIWYG editor and seeded
 with initial wording in all three languages (migration 0021). `public_content`

@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,6 +23,24 @@ func registerFulfilment(g *gin.RouterGroup, d Deps) {
 			c.Query("from"), c.Query("to"), c.Query("status"))
 		if err != nil {
 			Fail(c, err)
+			return
+		}
+		// Every data grid exports (99 §8). This one is the courier run sheet in
+		// practice, so it is the export most likely to be printed.
+		if c.Query("format") == "csv" {
+			rows := make([][]string, 0, len(page.Items))
+			for _, v := range page.Items {
+				rows = append(rows, []string{
+					v.ServiceDate, v.Slot, v.DeliveryCode, v.Status, v.Kitchen,
+					v.CustomerName, v.Phone, v.AddressLine, v.District,
+					strconv.Itoa(v.Meals), strconv.Itoa(v.DistanceM),
+					v.Mode, v.Reason,
+				})
+			}
+			csvOut(c, "deliveries",
+				[]string{"date", "slot", "code", "status", "kitchen", "customer",
+					"phone", "address", "district", "meals", "distance (m)",
+					"assignment", "reason"}, rows)
 			return
 		}
 		OK(c, http.StatusOK, page)

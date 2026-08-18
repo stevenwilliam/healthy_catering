@@ -263,6 +263,76 @@ func registerAdmin(g *gin.RouterGroup, d Deps) {
 		OK(c, http.StatusCreated, gin.H{"id": id})
 	})
 
+	// ── Career: openings and applications ───────────────────────────────────
+	//
+	// Both are data grids, so both export (99 §8). The export honours the
+	// current search and status filter — an export of something other than
+	// what is on screen is worse than none.
+	admin.GET("/job-applications", RequirePermission(security.PermSettingsRead), func(c *gin.Context) {
+		page, err := d.Career.ListApplications(c.Request.Context(), listParams(c), c.Query("status"))
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		if c.Query("format") == "csv" {
+			rows := make([][]string, 0, len(page.Items))
+			for _, a := range page.Items {
+				rows = append(rows, []string{
+					a.CreatedAt.Format("2006-01-02 15:04"), a.FullName, a.Email,
+					a.Phone, a.Position, a.Locale, a.Status, a.Message,
+				})
+			}
+			csvOut(c, "job-applications",
+				[]string{"received", "name", "email", "phone", "position",
+					"language", "status", "message"}, rows)
+			return
+		}
+		OK(c, http.StatusOK, page)
+	})
+
+	admin.PATCH("/job-applications/:id", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		id, err := uuid.Parse(c.Param("id"))
+		if err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation, "Not a valid id."))
+			return
+		}
+		var in struct {
+			Status string `json:"status"`
+		}
+		if err := c.ShouldBindJSON(&in); err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation, "Send a JSON body with a status."))
+			return
+		}
+		if err := d.Career.SetStatus(c.Request.Context(), id, in.Status, actorFrom(c)); err != nil {
+			Fail(c, err)
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
+	admin.GET("/job-openings", RequirePermission(security.PermSettingsRead), func(c *gin.Context) {
+		rows, err := d.Career.AllOpenings(c.Request.Context())
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		if c.Query("format") == "csv" {
+			out := make([][]string, 0, len(rows))
+			for _, o := range rows {
+				active := "no"
+				if o.IsActive {
+					active = "yes"
+				}
+				out = append(out, []string{o.Title, o.Slug, o.Summary,
+					strconv.Itoa(o.SortOrder), active})
+			}
+			csvOut(c, "job-openings",
+				[]string{"title", "slug", "summary", "sort order", "active"}, out)
+			return
+		}
+		OK(c, http.StatusOK, rows)
+	})
+
 	// ── Public content ──────────────────────────────────────────────────────
 	//
 	// The hero wording, in three languages. Indonesian is the source and the

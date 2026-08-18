@@ -14,9 +14,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/stevenwilliam/healthy_catering/internal/adapter/postgres"
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/domain/money"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/ratelimit"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/richtext"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
@@ -59,6 +61,13 @@ type PageData struct {
 	// right box before the file arrives. Zero when they could not be read, in
 	// which case the template omits the attributes rather than guessing.
 	HeroW, HeroH int
+
+	// Openings and the career form's state. Applied is set after a successful
+	// POST so the page can confirm rather than silently re-render.
+	Openings   []postgres.JobOpening
+	Applied    bool
+	FormErrors map[string]string
+	Form       map[string]string
 
 	// Active names the current section, so the masthead can mark which page
 	// you are on. Without it every nav item looks identical on every page,
@@ -418,6 +427,118 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		}
 	}
 
+	// ── Career ──────────────────────────────────────────────────────────────
+	career := func(lang i18n.Locale) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			diets, _ := publicDiets(c, d)
+			data := PageData{
+				L:           lang,
+				Active:      "career",
+				Title:       publicMessages.T(lang, "career.title"),
+				Description: publicMessages.T(lang, "career.description"),
+				Canonical:   base() + i18n.Path(lang, "/career"),
+				DietTypes:   diets,
+				Form:        map[string]string{},
+				FormErrors:  map[string]string{},
+			}
+			if d.Career != nil {
+				data.Openings, _ = d.Career.Openings(c.Request.Context())
+			}
+			page(c, "career", data)
+		}
+	}
+
+	// The form POST.
+	//
+	// NO FILES, structurally rather than by validation: the body is capped,
+	// multipart is refused outright, and only ParseForm is ever called — the
+	// multipart parser is never reached, so there is nothing to write to disk
+	// even if someone crafts a request for it.
+	applyCareer := func(lang i18n.Locale) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			diets, _ := publicDiets(c, d)
+			data := PageData{
+				L:           lang,
+				Active:      "career",
+				Title:       publicMessages.T(lang, "career.title"),
+				Description: publicMessages.T(lang, "career.description"),
+				Canonical:   base() + i18n.Path(lang, "/career"),
+				DietTypes:   diets,
+				Form:        map[string]string{},
+				FormErrors:  map[string]string{},
+			}
+			if d.Career != nil {
+				data.Openings, _ = d.Career.Openings(c.Request.Context())
+			}
+
+			if ct := c.ContentType(); ct != "application/x-www-form-urlencoded" {
+				data.FormErrors["_"] = "unsupported"
+				render(c, http.StatusUnsupportedMediaType, "career", data)
+				return
+			}
+			// 32 KB is generous for five text fields and small enough that a
+			// large body is refused before it is read into memory.
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 32<<10)
+			if err := c.Request.ParseForm(); err != nil {
+				data.FormErrors["_"] = "toolarge"
+				render(c, http.StatusRequestEntityTooLarge, "career", data)
+				return
+			}
+
+			// Rate limited by IP: an unauthenticated public form is a spam
+			// target, and there is no CAPTCHA configured yet (docs/12).
+			if d.Limiter != nil {
+				if res := d.Limiter.Allow("career:"+c.ClientIP(),
+					ratelimit.Rule{Burst: 5, Window: time.Hour}); !res.Allowed {
+					data.FormErrors["_"] = "toomany"
+					render(c, http.StatusTooManyRequests, "career", data)
+					return
+				}
+			}
+
+			form := c.Request.PostForm
+			in := app.ApplicationInput{
+				FullName:  form.Get("full_name"),
+				Email:     form.Get("email"),
+				Phone:     form.Get("phone"),
+				Position:  form.Get("position"),
+				Message:   form.Get("message"),
+				Locale:    lang,
+				IP:        c.ClientIP(),
+				UserAgent: c.Request.UserAgent(),
+			}
+			// Echoed back so a rejected form does not make the applicant retype
+			// everything — the single most common reason a form is abandoned.
+			data.Form = map[string]string{
+				"full_name": in.FullName, "email": in.Email, "phone": in.Phone,
+				"position": in.Position, "message": in.Message,
+			}
+
+			fieldErrs, err := d.Career.Apply(c.Request.Context(), in)
+			if err != nil {
+				data.FormErrors["_"] = "failed"
+				render(c, http.StatusInternalServerError, "career", data)
+				return
+			}
+			if len(fieldErrs) > 0 {
+				data.FormErrors = fieldErrs
+				render(c, http.StatusUnprocessableEntity, "career", data)
+				return
+			}
+			data.Applied = true
+			data.Form = map[string]string{}
+			page(c, "career", data)
+		}
+	}
+
+	// ── Benefits ────────────────────────────────────────────────────────────
+	// Its own page as well as the block on the price list, because it is now a
+	// header destination (Steven, 2026-08-18).
+	benefits := func(lang i18n.Locale) gin.HandlerFunc {
+		return simplePage(lang, "benefits", "/benefits",
+			"benefits.title", "benefits.description")
+	}
+
 	// One set of routes per language. The default locale keeps the bare paths
 	// it has always had, so no existing link, bookmark or indexed URL breaks;
 	// the other two live under /en and /zh. Path-prefixed rather than a cookie
@@ -436,8 +557,9 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			"contact.title", "contact.description"))
 		r.GET(prefix+"/about", simplePage(info.Locale, "about", "/about",
 			"about.title", "about.description"))
-		r.GET(prefix+"/career", simplePage(info.Locale, "career", "/career",
-			"career.title", "career.description"))
+		r.GET(prefix+"/career", career(info.Locale))
+		r.POST(prefix+"/career", applyCareer(info.Locale))
+		r.GET(prefix+"/benefits", benefits(info.Locale))
 	}
 
 	// ── Public company contact ──────────────────────────────────────────────

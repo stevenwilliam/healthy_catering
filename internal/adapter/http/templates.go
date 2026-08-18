@@ -93,6 +93,7 @@ const publicTemplates = `
       </ul>
     </details>
     <a href="{{path .L "/price-list"}}"{{if eq .Active "pricelist"}} aria-current="page"{{end}}>{{t .L "nav.pricelist"}}</a>
+    <a href="{{path .L "/benefits"}}"{{if eq .Active "benefits"}} aria-current="page"{{end}}>{{t .L "nav.benefits"}}</a>
     <a href="{{path .L "/contact"}}"{{if eq .Active "contact"}} aria-current="page"{{end}}>{{t .L "nav.contact"}}</a>
     <a href="{{path .L "/about"}}"{{if eq .Active "about"}} aria-current="page"{{end}}>{{t .L "nav.about"}}</a>
     <a href="{{path .L "/career"}}"{{if eq .Active "career"}} aria-current="page"{{end}}>{{t .L "nav.career"}}</a>
@@ -291,6 +292,25 @@ const publicTemplates = `
     <p class="lede">{{if .ShowMealPrices}}{{t .L "price.lede"}}{{else}}{{t .L "price.lede_quote"}}{{end}}</p>
   </section>
 
+  {{if and .Prices .Prices.Packages}}
+  <section class="check">
+    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
+    <div class="grid">
+      {{range .Prices.Packages}}
+      <article class="card">
+        <h3>{{.Name}}</h3>
+        {{if .Description}}<p>{{.Description}}</p>{{end}}
+        <p class="badges">
+          <span class="badge">{{.MealCredits}} {{t $.L "price.credits"}}</span>
+        </p>
+        <p class="price">
+          {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}
+        </p>
+      </article>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
   {{if .ShowMealPrices}}
   <section class="panel">
     <h2>{{t .L "price.meals_h2"}}</h2>
@@ -349,25 +369,6 @@ const publicTemplates = `
     </div>
   </section>
 
-  {{if and .Prices .Prices.Packages}}
-  <section class="check">
-    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
-    <div class="grid">
-      {{range .Prices.Packages}}
-      <article class="card">
-        <h3>{{.Name}}</h3>
-        {{if .Description}}<p>{{.Description}}</p>{{end}}
-        <p class="badges">
-          <span class="badge">{{.MealCredits}} {{t $.L "price.credits"}}</span>
-        </p>
-        <p class="price">
-          {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}
-        </p>
-      </article>
-      {{end}}
-    </div>
-  </section>
-  {{end}}
 </main>
 {{template "foot" .}}
 {{end}}
@@ -427,12 +428,111 @@ const publicTemplates = `
     <h1>{{t .L "career.h1"}}</h1>
     <p class="lede">{{c .Copy .L "career.lede"}}</p>
   </section>
+
+  <!-- What is open right now, first. Someone on this page wants to know
+       whether there is a job before they read anything else. Rows come from
+       job_opening, edited in the back office. -->
   <section class="panel">
-    <p>{{c .Copy .L "career.body"}}</p>
-    {{if .Company.email}}
-    <p><a class="cta cta-on-sheet" href="mailto:{{.Company.email}}?subject={{t .L "career.subject"}}">
-      {{t .L "career.apply"}}</a></p>
+    <h2>{{t .L "career.openings_h2"}}</h2>
+    {{if .Openings}}
+    <ul class="openings">
+      {{range .Openings}}
+      <li>
+        <strong>{{.Title}}</strong>
+        {{if .Summary}}<span class="opening-summary">{{.Summary}}</span>{{end}}
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="empty">{{t .L "career.no_openings"}}</p>
     {{end}}
+    <p>{{c .Copy .L "career.body"}}</p>
+  </section>
+
+  <section class="check">
+    <div class="panel">
+      <h2>{{t .L "career.form_h2"}}</h2>
+
+      {{if .Applied}}
+      <p class="notice-ok" role="status">{{t .L "career.thanks"}}</p>
+      {{else}}
+
+      {{if .FormErrors._}}
+      <p class="error" role="alert">
+        {{if eq .FormErrors._ "toomany"}}{{t .L "career.err_toomany"}}
+        {{else if eq .FormErrors._ "toolarge"}}{{t .L "career.err_toolarge"}}
+        {{else if eq .FormErrors._ "unsupported"}}{{t .L "career.err_unsupported"}}
+        {{else}}{{t .L "career.err_failed"}}{{end}}
+      </p>
+      {{end}}
+
+      <!-- No enctype and no file input, on purpose: this form is
+           urlencoded-only and the server refuses anything else. A CV is
+           emailed after we reply (see the note under the button). -->
+      <form method="post" action="{{path .L "/career"}}" novalidate class="jobform">
+        <div class="field-row">
+          <label class="label" for="full_name">{{t .L "career.f_name"}}</label>
+          <input class="field" id="full_name" name="full_name" maxlength="120" required
+                 value="{{index .Form "full_name"}}"
+                 {{if .FormErrors.full_name}}aria-invalid="true" aria-describedby="e-name"{{end}}>
+          {{if .FormErrors.full_name}}<p class="error" id="e-name">{{t .L "career.e_required"}}</p>{{end}}
+        </div>
+
+        <div class="field-row">
+          <label class="label" for="email">{{t .L "career.f_email"}}</label>
+          <input class="field" id="email" name="email" type="email" maxlength="254" required
+                 value="{{index .Form "email"}}"
+                 {{if .FormErrors.email}}aria-invalid="true" aria-describedby="e-email"{{end}}>
+          {{if .FormErrors.email}}<p class="error" id="e-email">{{t .L "career.e_email"}}</p>{{end}}
+        </div>
+
+        <div class="field-row">
+          <label class="label" for="phone">{{t .L "career.f_phone"}}</label>
+          <input class="field" id="phone" name="phone" inputmode="tel" maxlength="30"
+                 value="{{index .Form "phone"}}"
+                 {{if .FormErrors.phone}}aria-invalid="true" aria-describedby="e-phone"{{end}}>
+          {{if .FormErrors.phone}}<p class="error" id="e-phone">{{t .L "career.e_phone"}}</p>{{end}}
+        </div>
+
+        <div class="field-row">
+          <label class="label" for="position">{{t .L "career.f_position"}}</label>
+          <select class="field" id="position" name="position" required
+                  {{if .FormErrors.position}}aria-invalid="true" aria-describedby="e-pos"{{end}}>
+            <option value="">{{t .L "career.f_position_choose"}}</option>
+            {{$sel := index .Form "position"}}
+            {{range .Openings}}
+            <option value="{{.Slug}}"{{if eq $sel .Slug}} selected{{end}}>{{.Title}}</option>
+            {{end}}
+          </select>
+          {{if .FormErrors.position}}<p class="error" id="e-pos">{{t .L "career.e_position"}}</p>{{end}}
+        </div>
+
+        <div class="field-row">
+          <label class="label" for="message">{{t .L "career.f_message"}}</label>
+          <textarea class="field" id="message" name="message" rows="6" maxlength="4000" required
+                    {{if .FormErrors.message}}aria-invalid="true" aria-describedby="e-msg"{{end}}>{{index .Form "message"}}</textarea>
+          {{if .FormErrors.message}}<p class="error" id="e-msg">{{t .L "career.e_required"}}</p>{{end}}
+        </div>
+
+        <button class="cta cta-on-sheet" type="submit">{{t .L "career.submit"}}</button>
+        <p class="form-note">{{t .L "career.no_file_note"}}</p>
+      </form>
+      {{end}}
+    </div>
+  </section>
+</main>
+{{template "foot" .}}
+{{end}}
+
+{{define "benefits"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.benefits"}}</p>
+    <h1>{{c .Copy .L "benefit.title"}}</h1>
+  </section>
+  <section class="panel">
+    <div class="richtext">{{chtml .Copy .L "benefit.body"}}</div>
   </section>
 </main>
 {{template "foot" .}}

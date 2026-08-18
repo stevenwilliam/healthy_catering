@@ -276,6 +276,21 @@ it is implemented **and to the test that proves it**. Non-negotiables:
 - **Search box on every list.** Every screen rendering a list or table has a
   debounced search box that filters that data. No exceptions — a list without
   search is incomplete.
+- **Every report and every data grid has an Export to CSV button**, and the
+  delimiter is a **pipe (`|`)**, not a comma. No exceptions: if a screen shows
+  a table, it exports. A report I can only read on screen is a report I have to
+  retype into a spreadsheet.
+  - Pipe because the data is Indonesian — addresses, dish names and notes have
+    commas in them constantly, and a comma-delimited file of that data opens
+    misaligned in Excel often enough to be useless.
+  - The export is still a real CSV, quoted per RFC 4180 with `|` as the
+    separator, not a hand-joined string. A value containing a pipe, a quote or
+    a newline must survive the round trip.
+  - Cells are still guarded against spreadsheet formula injection: anything
+    starting `=`, `+`, `-`, `@`, tab or CR is prefixed with an apostrophe. A
+    CSV is an executable document in Excel.
+  - The export honours the filters and the search on screen. Exporting
+    something other than what is displayed is worse than no export.
 - **Configurable values live in a `sys_parameters` table**, never hard-coded:
   company phone/email/address, tax rates, thresholds, feature toggles,
   operational timings. Every one ships with full CRUD (list + search, create,

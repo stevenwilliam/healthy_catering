@@ -118,6 +118,24 @@ func registerReports(g *gin.RouterGroup, d Deps) {
 			Fail(c, err)
 			return
 		}
+		if c.Query("format") == "csv" {
+			csvOut(c, "coverage",
+				[]string{"district", "city", "attempts", "notify requests",
+					"avg distance to nearest (km)", "nearest kitchen"},
+				func() [][]string {
+					out := make([][]string, 0, len(rows))
+					for _, r := range rows {
+						out = append(out, []string{
+							r.District, r.City,
+							strconv.Itoa(r.Attempts), strconv.Itoa(r.NotifyRequests),
+							strconv.FormatFloat(r.AvgDistanceKM, 'f', 1, 64),
+							r.NearestKitchen,
+						})
+					}
+					return out
+				}())
+			return
+		}
 		OK(c, http.StatusOK, rows)
 	})
 
@@ -177,6 +195,22 @@ func registerReports(g *gin.RouterGroup, d Deps) {
 		rows, err := d.Reports.UnpaidAndExpiring(c.Request.Context())
 		if err != nil {
 			Fail(c, err)
+			return
+		}
+		if c.Query("format") == "csv" {
+			csvOut(c, "unpaid-and-expiring",
+				[]string{"kind", "reference", "customer", "amount", "deadline",
+					"minutes left"},
+				func() [][]string {
+					out := make([][]string, 0, len(rows))
+					for _, r := range rows {
+						out = append(out, []string{
+							r.Kind, r.Reference, r.CustomerName, r.Amount,
+							r.Deadline, strconv.Itoa(r.MinutesLeft),
+						})
+					}
+					return out
+				}())
 			return
 		}
 		OK(c, http.StatusOK, rows)

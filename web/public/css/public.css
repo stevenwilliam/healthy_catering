@@ -368,6 +368,46 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   border-left: 3px solid var(--border);
 }
 
+/* ── Career ─────────────────────────────────────────────────────────────── */
+.openings { list-style: none; margin: 0 0 var(--space-6); padding: 0; }
+.openings li {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.openings li:last-child { border-bottom: 0; }
+.opening-summary { display: block; font-size: var(--text-sm); color: var(--ink-muted); }
+
+.jobform { max-width: 40rem; }
+.field-row { margin-bottom: var(--space-4); }
+.field {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.field:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+textarea.field { min-height: 8rem; }
+.form-note {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  max-width: 44ch;
+}
+.notice-ok {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--blue-light);
+  color: var(--ink);           /* 8.15 on this tint ✓ */
+}
+/* Errors are announced (role=alert) and carry a word, never colour alone. */
+.error { color: var(--danger); font-size: var(--text-sm); margin: var(--space-2) 0 0; }
+.panel .error { color: var(--berry-deep); }
+
 /* ── Contact ────────────────────────────────────────────────────────────── */
 .contact-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
 .contact-list li { margin-bottom: var(--space-2); }
@@ -579,6 +619,14 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
 .badge.est { background: var(--orange-light); }  /* deep ink on it = 7.27:1 */
 
 .empty { margin: 0; }
+
+/* Vertical rhythm between top-level sections.
+ *
+ * Sections were spaced by whichever class they happened to carry — .check had
+ * a top margin and .panel had none — so on the price list the packages block
+ * and the quote panel sat almost touching. One rule on adjacent sections means
+ * spacing no longer depends on which wrapper a page reached for. */
+main > section + section { margin-top: var(--space-16); }
 .check { margin-top: var(--space-12); }
 .section-head { margin-bottom: var(--space-6); }
 

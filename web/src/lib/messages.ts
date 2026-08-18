@@ -475,6 +475,11 @@ export const messages = {
     en: 'Only http, https or mailto links are allowed.',
     zh: '仅允许 http、https 或 mailto 链接。',
   },
+  // ── CSV export ───────────────────────────────────────────────────────────
+  'csv.export': { id: 'Ekspor CSV', en: 'Export CSV', zh: '导出 CSV' },
+  'csv.failed': {
+    id: 'Ekspor gagal. Coba lagi.', en: 'Export failed. Try again.', zh: '导出失败，请重试。',
+  },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages

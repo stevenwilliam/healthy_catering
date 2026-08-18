@@ -180,8 +180,21 @@ func (s *Reports) Retention(ctx context.Context) ([]postgres.RetentionRow, error
 // Every cell goes through sanitize.CSVCell: a delivery note reading
 // `=cmd|'/c calc'!A1` is a formula in Excel, and every one of these reports is
 // exported and opened on a staff laptop (CLAUDE.md §4, D11).
+// CSVDelimiter is the field separator for every export in the product. One
+// constant, so a second exporter cannot quietly ship comma-separated files
+// alongside pipe-separated ones.
+const CSVDelimiter = '|'
+
 func WriteCSV(w io.Writer, headers []string, rows [][]string) error {
 	cw := csv.NewWriter(w)
+	// PIPE, not comma (99 §8). This data is Indonesian: addresses, dish names
+	// and courier notes contain commas constantly, and a comma-delimited file
+	// of it opens misaligned in Excel often enough to be useless.
+	//
+	// Still a real RFC 4180 writer, not a hand-joined string — a value that
+	// itself contains a pipe, a quote or a newline is quoted and survives the
+	// round trip. encoding/csv quotes on its Comma, whatever that is set to.
+	cw.Comma = CSVDelimiter
 	if err := cw.Write(headers); err != nil {
 		return fmt.Errorf("csv: header: %w", err)
 	}

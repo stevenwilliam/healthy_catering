@@ -173,6 +173,12 @@ frameworks, CSS-in-JS.
 
 - **Search box on every list.** Every screen rendering a list or table has a
   search box that filters it. No exceptions.
+- **Every report and every data grid ships an Export to CSV button**, and the
+  delimiter is a **pipe (`|`)**, never a comma. Indonesian addresses, dish names
+  and courier notes contain commas constantly, and a comma-delimited export of
+  that data opens misaligned in Excel. It is still a real quoted CSV, not a
+  hand-joined string, still guarded against formula injection, and it exports
+  what the screen is currently showing — filters and search included.
 - **Configurable values live in `sys_parameters`.** Anything that could change
   without a code change — company phone, email, address, tax rate, feature
   toggles, thresholds — is a row in that table, not a constant, and ships with

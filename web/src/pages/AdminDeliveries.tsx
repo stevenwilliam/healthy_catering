@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiFailure, Page, request } from '../lib/api'
 import { SearchBox, State } from '../components/ui'
 import { useT } from '../lib/i18n'
+import ExportCsv from '../components/ExportCsv'
 import type { MessageKey } from '../lib/messages'
 
 type Row = {
@@ -63,8 +64,11 @@ export default function AdminDeliveries() {
         <input id="date" type="date" className="field" value={date}
                onChange={(e) => setDate(e.target.value)} />
       </div>
-      <SearchBox value={q} onChange={setQ} placeholder={t('deliv.search_placeholder')}
-                 resultCount={page?.total} />
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="grow"><SearchBox value={q} onChange={setQ} placeholder={t('deliv.search_placeholder')}
+                 resultCount={page?.total} /></div>
+        <ExportCsv path="/admin/deliveries" filename="deliveries" params={{ q, from: date, to: date }} />
+      </div>
 
       <State loading={loading} error={error} empty={(page?.items.length ?? 0) === 0}
              emptyText={t('deliv.empty')}>

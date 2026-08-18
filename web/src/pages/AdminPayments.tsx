@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiFailure, Page, request } from '../lib/api'
 import { SearchBox, State, SubmitButton } from '../components/ui'
 import { useT } from '../lib/i18n'
+import ExportCsv from '../components/ExportCsv'
 
 type QueueItem = {
   payment_id: string; order_code: string; customer_name: string; customer_email: string
@@ -63,8 +64,11 @@ export default function AdminPayments() {
           telephone. */}
       <p className="text-sm text-ink-muted mb-6">{t('pay.oldest_first')}</p>
 
-      <SearchBox value={q} onChange={setQ} placeholder={t('pay.search_placeholder')}
-                 resultCount={page?.total} />
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="grow"><SearchBox value={q} onChange={setQ} placeholder={t('pay.search_placeholder')}
+                 resultCount={page?.total} /></div>
+        <ExportCsv path="/admin/payments" filename="payment-queue" params={{ q }} />
+      </div>
 
       <State loading={loading} error={error} empty={(page?.items.length ?? 0) === 0}
              emptyText={t('pay.empty')}>
