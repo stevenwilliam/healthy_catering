@@ -25,9 +25,9 @@ typo and must never be "corrected".
   not "fix" either one.
 - Never recolour it to a third colour, never restretch it, never redraw the
   letterforms.
-- **On a dark or Nourish-Green fill the mark disappears.** A reversed-out
-  (beige or white) version is needed before the first dark header is built.
-  It does not exist yet — see §5.
+- **On a dark or Nourish-Green fill the mark disappears**, so a reversed-out
+  version is required. It now exists: `scripts/mklogo.py` derives it from the
+  supplied artwork — see §3.2.
 
 ## 2. Palette
 
@@ -39,15 +39,15 @@ not an accessibility one — see the ratios below.
 
 | Token | Hex | Note |
 |---|---|---|
-| `--nourish-deep` | `#1C3D34` | the logo ink; the workhorse; masthead + footer fill |
-| `--nourish` | `#468973` | **the page ground** since 2026-08-18 — see §2.7 |
+| `--nourish-deep` | `#1C3D34` | the logo ink; **the page ground** since 2026-08-18 — see §2.7 |
+| `--nourish` | `#468973` | **the bars** — masthead and footer — see §2.7 |
 
 ### 2.2 Secondary — Restore Beige
 
 | Token | Hex | Note |
 |---|---|---|
-| `--beige` | `#FFFAE0` | the content **sheet** — where body copy is allowed |
-| `--beige-deep` | `#CCBDAA` | borders, muted surfaces; the footer's muted ink |
+| `--beige` | `#FFFAE0` | primary ink on both greens, and the **sheet** for panels and the app |
+| `--beige-deep` | `#CCBDAA` | borders and muted text **on the deep ground only** — 2.25 on a bar |
 
 ### 2.3 Tertiary
 
@@ -120,43 +120,59 @@ The four passing colours give a full semantic set without inventing anything:
 Berry for destructive, Blue for informational, Brown for warning-ish/neutral
 emphasis, Nourish deep for primary.
 
-### 2.7 The green ground (Steven, 2026-08-18)
+### 2.7 The two grounds (Steven, 2026-08-18)
 
-The page ground moved from Restore Beige to **Nourish Green `#468973`**. That
-one change re-derives the layout rules, because `#468973` sits at relative
-luminance 0.204 — almost exactly midway between black and white — and **nothing
-reaches AA 4.5 on it**:
+The page ground moved from Restore Beige to Nourish Green `#468973`, and then
+the two greens were **swapped**: the PAGE is deep `#1C3D34` and the BARS — the
+masthead and the fixed footer — are mid `#468973`.
 
-| On `#468973` | Ratio | Verdict |
+That swap matters because `#468973` sits at relative luminance 0.204, almost
+exactly midway between black and white, and **nothing in the brand reaches AA
+4.5 on it**:
+
+| On mid green `#468973` | Ratio | Verdict |
 |---|---|---|
 | white `#FFFFFF` | **4.13** | AA large text / UI boundary only |
 | beige `#FFFAE0` | **3.93** | AA large text / UI boundary only |
 | deep ink `#1C3D34` | **2.88** | fails everything |
+| `#CCBDAA` | **2.25** | fails everything — never use it on a bar |
+| black `#000000` | 5.09 | passes, but is not a brand colour |
 
-White is the best case available and it is still short of 4.5. So the rule is:
+On the deep ground everything is comfortable:
 
-> **The green is a ground, not a surface for reading.** Display type sits on it.
-> Every paragraph sits on a beige sheet (`.panel`, ink 11.32) or a white card
-> (ink 11.89).
-
-What that licenses, and what it forbids:
-
-| Element | On the ground? | Why |
+| On deep green `#1C3D34` | Ratio | Verdict |
 |---|---|---|
-| `h1` 44–64px, `h2` 32px, beige | yes | ≥24px is WCAG "large text", 3.93 ✓ |
-| `.lede` 20px **at weight 600** | yes | ≥18.66px bold is large text, 3.93 ✓ |
-| the 13px `.eyebrow` | **no** — it is a beige pill | 13px needs 4.5; as a pill it is ink-on-beige at 11.32 ✓ |
-| any `<p>` at body size | **no** — wrap it in `.panel` | 3.93 is not AA at 17px |
-| the CTA button | inverted: beige fill, deep ink | a deep-green fill is 2.88 against the ground and fails 1.4.11 |
-| focus rings | beige, not deep ink | deep ink is 2.88 there — an indicator you cannot see |
+| beige `#FFFAE0` | **11.32** | AAA |
+| white `#FFFFFF` | **11.89** | AAA |
 
-**The WhatsApp float needed rescuing.** Its `#128C7E` measures **1.00:1**
-against `#468973` — the two luminances differ by 0.0003, so the button was one
-colour change away from being a shape only a hue-discriminating eye could find.
-(WhatsApp's brighter `#25D366` is no better; it was already ruled out at 1.89
-on beige.) The fix is a permanent 3px beige ring: 3.93 against the ground and
-3.94 against the teal, so the control is bounded whichever it overlaps. That
-ring is an accessibility mechanism, not styling — do not remove it.
+So the rules are:
+
+> **The page is deep green and body copy sits straight on it in beige.** Panels
+> and cards are design decisions here, not accessibility crutches.
+>
+> **The bars are mid green and everything on them is LARGE text** — `--text-bar`
+> is 19px, the first whole pixel above WCAG's 18.66px threshold, at weight 700.
+> A 15px nav link on a bar looks fine and is an AA failure.
+
+Consequences worth knowing before editing anything:
+
+| Element | Rule | Why |
+|---|---|---|
+| masthead nav, footer, language selector | `--text-bar` @700 | 3.93 is AA for large text only |
+| `--on-dark-muted` `#CCBDAA` | never on a bar | 2.25 there; it is a deep-ground token |
+| the CTA | beige fill, deep ink | 11.32 on the page ✓ |
+| focus rings on the page | beige | 11.32 ✓ |
+| the WhatsApp float | keeps its beige ring | see below |
+
+**The WhatsApp float has needed its ring under both grounds, for two different
+reasons.** On the mid-green ground `#128C7E` measured **1.00:1** — the two were
+within 0.0003 of the same luminance, so the button was a shape findable only by
+hue. On the deep ground it measures **2.87**, still under the 3:1 that 1.4.11
+requires of a control. The permanent 3px beige ring bounds it either way: 11.32
+against the page and 3.94 against the teal. Its focus state is **white**, not
+beige, because the resting ring is already beige and an outer deep-green ring
+would be invisible against the page — focus and resting would look identical.
+The ring is an accessibility mechanism, not styling. Do not remove it.
 
 ## 3. Typography
 

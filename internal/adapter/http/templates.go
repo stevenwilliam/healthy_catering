@@ -7,10 +7,15 @@ package http
 // self-hosted, and there is no inline script — the CSP has no 'unsafe-inline'
 // so an inline <script> would simply not run.
 //
-// The page ground is Nourish Green #468973, on which nothing reaches AA at
-// reading size. That is why body copy in here is always wrapped in a .panel or
-// a .card and never dropped straight onto the background — see the header
+// Two grounds: the PAGE is deep #1C3D34 (beige on it is 11.32, so body copy
+// can sit straight on it) and the BARS — masthead and footer — are mid #468973,
+// where beige is only 3.93 and every string must be large. See the header
 // comment in web/public/css/public.css.
+//
+// NO LITERAL COPY. Every visible string goes through `t`, and every internal
+// link through `path`, so the page renders in the reader's language and stays
+// there. Adding a fourth language is then a catalogue edit in messages.go,
+// not a template rewrite.
 const publicTemplates = `
 {{define "head"}}
 <!doctype html>
@@ -23,6 +28,12 @@ const publicTemplates = `
 <link rel="canonical" href="{{.Canonical}}">
 <meta name="theme-color" content="#1C3D34">
 
+<!-- Every language of this page, so a search engine treats the three as one
+     page in three languages rather than as duplicates competing with each
+     other. x-default points at Indonesian, the default locale. -->
+{{range .Languages}}<link rel="alternate" hreflang="{{.Info.Tag}}" href="{{.Abs}}">
+{{end}}<link rel="alternate" hreflang="x-default" href="{{.BaseURL}}/">
+
 <!-- Open Graph, STATIC in the served HTML. Preview bots do not run
      JavaScript, so these have to be here rather than set by a script
      (99 §13). This is what makes a WhatsApp share show a card. -->
@@ -34,13 +45,18 @@ const publicTemplates = `
 <meta property="og:image" content="{{.OGImage}}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:locale" content="id_ID">
+<meta property="og:locale" content="{{.Lang}}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{.Title}}">
 <meta name="twitter:description" content="{{.Description}}">
 <meta name="twitter:image" content="{{.OGImage}}">
 
-<link rel="icon" href="/images/evermore-wordmark-light.png" type="image/png">
+<!-- Favicon. The mark is the wordmark's leading 'e' on the masthead fill,
+     derived by scripts/mklogo.py — the full lockup is 104:11 and turns to mush
+     at 16px. .ico first for the browsers that still ask for it by convention. -->
+<link rel="icon" href="/images/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/css/tokens.css">
 <link rel="stylesheet" href="/css/public.css">
@@ -53,14 +69,52 @@ const publicTemplates = `
   <!-- The supplied wordmark, reversed out for the dark fill. width/height are
        the intrinsic pixels so the masthead does not reflow as it loads; the
        stylesheet constrains the displayed height. -->
-  <a class="wordmark" href="/" aria-label="Evermore — beranda">
+  <a class="wordmark" href="{{path .L "/"}}" aria-label="{{t .L "nav.home_aria"}}">
     <img src="/images/evermore-wordmark-light.png" width="560" height="60"
          alt="Evermore">
   </a>
-  <nav aria-label="Menu utama">
-    {{range .DietTypes}}<a href="/menu/{{.Slug}}">{{.Name}}</a>{{end}}
+  <nav aria-label="{{t .L "nav.main"}}">
+    {{range .DietTypes}}<a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a>{{end}}
   </nav>
+  {{template "langpicker" .}}
 </header>
+{{end}}
+
+<!-- Language selector.
+     <details> rather than a scripted menu: the CSP has no 'unsafe-inline', the
+     public pages ship no JavaScript at all, and a disclosure widget is
+     keyboard-operable and screen-reader-announced for free. Closed, it shows
+     the CURRENT language — flag plus its own name — so a reader who has landed
+     in the wrong one can see what they are in before they open it.
+     Each option carries its endonym: someone who cannot read Indonesian must
+     still be able to find "English" and "中文" in a list.
+     Flags are aria-hidden decoration. A flag is a country, not a language, so
+     the name is what actually labels each option. -->
+{{define "langpicker"}}
+{{$current := .L}}
+<details class="langpick">
+  <summary aria-label="{{t .L "lang.choose"}}">
+    {{range .Languages}}{{if .Active}}{{.Flag}}<span class="langpick-name">{{.Info.Endonym}}</span>{{end}}{{end}}
+    <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
+      <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </summary>
+  <ul class="langpick-menu">
+    {{range .Languages}}
+    <li>
+      <a href="{{.URL}}" hreflang="{{.Info.Tag}}" lang="{{.Info.Tag}}"
+         {{if .Active}}aria-current="true"{{end}}>
+        {{.Flag}}<span>{{.Info.Endonym}}</span>
+        {{if .Active}}<svg class="langpick-tick" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+          <path d="M2 6.5l2.8 2.8L10 3.5" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>{{end}}
+      </a>
+    </li>
+    {{end}}
+  </ul>
+</details>
 {{end}}
 
 {{define "foot"}}
@@ -72,7 +126,7 @@ const publicTemplates = `
 {{$wa := waNumber .Company.whatsapp}}
 {{if $wa}}
 <a class="wa-float" href="https://wa.me/{{$wa}}" target="_blank" rel="noopener noreferrer"
-   aria-label="Hubungi kami di WhatsApp">
+   aria-label="{{t .L "wa.aria"}}">
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.84-.2-.49-.4-.42-.56-.43h-.47c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29z"/>
   </svg>
@@ -90,19 +144,32 @@ const publicTemplates = `
 {{define "home"}}
 {{template "head" .}}
 <main>
-  <section class="hero">
-    <p class="eyebrow">Katering sehat harian · Jakarta</p>
-    <h1>Makan sehat, setiap hari, tanpa repot.</h1>
-    <p class="lede">{{.Description}}</p>
-    <a class="cta" href="/menu/healthy">Lihat menu minggu ini</a>
+  <section class="hero hero-split">
+    <div class="hero-copy">
+      <p class="eyebrow">{{t .L "home.eyebrow"}}</p>
+      <h1>{{t .L "home.h1"}}</h1>
+      <p class="lede">{{.Description}}</p>
+      <a class="cta" href="{{path .L "/menu/healthy"}}">{{t .L "home.cta"}}</a>
+    </div>
+    {{if .HeroImage}}
+    <!-- The picture is a sys_parameters row, so it can be swapped without a
+         deploy. width/height are the intrinsic size so the column does not
+         collapse and reflow while it loads. Loaded eagerly and fetch-priority
+         high: it is the largest element on the first screen, which makes it
+         the LCP — lazy-loading it would delay the very metric it defines. -->
+    <div class="hero-art">
+      <img src="{{.HeroImage}}" alt="{{t .L "home.hero_alt"}}"
+           width="800" height="800" fetchpriority="high" decoding="async">
+    </div>
+    {{end}}
   </section>
 
   <section class="diets">
-    <div class="section-head"><h2>Pilih sesuai kebutuhan Anda</h2></div>
+    <div class="section-head"><h2>{{t .L "home.diets_h2"}}</h2></div>
     <div class="grid">
       {{range .DietTypes}}
       <article class="card">
-        <h3><a href="/menu/{{.Slug}}">{{.Name}}</a></h3>
+        <h3><a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a></h3>
         <p>{{.Description}}</p>
       </article>
       {{end}}
@@ -113,9 +180,8 @@ const publicTemplates = `
        against 2.88 straight on the green ground. -->
   <section class="check">
     <div class="panel">
-      <h2>Kami antar ke tempat Anda?</h2>
-      <p>Masukkan titik lokasi Anda saat mendaftar — kami langsung memberi tahu
-         dapur mana yang melayani, sebelum Anda memesan.</p>
+      <h2>{{t .L "home.check_h2"}}</h2>
+      <p>{{t .L "home.check_body"}}</p>
     </div>
   </section>
 </main>
@@ -126,13 +192,13 @@ const publicTemplates = `
 {{template "head" .}}
 <main>
   <section class="hero compact">
-    <p class="eyebrow">Menu</p>
+    <p class="eyebrow">{{t .L "menu.eyebrow"}}</p>
     <h1>{{.Diet.Name}}</h1>
     <p class="lede">{{.Diet.Description}}</p>
   </section>
 
   <section class="meals">
-    <div class="section-head"><h2>Menu tujuh hari ke depan</h2></div>
+    <div class="section-head"><h2>{{t .L "menu.h2"}}</h2></div>
     {{if .Meals}}
     <div class="grid">
       {{range .Meals}}
@@ -141,16 +207,16 @@ const publicTemplates = `
         <h3>{{if .Name}}{{.Name}}{{else}}{{index .Items 0}}{{end}}</h3>
         <ul class="items">{{range .Items}}<li>{{.}}</li>{{end}}</ul>
         <p class="badges">
-          <span class="badge">{{.Kcal}} kkal</span>
-          <span class="badge">{{.ProteinG}} g protein</span>
-          {{if not .Complete}}<span class="badge est">perkiraan</span>{{end}}
+          <span class="badge">{{.Kcal}} {{t $.L "menu.kcal"}}</span>
+          <span class="badge">{{.ProteinG}} {{t $.L "menu.protein"}}</span>
+          {{if not .Complete}}<span class="badge est">{{t $.L "menu.estimated"}}</span>{{end}}
         </p>
       </article>
       {{end}}
     </div>
     {{else}}
     <div class="panel">
-      <p class="empty">Menu untuk minggu ini sedang disiapkan. Silakan cek kembali besok.</p>
+      <p class="empty">{{t .L "menu.empty"}}</p>
     </div>
     {{end}}
   </section>
@@ -162,9 +228,9 @@ const publicTemplates = `
 {{template "head" .}}
 <main>
   <section class="hero">
-    <h1>Halaman tidak ditemukan</h1>
-    <p class="lede">Tautan yang Anda buka tidak ada atau sudah dipindahkan.</p>
-    <a class="cta" href="/">Kembali ke beranda</a>
+    <h1>{{t .L "notfound.h1"}}</h1>
+    <p class="lede">{{t .L "notfound.body"}}</p>
+    <a class="cta" href="{{path .L "/"}}">{{t .L "notfound.cta"}}</a>
   </section>
 </main>
 {{template "foot" .}}

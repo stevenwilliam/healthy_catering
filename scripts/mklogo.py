@@ -140,7 +140,7 @@ def downscale(cov, w, box, out_w):
     return out_w, out_h, mask
 
 
-def encode(path, w, h, rgba):
+def encode_bytes(w, h, rgba):
     def chunk(typ, body):
         return (struct.pack('>I', len(body)) + typ + body
                 + struct.pack('>I', zlib.crc32(typ + body) & 0xFFFFFFFF))
@@ -149,10 +149,14 @@ def encode(path, w, h, rgba):
     for y in range(h):
         raw.append(0)                       # filter 0; the art compresses fine
         raw += rgba[y * w * 4:(y + 1) * w * 4]
-    png = (b'\x89PNG\r\n\x1a\n'
-           + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0))
-           + chunk(b'IDAT', zlib.compress(bytes(raw), 9))
-           + chunk(b'IEND', b''))
+    return (b'\x89PNG\r\n\x1a\n'
+            + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(bytes(raw), 9))
+            + chunk(b'IEND', b''))
+
+
+def encode(path, w, h, rgba):
+    png = encode_bytes(w, h, rgba)
     open(path, 'wb').write(png)
     return len(png)
 
@@ -169,6 +173,88 @@ def tint(mask, w, h, rgb):
 def hexrgb(s):
     s = s.lstrip('#')
     return int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16)
+
+
+def first_glyph_box(cov, w, box, thresh=12):
+    """Bounding box of the leading 'e'.
+
+    The brand supplies a horizontal lockup and no icon mark, and a 6238x663
+    wordmark shrunk into a 16px tab is an illegible smear. The leading 'e' is
+    the distinctive letterform in this face — the flat crossbar — so it stands
+    in as the mark. Found by ink columns rather than hard-coded pixels, so it
+    survives the artwork being re-exported.
+    """
+    x0, y0, x1, y1 = box
+    gx0 = gx1 = None
+    for x in range(x0, x1):
+        inked = any(cov[y * w + x] > thresh for y in range(y0, y1))
+        if inked and gx0 is None:
+            gx0 = x
+        elif not inked and gx0 is not None:
+            gx1 = x
+            break
+    if gx1 is None:
+        gx1 = x1
+    # Tighten vertically to the glyph itself, not the whole wordmark band.
+    gy0, gy1 = None, None
+    for y in range(y0, y1):
+        if any(cov[y * w + x] > thresh for x in range(gx0, gx1)):
+            if gy0 is None:
+                gy0 = y
+            gy1 = y + 1
+    return gx0, gy0, gx1, gy1
+
+
+def square_icon(cov, w, gbox, size, bg, fg, pad_frac=0.125):
+    """The glyph, centred on an opaque square.
+
+    Opaque rather than transparent on purpose: a tab strip may be light or
+    dark, and a transparent beige mark disappears into a light one. The deep
+    green field carries the mark at 11.32:1 either way, and is the same fill as
+    the masthead, so a tab reads as the same brand as the page.
+    """
+    gx0, gy0, gx1, gy1 = gbox
+    gw, gh = gx1 - gx0, gy1 - gy0
+    inner = max(1, int(round(size * (1 - 2 * pad_frac))))
+    out_w = inner if gw >= gh else max(1, int(round(inner * gw / gh)))
+    mw, mh, mask = downscale(cov, w, gbox, out_w)
+
+    ox, oy = (size - mw) // 2, (size - mh) // 2
+    canvas = bytearray()
+    for _ in range(size * size):
+        canvas += bytes((bg[0], bg[1], bg[2], 255))
+    for y in range(mh):
+        for x in range(mw):
+            a = mask[y * mw + x]
+            if not a:
+                continue
+            o = ((oy + y) * size + (ox + x)) * 4
+            for c in range(3):
+                canvas[o + c] = (fg[c] * a + bg[c] * (255 - a)) // 255
+    return bytes(canvas)
+
+
+def write_ico(path, images):
+    """A .ico holding PNG-encoded frames.
+
+    PNG inside ICO is the modern form and is what every current browser reads;
+    the legacy BMP-with-AND-mask form buys nothing here. `images` is a list of
+    (size, png_bytes).
+    """
+    count = len(images)
+    header = struct.pack('<HHH', 0, 1, count)
+    offset = 6 + 16 * count
+    entries, blobs = b'', b''
+    for size, blob in images:
+        entries += struct.pack(
+            '<BBBBHHII',
+            0 if size >= 256 else size,   # 0 means 256 in the ICO header
+            0 if size >= 256 else size,
+            0, 0, 1, 32, len(blob), offset)
+        offset += len(blob)
+        blobs += blob
+    open(path, 'wb').write(header + entries + blobs)
+    return 6 + 16 * count + len(blobs)
 
 
 def main():
@@ -212,6 +298,25 @@ def main():
                 card[o + c] = (BEIGE[c] * a + GREEN[c] * (255 - a)) // 255
     n = encode('web/public/images/og-default.png', OW, OH, bytes(card))
     print(f'  og    {OW}x{OH} {n} bytes', file=sys.stderr)
+
+    # ── Favicons ────────────────────────────────────────────────────────────
+    # Square mark, derived from the leading 'e' — the wordmark itself is 104:11
+    # and turns into an unreadable smear at 16px.
+    gbox = first_glyph_box(cov, w, box)
+    print(f'glyph "e" at {gbox} = {gbox[2]-gbox[0]}x{gbox[3]-gbox[1]}', file=sys.stderr)
+
+    ico_frames = []
+    for size in (16, 32, 48):
+        blob = encode_bytes(size, size,
+                            square_icon(cov, w, gbox, size, DEEP, BEIGE))
+        ico_frames.append((size, blob))
+    n = write_ico('web/public/images/favicon.ico', ico_frames)
+    print(f'  favicon.ico 16/32/48 {n} bytes', file=sys.stderr)
+
+    for size, name in ((32, 'favicon-32.png'), (180, 'apple-touch-icon.png')):
+        n = encode(f'web/public/images/{name}', size, size,
+                   square_icon(cov, w, gbox, size, DEEP, BEIGE))
+        print(f'  {name} {size}x{size} {n} bytes', file=sys.stderr)
 
 
 if __name__ == "__main__":

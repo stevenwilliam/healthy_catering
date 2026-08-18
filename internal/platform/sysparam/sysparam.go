@@ -60,6 +60,7 @@ const (
 	KeyMaxLoginAttempts     = "security.max_login_attempts"
 	KeyLockoutDuration      = "security.lockout_duration"
 	KeyRequireEmailVerified = "security.require_email_verification"
+	KeyPublicHeroImage      = "public.hero_image"
 )
 
 // Param is one row.

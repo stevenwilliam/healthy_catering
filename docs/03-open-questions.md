@@ -266,3 +266,36 @@ menus are how people end up with an empty box.
 | Q-27 | Terms of service, privacy policy and refund policy copy — I can draft, someone must approve | Legal pages, launch |
 | Q-28 | Erode font licence for web embedding (carried from `00` Q9) | Any public page |
 | 🟡 Q-29 | Reversed-out logo | **Deferred by Steven 2026-08-13** — the text wordmark stays for now, to be fine-tuned later. |
+
+---
+
+## Q-24 — Translated catalogue content (raised 2026-08-18)
+
+The UI is now trilingual: Indonesian, English and Simplified Chinese, with the
+copy in message catalogues (`internal/adapter/http/messages.go` and
+`web/src/lib/messages.ts`) and a language selector on both surfaces.
+
+**What is still single-language is the CONTENT**, because it is database rows
+rather than UI strings:
+
+| Table | Columns | Shows up as |
+|---|---|---|
+| `diet_type` | `name`, `description`, `seo_title`, `seo_description` | nav links, menu page headline and lede, `<title>` |
+| `meal` | `name` | the card title on a menu page |
+| `food` | `name` | the item list inside each card |
+
+So a reader on `/zh/menu/keto` gets Chinese chrome around an Indonesian menu.
+That is better than nothing and is visibly half-done.
+
+**Proposed default:** add a `translations` JSONB column per table, keyed by
+locale, e.g. `{"en": {"name": "...", "description": "..."}, "zh": {...}}`, with
+the existing columns staying as the fallback. One migration, one admin form
+section per record, no fan-out of columns as locales are added. Reads fall back
+to the base column when a locale is absent, exactly as the message catalogues
+already do.
+
+**Needs Steven to decide:** whether the menu content is translated at all (it
+is real ongoing work — every meal, every week, in three languages), or whether
+only the marketing chrome is multilingual and the food keeps its Indonesian
+names. The second is a legitimate choice and is cheaper forever; a lot of
+Jakarta restaurants do exactly that.

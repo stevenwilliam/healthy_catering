@@ -97,6 +97,15 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Trilingual, 2026-08-18 (Steven).** Indonesian, English and Simplified
+Chinese, with a flag-and-name language selector on both surfaces. Public pages
+are path-prefixed (`/`, `/en/`, `/zh/`) with hreflang alternates and a
+per-locale sitemap; the app stores the preference. Copy lives in catalogues
+(`internal/adapter/http/messages.go`, `web/src/lib/messages.ts`) and the
+notification templates gained Chinese. Details and the limits in `docs/11`.
+**Not done:** the app's inner screens (~140 strings) are still Indonesian, and
+menu CONTENT is single-language by schema — raised as docs/03 Q-24.
+
 **Brand pass, 2026-08-18 (Steven).** Page ground is now Nourish Green `#468973`;
 the supplied wordmark replaces the text logo on both surfaces; the footer is the
 masthead's fill, fixed to the bottom and thin; the WhatsApp float is larger and
@@ -107,6 +116,13 @@ and white cards, and the WhatsApp teal measures **1.00:1** against it and now
 carries a beige ring. Re-verified by screenshot on home, menu, 404 and the app
 at 390px and 1280px. `/images` was also never mounted, so every page's
 `og:image` had been 404ing — fixed, and the card is generated.
+
+**Then the two greens were swapped** (Steven): the page is deep `#1C3D34` and
+the bars are mid `#468973`. Net accessibility gain — body copy on the page is
+11.32 — at the cost of the bars, where beige is 3.93 and every string must be
+19px/700 "large text". Favicon derived from the wordmark's leading `e`; a split
+hero with a picture on the right, its source a `sys_parameters` row (migration
+0015). `docs/10` §2.7 carries the measured tables.
 
 ## M14 — Security suite ✅
 Injection, oversell, constraint-as-last-line, append-only, price overlap,
@@ -119,8 +135,10 @@ systemd + nginx + hardened unit + first-run admin. Handbook at `14`.
 ## M16 — Documents ✅ / 🟡
 ✅ `12-security` (control map with the test that proves each) ·
 ✅ `14` deployment handbook · ✅ `15` user guide · ✅ `16` admin guide ·
+✅ `11-i18n` (languages, locale negotiation, the selector, and what is *not*
+translated) ·
 ⬜ `01-PRD`, `02-business-rules` with `BR-x.y` ids, `03-data-model`,
-`04-api-specification`, `05`, `06`, `07`, `08`, `11`, `13a` — the planning
+`04-api-specification`, `05`, `06`, `07`, `08`, `13a` — the planning
 documents cover their content but the house numbering has not been folded in
 (see `04-milestones.md` §2).
 

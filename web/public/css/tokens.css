@@ -5,19 +5,34 @@
  * has a MEASURED contrast ratio in the comment — calculated, never eyeballed
  * (CLAUDE.md §7). Recompute with scripts/contrast.py after any change.
  *
- * 2026-08-18 — Steven moved the page ground from Restore Beige to Nourish
- * Green #468973. That one change re-derives the whole palette, because
+ * 2026-08-18 — Steven moved the page ground to Nourish Green #468973, then
+ * swapped the two greens over: the GROUND is now deep #1C3D34 and the BARS
+ * (masthead + footer) are #468973. The swap moves the hard constraint from the
+ * page to the bars, and on balance it is the better trade.
+ *
  * #468973 sits at luminance 0.204, almost exactly halfway between black and
- * white, and NOTHING reaches AA 4.5 on it:
+ * white, so nothing in the palette reaches AA 4.5 on it:
  *
  *     white  #FFFFFF on #468973 ... 4.13   (AA large / UI only)
  *     beige  #FFFAE0 on #468973 ... 3.93   (AA large / UI only)
  *     deep   #1C3D34 on #468973 ... 2.88   (fails everything)
+ *     black  #000000 on #468973 ... 5.09   (passes, but is not in the brand)
  *
- * So the rule this file now enforces: the green is a GROUND, never a surface
- * for body copy. Display type sits on it; anything at reading size sits on a
- * beige sheet or a white card. That is not a workaround, it is the only
- * arrangement that keeps the colour Steven asked for and AA at the same time.
+ * On the deep ground, by contrast, everything is comfortable:
+ *
+ *     beige  #FFFAE0 on #1C3D34 ... 11.32  (AAA)
+ *     white  #FFFFFF on #1C3D34 ... 11.89  (AAA)
+ *
+ * So the rules this file enforces are now:
+ *
+ *   1. The PAGE is deep green. Body copy may sit straight on it in beige —
+ *      the sheet-and-card discipline the mid-green ground forced is no longer
+ *      required for legibility, though panels and cards remain as design.
+ *   2. The BARS are mid green, where beige is only 3.93. Every string on a bar
+ *      is therefore LARGE text — ≥18.66px at weight 700 — which is what
+ *      --text-bar is for. A 15px nav link on the bar is an AA failure, not a
+ *      style choice.
+ *   3. #CCBDAA is 2.25 on the bar and must not appear there at all.
  */
 
 :root {
@@ -49,31 +64,36 @@
   --berry-light: #CC6883;   /* ✗ 3.40 — background only */
 
   /* ── Semantic roles ──────────────────────────────────────────────────── */
-  --canvas: var(--nourish);            /* the page ground */
-  --sheet: var(--beige);               /* where body copy is allowed to live */
-  --surface: #FFFFFF;                  /* cards on the sheet or on the ground */
+  --canvas: var(--nourish-deep);       /* the page ground — deep green */
+  --bar: var(--nourish);               /* masthead + footer — mid green */
+  --sheet: var(--beige);               /* beige panels standing on the ground */
+  --surface: #FFFFFF;                  /* cards */
   --bg: var(--canvas);                 /* kept: older rules still read --bg */
   --ink: var(--nourish-deep);          /* 11.32 on the sheet · 11.89 on white */
   --ink-muted: #4A5D56;                /* 6.69 on the sheet ✓ AA at body size */
 
-  /* On the green ground. Both are LARGE-TEXT-ONLY tokens: 3.93 and 4.13 clear
-     AA's 3:1 for text at 24px, or 18.66px bold, and clear 1.4.11 for a control
-     boundary. Neither may be used for a paragraph. */
-  --on-canvas: var(--beige);           /* 3.93 — display type on the ground */
-  --on-canvas-strong: #FFFFFF;         /* 4.13 — when it has to carry further */
+  /* On the deep ground — comfortable at any size. */
+  --on-canvas: var(--beige);           /* 11.32 ✓ AAA */
+  --on-canvas-strong: #FFFFFF;         /* 11.89 ✓ AAA */
+  --on-canvas-muted: var(--beige-deep); /* 6.47 ✓ AA at body size */
+
+  /* On a mid-green BAR. 3.93 and 4.13 clear AA's 3:1 for large text and clear
+     1.4.11 for a control boundary — and clear nothing else. Anything wearing
+     these must also be --text-bar sized, or it is a failure. */
+  --on-bar: var(--beige);              /* 3.93 — LARGE TEXT ONLY */
+  --on-bar-strong: #FFFFFF;            /* 4.13 — LARGE TEXT ONLY */
 
   --border: rgba(28, 61, 52, 0.60);    /* 3.56 on beige ✓ */
   --border-subtle: rgba(28, 61, 52, 0.28); /* 1.69 — DECORATIVE ONLY: a divider
                                           between filled surfaces, never a
                                           control boundary or a focus ring */
   --focus: var(--nourish-deep);
-  --focus-on-canvas: var(--beige);     /* the ring has to be visible against the
-                                          ground, and deep ink is 2.88 there */
+  --focus-on-canvas: var(--beige);     /* 11.32 against the deep ground ✓ */
   --primary: var(--nourish-deep);
   --primary-ink: var(--beige);         /* 11.32 ✓ */
-  /* A dark-green button ON the green ground is 2.88:1 — it fails 1.4.11 as a
-     control that has to be findable. On the ground the CTA inverts: beige fill
-     (3.93 against the ground ✓) carrying deep ink (11.32 ✓). */
+  /* The CTA stays beige-on-ground. It was inverted because a deep-green fill
+     on the mid-green ground was 2.88; on the deep ground the same beige fill
+     now measures 11.32, so it is comfortably right either way. */
   --cta-on-canvas: var(--beige);
   --cta-on-canvas-ink: var(--nourish-deep);
   --danger: var(--berry-deep);
@@ -99,6 +119,11 @@
   --text-2xl: 2rem;       /* 32px */
   --text-3xl: 2.75rem;    /* 44px */
   --text-4xl: 4rem;       /* 64px */
+  /* Bar text. 19px is the first whole pixel above WCAG's 18.66px "large text"
+     threshold, which at weight 700 is what makes beige legal on the mid-green
+     masthead and footer at 3.93:1. It is a floor, not a preference — reduce it
+     and the nav quietly stops meeting AA. */
+  --text-bar: 1.1875rem;  /* 19px */
 
   /* ── Weight ──────────────────────────────────────────────────────────────
      Erode ships four discrete cuts (400/500/600/700), so display weights must

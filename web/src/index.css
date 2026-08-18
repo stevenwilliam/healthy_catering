@@ -5,14 +5,17 @@
 /* The app shares web/public/css/tokens.css (linked from index.html), so
  * --footer-h and the measured palette cannot drift from the public pages.
  *
- * Ground rule, same as the public site: the page ground is Nourish Green
- * #468973 and nothing reaches AA 4.5 on it. The app therefore paints the
- * ground on <body> and puts all of its content on the beige sheet in App.tsx.
+ * Ground rule, same as the public site. Two grounds:
+ *   PAGE — deep #1C3D34 on <body>; beige on it is 11.32.
+ *   BARS — mid #468973 on the header and footer; beige there is only 3.93,
+ *          so every string on a bar is text-bar (19px) at weight 700.
+ * The app's forms and tables were designed against a light surface, so they
+ * keep their one beige sheet (App.tsx) with the ground framing it.
  */
 
 @layer base {
   body {
-    @apply bg-canvas text-ink font-sans antialiased;
+    @apply bg-canvas text-beige font-sans antialiased;
     font-weight: 450;   /* Inter a touch above regular; it sits on colour */
   }
 
@@ -71,13 +74,41 @@
            duration-200 hover:-translate-y-0.5 sm:h-[76px] sm:w-[76px];
     bottom: calc(var(--footer-h) + 1rem + env(safe-area-inset-bottom, 0px));
     background: #128C7E;
-    outline: 3px solid var(--sheet);
-    box-shadow: 0 6px 20px rgba(11, 30, 25, 0.38);
+    /* The ring is the accessibility mechanism, not decoration: the teal is
+       2.87 against the deep ground, under the 3:1 that 1.4.11 requires. A
+       box-shadow rather than an outline, so :focus-visible has an outline of
+       its own left to draw. */
+    box-shadow: 0 0 0 3px var(--sheet), 0 6px 20px rgba(11, 30, 25, 0.38);
   }
   .wa-float svg { @apply h-[34px] w-[34px] sm:h-[38px] sm:w-[38px]; }
+  /* Focus must look different from resting. The resting ring is already
+     beige, and a deep-green outer ring would now be invisible against the
+     page — so focus is white: 11.89 on the page, 4.14 on the teal. */
   .wa-float:focus-visible {
-    outline: 3px solid var(--sheet);
-    box-shadow: 0 0 0 3px var(--nourish-deep), 0 6px 20px rgba(11, 30, 25, 0.38);
+    outline: 3px solid #FFFFFF;
+    outline-offset: 3px;
+  }
+
+  /* ── Language selector ─────────────────────────────────────────────────
+     Sits on the mid-green bar, so its label is text-bar and its border is
+     beige — #CCBDAA measures 2.25 there and would vanish. */
+  .langpick-trigger {
+    @apply inline-flex items-center gap-2 min-h-touch rounded-full border
+           border-beige px-3 text-bar font-bold text-beige hover:bg-beige/10;
+  }
+  .langpick-list {
+    @apply absolute right-0 z-50 mt-2 min-w-[13rem] rounded-xl bg-sheet p-2
+           text-ink shadow-lift;
+  }
+  .langpick-item {
+    @apply flex w-full items-center gap-3 min-h-touch rounded-lg px-3 text-sm
+           font-semibold text-ink hover:bg-nourish-deep/10;
+  }
+  /* All three flags are 3:2, so one box fits every one. The hairline stops a
+     white or light band bleeding into whatever sits behind it. */
+  .flag {
+    @apply block h-3.5 w-[21px] rounded-sm;
+    box-shadow: inset 0 0 0 1px rgba(11, 30, 25, 0.35);
   }
 }
 

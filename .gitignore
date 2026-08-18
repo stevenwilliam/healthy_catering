@@ -26,3 +26,7 @@ web/dist/
 
 # TypeScript incremental build cache — a build artifact, not source.
 web/tsconfig.tsbuildinfo
+
+# Python bytecode from scripts/
+__pycache__/
+*.pyc

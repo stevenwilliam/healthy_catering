@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/stevenwilliam/healthy_catering/internal/app"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
@@ -27,8 +28,15 @@ type PageData struct {
 	Description string
 	Canonical   string
 	OGImage     string
-	Lang        string
+	Lang        string // BCP-47, for <html lang> — "id-ID", "en", "zh-Hans"
 	JSONLD      template.JS
+
+	// L is the locale every template lookup goes through.
+	L i18n.Locale
+	// Languages is this same page in each language: what the selector links
+	// to, and what the hreflang alternates advertise. Built per request
+	// because the answer depends on the path being viewed.
+	Languages []langLink
 
 	BaseURL   string
 	Year      int
@@ -37,6 +45,19 @@ type PageData struct {
 	Meals     []mealCard
 	Diet      *dietLink
 	MapsKey   string
+	// HeroImage is the big picture beside the home headline. A sys_parameters
+	// row, so swapping it never needs a deploy; empty hides the picture and
+	// lets the headline run full width.
+	HeroImage string
+}
+
+// langLink is one entry in the language selector.
+type langLink struct {
+	Info   i18n.Info
+	URL    string        // path for the link, e.g. "/zh/menu/keto"
+	Abs    string        // absolute, for hreflang
+	Flag   template.HTML // inline SVG; decorative, the name carries the meaning
+	Active bool
 }
 
 type dietLink struct {
@@ -69,6 +90,15 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// template hides the button on empty — a floating action that opens a
 		// broken chat is worse than no button.
 		"waNumber": waNumber,
+		// t is the only way copy reaches a public page. Templates never carry
+		// a literal string, so adding a language is a catalogue edit rather
+		// than a template rewrite (CLAUDE.md §10).
+		"t": publicMessages.T,
+		// path rewrites a locale-free path into the current locale, so a link
+		// written once in the template stays inside the language the reader
+		// chose. Without it every href would silently drop them back to
+		// Indonesian.
+		"path": i18n.Path,
 	}).Parse(publicTemplates))
 	r.SetHTMLTemplate(tpl)
 
@@ -124,7 +154,26 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	render := func(c *gin.Context, status int, name string, data PageData) {
 		data.BaseURL = base()
 		data.Year = time.Now().Year()
-		data.Lang = "id"
+		data.Lang = i18n.Meta(data.L).Tag
+
+		// The same page in every language: the selector's links and the
+		// hreflang alternates are the same list. Derived from the path being
+		// viewed, so switching language on /zh/menu/keto lands on
+		// /en/menu/keto rather than dumping the reader back on the home page —
+		// which is the single most annoying thing a language switcher does.
+		_, rest := i18n.FromPath(c.Request.URL.Path)
+		data.Languages = make([]langLink, 0, len(i18n.Supported))
+		for _, info := range i18n.All() {
+			u := i18n.Path(info.Locale, rest)
+			data.Languages = append(data.Languages, langLink{
+				Info:   info,
+				URL:    u,
+				Abs:    base() + u,
+				Flag:   flagFor(info.Locale),
+				Active: info.Locale == data.L,
+			})
+		}
+
 		if data.OGImage == "" {
 			data.OGImage = base() + "/images/og-default.png"
 		}
@@ -136,6 +185,8 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			"whatsapp": d.Params.String(ctx, sysparam.KeyCompanyWhatsApp, ""),
 		}
 		data.MapsKey = d.Config.Maps.BrowserKey
+		data.HeroImage = d.Params.String(ctx, sysparam.KeyPublicHeroImage,
+			"/images/hero-meditation.svg")
 		c.HTML(status, name, data)
 	}
 
@@ -144,81 +195,109 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	}
 
 	// ── Home ────────────────────────────────────────────────────────────────
-	r.GET("/", func(c *gin.Context) {
-		diets, _ := publicDiets(c, d)
-		page(c, "home", PageData{
-			Title: "Evermore — katering sehat harian di Jakarta",
-			Description: "Makanan sehat harian diantar ke rumah atau kantor Anda di Jakarta. " +
-				"Pilih menu sesuai kebutuhan: Healthy, Weight Loss, High Protein dan lainnya.",
-			Canonical: base() + "/",
-			DietTypes: diets,
-			JSONLD: template.JS(`{"@context":"https://schema.org","@type":"Restaurant",` +
-				`"name":"Evermore","servesCuisine":"Healthy","priceRange":"$$",` +
-				`"address":{"@type":"PostalAddress","addressLocality":"Jakarta","addressCountry":"ID"},` +
-				`"url":"` + base() + `"}`),
-		})
-	})
+	home := func(loc i18n.Locale) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			diets, _ := publicDiets(c, d)
+			page(c, "home", PageData{
+				L:           loc,
+				Title:       publicMessages.T(loc, "home.title"),
+				Description: publicMessages.T(loc, "home.description"),
+				Canonical:   base() + i18n.Path(loc, "/"),
+				DietTypes:   diets,
+				JSONLD: template.JS(`{"@context":"https://schema.org","@type":"Restaurant",` +
+					`"name":"Evermore","servesCuisine":"Healthy","priceRange":"$$",` +
+					`"address":{"@type":"PostalAddress","addressLocality":"Jakarta","addressCountry":"ID"},` +
+					`"url":"` + base() + `"}`),
+			})
+		}
+	}
 
 	// ── One page per diet type — the SEO surface ────────────────────────────
-	r.GET("/menu/:slug", func(c *gin.Context) {
-		dt, err := d.Catalogue.DietTypeBySlug(c.Request.Context(), c.Param("slug"))
-		if err != nil {
+	menu := func(lang i18n.Locale) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			dt, err := d.Catalogue.DietTypeBySlug(c.Request.Context(), c.Param("slug"))
+			if err != nil {
+				diets, _ := publicDiets(c, d)
+				render(c, http.StatusNotFound, "notfound", PageData{
+					L:           lang,
+					Title:       publicMessages.T(lang, "notfound.title"),
+					Description: publicMessages.T(lang, "notfound.body"),
+					Canonical:   base() + i18n.Path(lang, "/"),
+					DietTypes:   diets,
+				})
+				return
+			}
+
+			tz := tzOf(d)
+			now := time.Now().In(tz)
+			meals, _ := d.Catalogue.Calendar(c.Request.Context(), app.CalendarQuery{
+				From:       now.Format("2006-01-02"),
+				To:         now.AddDate(0, 0, 7).Format("2006-01-02"),
+				DietTypeID: &dt.ID, PublicOnly: true,
+			})
+
+			cards := make([]mealCard, 0, len(meals))
+			for _, m := range meals {
+				items := make([]string, 0, len(m.Items))
+				for _, it := range m.Items {
+					items = append(items, it.FoodName)
+				}
+				name := ""
+				if m.Name != nil {
+					name = *m.Name
+				}
+				cards = append(cards, mealCard{
+					Name: name, DietType: m.DietTypeName, Slot: m.SlotAlias,
+					Date: m.ServiceDate, Kcal: m.Nutrition.CaloriesKcal,
+					ProteinG: gramsOf(m.Nutrition.ProteinMg), Items: items,
+					Complete: m.Nutrition.Complete,
+				})
+			}
+
+			// The diet-type name and description are database rows in one
+			// language, so they read the same whichever locale is selected —
+			// only the frame around them translates. Same for the SEO
+			// overrides: a per-locale seo_title would need a column per
+			// locale (docs/03 Q-24).
+			title := publicMessages.Tf(lang, "menu.title", dt.Name)
+			if dt.SEOTitle != nil && *dt.SEOTitle != "" {
+				title = *dt.SEOTitle
+			}
+			desc := dt.Description
+			if dt.SEODescription != nil && *dt.SEODescription != "" {
+				desc = *dt.SEODescription
+			}
+
+			path := i18n.Path(lang, "/menu/"+dt.Slug)
 			diets, _ := publicDiets(c, d)
-			render(c, http.StatusNotFound, "notfound", PageData{
-				Title:       "Halaman tidak ditemukan — Evermore",
-				Description: "Tautan yang Anda buka tidak ada atau sudah dipindahkan.",
-				Canonical:   base() + "/",
-				DietTypes:   diets,
-			})
-			return
-		}
-
-		loc := tzOf(d)
-		now := time.Now().In(loc)
-		meals, _ := d.Catalogue.Calendar(c.Request.Context(), app.CalendarQuery{
-			From:       now.Format("2006-01-02"),
-			To:         now.AddDate(0, 0, 7).Format("2006-01-02"),
-			DietTypeID: &dt.ID, PublicOnly: true,
-		})
-
-		cards := make([]mealCard, 0, len(meals))
-		for _, m := range meals {
-			items := make([]string, 0, len(m.Items))
-			for _, it := range m.Items {
-				items = append(items, it.FoodName)
-			}
-			name := ""
-			if m.Name != nil {
-				name = *m.Name
-			}
-			cards = append(cards, mealCard{
-				Name: name, DietType: m.DietTypeName, Slot: m.SlotAlias,
-				Date: m.ServiceDate, Kcal: m.Nutrition.CaloriesKcal,
-				ProteinG: gramsOf(m.Nutrition.ProteinMg), Items: items,
-				Complete: m.Nutrition.Complete,
+			page(c, "menu", PageData{
+				L:           lang,
+				Title:       title,
+				Description: desc,
+				Canonical:   base() + path,
+				Diet:        &dietLink{Name: dt.Name, Slug: dt.Slug, Description: dt.Description},
+				Meals:       cards, DietTypes: diets,
+				JSONLD: template.JS(`{"@context":"https://schema.org","@type":"Menu",` +
+					`"name":"` + template.JSEscapeString(dt.Name) + `",` +
+					`"inLanguage":"` + i18n.Meta(lang).Tag + `","url":"` + base() + path + `"}`),
 			})
 		}
+	}
 
-		title := dt.Name + " — menu minggu ini | Evermore"
-		if dt.SEOTitle != nil && *dt.SEOTitle != "" {
-			title = *dt.SEOTitle
+	// One set of routes per language. The default locale keeps the bare paths
+	// it has always had, so no existing link, bookmark or indexed URL breaks;
+	// the other two live under /en and /zh. Path-prefixed rather than a cookie
+	// on one URL, because a cookie serves different content at the same
+	// address — which breaks sharing a link and gives search engines one URL
+	// with three bodies.
+	for _, info := range i18n.All() {
+		prefix := ""
+		if info.Prefix != "" {
+			prefix = "/" + info.Prefix
 		}
-		desc := dt.Description
-		if dt.SEODescription != nil && *dt.SEODescription != "" {
-			desc = *dt.SEODescription
-		}
-
-		diets, _ := publicDiets(c, d)
-		page(c, "menu", PageData{
-			Title: title, Description: desc,
-			Canonical: base() + "/menu/" + dt.Slug,
-			Diet:      &dietLink{Name: dt.Name, Slug: dt.Slug, Description: dt.Description},
-			Meals:     cards, DietTypes: diets,
-			JSONLD: template.JS(`{"@context":"https://schema.org","@type":"Menu",` +
-				`"name":"` + template.JSEscapeString(dt.Name) + `",` +
-				`"inLanguage":"id-ID","url":"` + base() + "/menu/" + dt.Slug + `"}`),
-		})
-	})
+		r.GET(prefix+"/", home(info.Locale))
+		r.GET(prefix+"/menu/:slug", menu(info.Locale))
+	}
 
 	// ── Public company contact ──────────────────────────────────────────────
 	//
@@ -247,6 +326,10 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			"User-agent: *",
 			"Allow: /$",
 			"Allow: /menu",
+			// The translated marketing pages are the same surface as the
+			// Indonesian one and are meant to be indexed too.
+			"Allow: /en",
+			"Allow: /zh",
 			"Disallow: /admin",
 			"Disallow: /app",
 			"Disallow: /cart",
@@ -262,13 +345,36 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 
 	r.GET("/sitemap.xml", func(c *gin.Context) {
 		diets, _ := publicDiets(c, d)
+
+		// Every page in every language, and each entry declares the whole set
+		// as xhtml:link alternates. A sitemap that lists only the Indonesian
+		// URLs leaves the other two to be discovered by luck; listing them
+		// without hreflang gets them read as duplicate content.
+		paths := []string{"/"}
+		for _, dt := range diets {
+			paths = append(paths, "/menu/"+dt.Slug)
+		}
+
 		var b strings.Builder
 		b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
-		b.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
-		b.WriteString("  <url><loc>" + base() + "/</loc><priority>1.0</priority></url>\n")
-		for _, dt := range diets {
-			b.WriteString("  <url><loc>" + base() + "/menu/" + dt.Slug +
-				"</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n")
+		b.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"` +
+			` xmlns:xhtml="http://www.w3.org/1999/xhtml">` + "\n")
+		for _, p := range paths {
+			priority, changefreq := "0.8", "<changefreq>daily</changefreq>"
+			if p == "/" {
+				priority, changefreq = "1.0", ""
+			}
+			for _, info := range i18n.All() {
+				b.WriteString("  <url><loc>" + base() + i18n.Path(info.Locale, p) + "</loc>")
+				b.WriteString(changefreq + "<priority>" + priority + "</priority>")
+				for _, alt := range i18n.All() {
+					b.WriteString(`<xhtml:link rel="alternate" hreflang="` + alt.Tag +
+						`" href="` + base() + i18n.Path(alt.Locale, p) + `"/>`)
+				}
+				b.WriteString(`<xhtml:link rel="alternate" hreflang="x-default" href="` +
+					base() + i18n.Path(i18n.Default, p) + `"/>`)
+				b.WriteString("</url>\n")
+			}
 		}
 		b.WriteString("</urlset>\n")
 		c.Data(http.StatusOK, "application/xml; charset=utf-8", []byte(b.String()))

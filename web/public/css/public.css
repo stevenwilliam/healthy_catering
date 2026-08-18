@@ -2,12 +2,15 @@
  * used here has a measured ratio in that file. Mobile-first, designed at
  * 360px (99 §8).
  *
- * The one structural rule, and the reason this file is laid out the way it is:
- * the page GROUND is Nourish Green #468973, on which nothing reaches AA at
- * reading size (best case is white at 4.13). So the ground carries display
- * type, surfaces and controls; every paragraph sits on a beige sheet or a
- * white card, where deep ink measures 11.32 and 11.89. Putting a <p> straight
- * onto .ground is the mistake this stylesheet is shaped to prevent.
+ * Two grounds, and which one a string sits on decides how large it has to be:
+ *
+ *   PAGE  — deep #1C3D34. Beige on it is 11.32, so body copy is free to sit
+ *           straight on the page. Panels and cards are design here, not the
+ *           accessibility crutch they were before the 2026-08-18 swap.
+ *   BARS  — mid #468973, the masthead and footer. Beige on it is only 3.93,
+ *           which is AA for LARGE text alone, so everything on a bar is
+ *           --text-bar (19px) at weight 700. This is the trap in this file:
+ *           a 15px label dropped onto a bar looks fine and is an AA failure.
  */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -81,19 +84,22 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 }
 
 /* ── Masthead ────────────────────────────────────────────────────────────
- * Deep Nourish Green, so every ink on it comes from the §2.5 table. */
+ * Mid Nourish Green since the 2026-08-18 swap. Beige on it is 3.93, which is
+ * AA for LARGE text only — so every string in here is --text-bar at weight
+ * 700. A 15px nav link on this fill is an AA failure, not a style choice. */
 .masthead {
-  background: var(--nourish-deep);
-  color: var(--on-dark);
+  background: var(--bar);
+  color: var(--on-bar);
+  border-bottom: 1px solid rgba(11, 30, 25, 0.25);
   padding: var(--space-4);
   display: flex; flex-wrap: wrap; gap: var(--space-4);
   align-items: center; justify-content: space-between;
 }
-.masthead a { color: var(--on-dark); text-decoration: none; }
+.masthead a { color: var(--on-bar); text-decoration: none; }
 .masthead nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
 .masthead nav a {
-  font-size: var(--text-sm);
-  font-weight: var(--w-ui);
+  font-size: var(--text-bar);   /* 19px @700 = WCAG large text; see tokens.css */
+  font-weight: var(--w-eyebrow);
 }
 .masthead nav a:hover { text-decoration: underline; }
 
@@ -109,6 +115,88 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   width: auto;
 }
 
+/* ── Language selector ───────────────────────────────────────────────────
+ * A <details> disclosure, not a scripted menu: the public pages ship no
+ * JavaScript and the CSP has no 'unsafe-inline', so a scripted dropdown would
+ * either not run or force a bundle onto a marketing page. <details> is
+ * keyboard-operable and announced as expandable for free.
+ *
+ * Closed, it shows the CURRENT language with its flag and its own name, which
+ * is what makes it findable by someone who has landed in a language they
+ * cannot read.
+ */
+.langpick { position: relative; margin-left: auto; }
+
+.langpick > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--on-bar);   /* 3.93 ✓ as a control boundary. NOT
+                                        --on-dark-muted, which is 2.25 here */
+  border-radius: var(--radius-full);
+  color: var(--on-bar);
+  font-size: var(--text-bar);        /* large text; see tokens.css */
+  font-weight: var(--w-eyebrow);
+  cursor: pointer;
+  list-style: none;             /* Firefox's default triangle */
+  user-select: none;
+}
+.langpick > summary::-webkit-details-marker { display: none; }
+.langpick > summary:hover { background: rgba(255, 250, 224, 0.10); }
+
+.langpick-caret { width: 10px; height: 6px; transition: transform var(--duration) var(--ease); }
+.langpick[open] > summary .langpick-caret { transform: rotate(180deg); }
+
+/* The flags are all 3:2, so one box fits every one of them. The hairline stops
+   a white or light band bleeding into whatever sits behind it. */
+.flag {
+  display: block;
+  width: 21px;
+  height: 14px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(11, 30, 25, 0.35);
+}
+
+.langpick-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-2));
+  z-index: 60;
+  min-width: 13rem;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  background: var(--sheet);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+}
+.langpick-menu a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--ink);              /* 11.32 on the sheet ✓ */
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--w-ui);
+}
+.langpick-menu a:hover { background: rgba(28, 61, 52, 0.08); }
+/* The tick is the second signal for the current language — aria-current is the
+   first. Never colour alone (99 §8). */
+.langpick-tick { width: 14px; height: 14px; margin-left: auto; }
+
+/* On the narrowest screens the current language's name would push the nav to a
+   third row; the flag alone still identifies it, and the full name is one tap
+   away inside the menu. */
+@media (max-width: 26rem) {
+  .langpick-name { display: none; }
+}
+
 /* ── Layout ──────────────────────────────────────────────────────────── */
 main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4); }
 
@@ -116,9 +204,30 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
 .hero.compact { padding-bottom: var(--space-8); }
 .hero h1 { max-width: 20ch; }
 
-/* 20px at 600 is "large text" under WCAG (≥18.66px bold), which is what makes
-   beige-on-ground legal here at 3.93:1. Drop either the size or the weight and
-   this line stops being AA — it is not a stylistic choice. */
+/* Copy left, picture right — one column until there is genuinely room for two.
+   60rem rather than the usual 48rem breakpoint because at tablet width a
+   half-width headline wraps to five or six lines and reads worse than the
+   stacked version. */
+.hero-split { display: grid; gap: var(--space-8); align-items: center; }
+.hero-copy { min-width: 0; }
+.hero-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lift);
+}
+@media (min-width: 60rem) {
+  .hero-split {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: var(--space-12);
+  }
+  .hero h1 { max-width: 16ch; }
+}
+
+/* On the deep ground beige measures 11.32, so this is AAA at any size — the
+   20px/600 here is now typography rather than an accessibility floor. (It was
+   load-bearing while the ground was mid-green.) */
 .lede {
   font-size: var(--text-lg);
   font-weight: var(--w-strong);
@@ -234,15 +343,17 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   gap: var(--space-3);
   height: calc(var(--footer-h) + env(safe-area-inset-bottom, 0px));
   padding: 0 var(--space-4) env(safe-area-inset-bottom, 0px);
-  background: var(--nourish-deep);
-  color: var(--on-dark);
-  font-size: var(--text-xs);
+  background: var(--bar);
+  color: var(--on-bar);
+  font-size: var(--text-bar);   /* large text: beige is only 3.93 on this fill */
+  font-weight: var(--w-eyebrow);
   line-height: 1;
+  border-top: 1px solid rgba(11, 30, 25, 0.25);
   box-shadow: 0 -2px 12px rgba(11, 30, 25, 0.28);
 }
 .foot p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.foot .small { color: var(--on-dark-muted); }   /* 6.47 ✓ */
-.foot .sep { color: var(--on-dark-muted); }
+.foot .small, .foot .sep { color: var(--on-bar); }  /* NOT --on-dark-muted:
+   #CCBDAA measures 2.25 on this fill and disappears into it */
 /* Below 30rem there is not room for both lines on one row; the copyright is
    the one that can go, because the contact detail is the useful half. */
 @media (max-width: 30rem) {
@@ -253,7 +364,6 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   h1 { font-size: var(--text-4xl); }
   main { padding: var(--space-12) var(--space-6); }
   .wordmark img { height: 30px; }
-  .foot { font-size: var(--text-sm); }
   .panel { padding: var(--space-12) var(--space-8); }
 }
 
@@ -262,14 +372,14 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
  * On EVERY page, not just the home page (Steven, 2026-08-18) — it lives in
  * the shared "foot" template.
  *
- * The colour needed rethinking when the ground turned green. WhatsApp's own
- * #128C7E measures 1.00:1 against #468973 — the two are within 0.0003 of the
- * same relative luminance, so the button was about to become a shape you can
- * only find if you can distinguish the hues, which is exactly what 1.4.11
- * exists to prevent. (Its usual #25D366 is no better: 1.89 against beige, and
- * it was already ruled out for that.) The fix is the beige ring: 3.93 against
- * the ground ✓ and 3.94 against the teal ✓, so the control is bounded on both
- * sides no matter which it overlaps. The white glyph on the teal is 4.14 ✓.
+ * The beige ring is load-bearing, and has survived two ground changes for two
+ * different reasons. On the mid-green ground, WhatsApp's #128C7E measured
+ * 1.00:1 — the two were within 0.0003 of the same luminance. On the deep
+ * ground it measures 2.87, still under the 3:1 that 1.4.11 requires of a
+ * control. Either way the button on its own is not findable, and the ring
+ * bounds it: 11.32 against the deep ground ✓ and 3.94 against the teal ✓.
+ * (WhatsApp's brighter #25D366 was already ruled out at 1.89 on beige.)
+ * The white glyph on the teal is 4.14 ✓.
  *
  * A plain anchor, not a script: the CSP has no 'unsafe-inline', so an inline
  * handler would silently not run.
@@ -289,10 +399,10 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   border-radius: 50%;
   background: #128C7E;
   color: #FFFFFF;
-  box-shadow: 0 6px 20px rgba(11, 30, 25, 0.38);
-  /* The ring IS the accessibility mechanism here, not decoration. */
-  outline: 3px solid var(--sheet);
-  outline-offset: 0;
+  /* The ring IS the accessibility mechanism here, not decoration. It is a
+     box-shadow rather than an outline so that :focus-visible still has an
+     outline of its own to draw — see below. */
+  box-shadow: 0 0 0 3px var(--sheet), 0 6px 20px rgba(11, 30, 25, 0.38);
   transition: transform 0.2s ease;
 }
 .wa-float svg { width: 34px; height: 34px; }
@@ -302,11 +412,14 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
   transform: translateY(-2px);
 }
 
-/* The focus ring has to be distinguishable from the permanent beige ring, so
-   it is drawn outside it with a gap. */
+/* Focus has to look DIFFERENT from resting, which is why it is white rather
+   than beige: the resting ring is already beige, and once the page ground
+   turned deep green an outer deep-green ring would have been invisible against
+   it — leaving focus and resting indistinguishable. White is 11.89 on the page
+   and 4.14 on the teal. */
 .wa-float:focus-visible {
-  outline: 3px solid var(--sheet);
-  box-shadow: 0 0 0 3px var(--nourish-deep), 0 6px 20px rgba(11, 30, 25, 0.38);
+  outline: 3px solid var(--on-canvas-strong);
+  outline-offset: 3px;
 }
 
 @media (min-width: 48rem) {

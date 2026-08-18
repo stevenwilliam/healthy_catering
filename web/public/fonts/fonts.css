@@ -73,8 +73,23 @@
 
 :root {
   /* Erode carries the wordmark's character; Inter carries everything a
-     customer actually reads (docs/10 §3). */
-  --font-display: 'Erode', Georgia, 'Times New Roman', serif;
+     customer actually reads (docs/10 §3).
+     
+     NEITHER FACE HAS CJK COVERAGE. Erode is a Latin display face and Inter's
+     variable file is Latin/Greek/Cyrillic, so with Chinese live since
+     2026-08-18 every Han character falls through to whatever comes next. The
+     CJK names below are therefore part of the design, not defensive padding:
+     without them the fallback is the browser's last-resort serif, which
+     against the Latin text on the same page looks like a rendering fault
+     rather than a second script. Ordered per-platform — PingFang on Apple,
+     Microsoft YaHei on Windows, Noto on Linux and Android. None is
+     downloaded: a CJK webfont is megabytes, and every platform already ships
+     a good one. */
+  --font-cjk: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+              'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC',
+              'WenQuanYi Micro Hei';
+  --font-display: 'Erode', var(--font-cjk), Georgia, 'Times New Roman', serif;
   --font-body: 'InterVariable', 'Inter', system-ui, -apple-system,
-               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+               'Segoe UI', Roboto, var(--font-cjk), 'Helvetica Neue', Arial,
+               sans-serif;
 }
