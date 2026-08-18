@@ -76,8 +76,21 @@ function Nav() {
 
   return (
     <header className="bg-bar text-beige">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
-        <Link to="/" className="flex items-center" aria-label={t('nav.home_aria')}>
+      {/* GRID, not a wrapping flexbox — the same bug the public masthead had:
+          as a flex row the right-hand group wrapped onto a line of its own, so
+          on a phone the header was a logo, then an orphaned language pill,
+          before any content. Explicit placement keeps the picker beside the
+          wordmark and lets only the nav take a second row. xl (1280px) is the
+          same threshold the public masthead uses. */}
+      <div
+        className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4
+                   gap-y-3 px-4 py-3 xl:grid-cols-[auto_1fr_auto]"
+      >
+        <Link
+          to="/"
+          className="col-start-1 row-start-1 flex items-center"
+          aria-label={t('nav.home_aria')}
+        >
           {/* The supplied wordmark, reversed out for the dark fill. Served
               from /images by the Go server, not bundled by Vite. */}
           <img
@@ -91,7 +104,11 @@ function Nav() {
         {/* text-bar, not text-sm: beige on the mid-green bar is 3.93, which is
             AA for LARGE text only (docs/10 §2.7). */}
         {session && (
-          <nav className="flex flex-wrap gap-4 text-bar font-bold" aria-label={t('nav.aria')}>
+          <nav
+            className="col-span-full row-start-2 flex flex-wrap gap-4 text-bar font-bold
+                       xl:col-span-1 xl:col-start-2 xl:row-start-1"
+            aria-label={t('nav.aria')}
+          >
             <Link to="/menu">{t('nav.menu')}</Link>
             <Link to="/orders">{t('nav.orders')}</Link>
             <Link to="/packages">{t('nav.packages')}</Link>
@@ -102,7 +119,10 @@ function Nav() {
             {staff && <Link to="/admin/settings">{t('nav.settings')}</Link>}
           </nav>
         )}
-        <div className="ml-auto flex items-center gap-3 text-bar font-bold">
+        <div
+          className="col-start-2 row-start-1 flex items-center justify-end gap-3
+                     text-bar font-bold xl:col-start-3"
+        >
           {session ? (
             <>
               <span className="hidden md:inline">{session.full_name}</span>

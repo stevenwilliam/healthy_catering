@@ -87,13 +87,36 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
  * Mid Nourish Green since the 2026-08-18 swap. Beige on it is 3.93, which is
  * AA for LARGE text only — so every string in here is --text-bar at weight
  * 700. A 15px nav link on this fill is an AA failure, not a style choice. */
+/* GRID, not a wrapping flexbox. As a flex row the three children wrapped
+   independently, so as soon as the row overflowed the language picker dropped
+   onto a line of ITS OWN, floating right with nothing beside it — at 390px
+   that cost four rows and ~200px of header before any content. The 19px/700
+   nav this bar's contrast floor requires made that overflow start at ~1100px
+   rather than at phone widths, so it was the common case, not an edge one.
+   Explicit placement means the picker is always beside the wordmark and the
+   nav is the only thing allowed to take a second row. */
 .masthead {
   background: var(--bar);
   color: var(--on-bar);
   border-bottom: 1px solid rgba(11, 30, 25, 0.25);
   padding: var(--space-4);
-  display: flex; flex-wrap: wrap; gap: var(--space-4);
-  align-items: center; justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+.masthead .wordmark { grid-column: 1; grid-row: 1; }
+.masthead .langpick { grid-column: 2; grid-row: 1; justify-self: end; }
+.masthead nav      { grid-column: 1 / -1; grid-row: 2; }
+
+/* One row only where all three genuinely fit. Measured rather than guessed:
+   the logo is ~290px, the six nav links ~640px at 19px/700, and the picker
+   ~230px, so below 80rem something has to give and it should be the nav
+   dropping to its own row. */
+@media (min-width: 80rem) {
+  .masthead { grid-template-columns: auto 1fr auto; }
+  .masthead nav { grid-column: 2; grid-row: 1; justify-self: start; }
+  .masthead .langpick { grid-column: 3; grid-row: 1; }
 }
 .masthead a { color: var(--on-bar); text-decoration: none; }
 .masthead nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
@@ -125,7 +148,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
  * is what makes it findable by someone who has landed in a language they
  * cannot read.
  */
-.langpick { position: relative; margin-left: auto; }
+.langpick { position: relative; }
 
 .langpick > summary {
   display: inline-flex;
