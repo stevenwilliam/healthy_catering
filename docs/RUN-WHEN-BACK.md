@@ -3,7 +3,32 @@
 Steps needing an interactive terminal, a browser, or credentials that do not
 exist yet. Use `vi` for any edits.
 
-_Updated: 2026-08-12, after the first build session._
+_Updated: 2026-08-18 — §A added (the site is still unreachable from your PC)._
+
+## A. One command — this is why you still cannot open the site · DO THIS FIRST
+
+The firewall rule added on 2026-08-13 was scoped to the wrong network. Your PC
+does not reach this VM from `192.168.88.0/24`; it arrives as **`172.16.0.1`**,
+the VMware host-side adapter. `ufw` logged 36 dropped connections from it to
+port 8090 — the packets never reached nginx, which is why the tab just spins.
+
+I could not run this myself: changing the firewall needs a permission this
+session does not have. Paste it into the terminal (or type `! <command>` in
+this session so the output lands here):
+
+```bash
+sudo ufw allow from 172.16.0.0/24 to any port 8090 proto tcp \
+     comment 'evermore dev (VMware host net)'
+sudo ufw status numbered
+```
+
+Then open **`http://192.168.88.101:8090/`**.
+
+Not `http://192.168.88.101/` — port 80 on the bare IP is still ruuma's
+`default_server`, so it loads the other project and looks like a broken deploy.
+
+Keep the existing `192.168.88.0/24` rule; it covers anything on the physical
+LAN. Both rules go away when the site moves to 443 (`docs/14` §8a).
 
 ## 0. What is already done — do NOT redo these
 

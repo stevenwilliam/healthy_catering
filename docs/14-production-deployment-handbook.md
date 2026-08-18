@@ -225,6 +225,36 @@ sudo ufw allow from 192.168.88.0/24 to any port 8090 proto tcp \
 sudo ufw status numbered
 ```
 
+### The trap: scope the rule to the address the client *actually arrives from*
+
+Opening the port to "the LAN" is only correct if the browser really reaches
+this host from the LAN subnet. On `claudedev` it does not. The box is a VM on
+`ens32` at `192.168.88.101`, but Steven's PC arrives as **`172.16.0.1`** — the
+VMware host-side virtual adapter — so a rule scoped to `192.168.88.0/24` keeps
+dropping him and the browser keeps timing out. Guessing the subnet is what
+costs the second round trip; **read it out of the block log instead**:
+
+```bash
+sudo grep 'DPT=8090' /var/log/ufw.log /var/log/ufw.log.1 \
+  | grep -o 'SRC=[0-9.]* DST=[0-9.]*' | sort | uniq -c | sort -rn
+#   36 SRC=172.16.0.1 DST=192.168.88.101      <- the real client address
+```
+
+An empty nginx access log tells you the packet never arrived; this tells you
+*who* was turned away. Then open it to that source:
+
+```bash
+sudo ufw allow from 172.16.0.0/24 to any port 8090 proto tcp \
+     comment 'evermore dev (VMware host net)'
+```
+
+Both rules are needed on this host — `192.168.88.0/24` for anything on the
+physical LAN, `172.16.0.0/24` for the PC hosting the VM.
+
+⚠️ Port 80 on the bare IP is **ruuma's** `default_server`, not Evermore. Typing
+`http://192.168.88.101/` loads the wrong project and looks like a deploy that
+went wrong; Evermore is `http://192.168.88.101:8090/` until DNS and TLS exist.
+
 In production this stage disappears: the site moves to 443, which the
 `Nginx Full` profile already allows, and 8090 should then be **removed**:
 
