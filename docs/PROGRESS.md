@@ -97,6 +97,14 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Screenshot coverage, 2026-08-18.** The four authenticated-screen captures
+(`spa-menu`, `spa-order`, `spa-cart-mobile`, `spa-admin-payments`) were deleted
+rather than kept: they were taken on 2026-08-13 and still showed the beige
+ground, the text wordmark and the untranslated UI, so as documentation they
+were actively misleading. Re-taking them needs a signed-in session in the
+headless browser — added to `RUN-WHEN-BACK.md` §B. The login screen, which
+needs no session, is captured in both English and Chinese.
+
 **Trilingual, 2026-08-18 (Steven).** Indonesian, English and Simplified
 Chinese, with a flag-and-name language selector on both surfaces. Public pages
 are path-prefixed (`/`, `/en/`, `/zh/`) with hreflang alternates and a

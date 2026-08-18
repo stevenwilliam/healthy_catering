@@ -30,6 +30,27 @@ Not `http://192.168.88.101/` — port 80 on the bare IP is still ruuma's
 Keep the existing `192.168.88.0/24` rule; it covers anything on the physical
 LAN. Both rules go away when the site moves to 443 (`docs/14` §8a).
 
+## B. Re-take the signed-in screenshots
+
+The four authenticated-screen captures were deleted on 2026-08-18: they dated
+from before the brand pass and the translations, so they showed a UI that no
+longer exists. Everything reachable without a session — the public pages in all
+three languages, the 404, the login screen — has been re-captured.
+
+Re-taking the rest needs a real session in the browser, which headless
+`--screenshot` cannot set up on its own:
+
+```bash
+cd /home/dev/projects/healthy_catering
+# Sign in as a seeded customer, then drive /app/menu, /app/orders,
+# /app/packages and /app/admin/payments with a browser that can run script —
+# the session lives in localStorage under the key the SPA sets, so a
+# screenshot-only run lands on the login page instead.
+```
+
+Not urgent, and not a blocker for anything. It matters the next time someone
+reads `docs/screenshots/` expecting it to show the current UI.
+
 ## 0. What is already done — do NOT redo these
 
 The build session completed the environment setup that this file previously
