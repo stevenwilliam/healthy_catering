@@ -97,6 +97,18 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Header navigation and four new pages, 2026-08-18 (Steven).** The masthead is
+now Price list · Contact · About us · Career · Category, with the six diet
+types moved into the Category submenu — a `<details>` disclosure like the
+language picker, so the pages still ship no JavaScript and the diet links stay
+plain crawlable `<a>`s. `/price-list`, `/contact`, `/about` and `/career` are
+real server-rendered routes in all three languages, with hreflang, canonicals
+and sitemap entries (33 URLs now). The price list reads the live pricing tables
+— DEFAULT scope only, valid today, so a negotiated corporate rate can never
+appear — and About/Career/Contact copy is editable in the back office
+(migration 0018). Nutrition badges are pinned to the foot of each menu card so
+the figures line up across a row.
+
 **Sample menu, 2026-08-18 (Steven).** `./bin/api seed-menu [days]` fills the
 calendar: 18 dishes with full nutrition panels, and one published lunch menu
 per diet type per day, cycling three variants so a week is not the same plate

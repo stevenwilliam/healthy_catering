@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/stevenwilliam/healthy_catering/internal/app"
+	"github.com/stevenwilliam/healthy_catering/internal/domain/money"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
@@ -57,6 +58,9 @@ type PageData struct {
 	// right box before the file arrives. Zero when they could not be read, in
 	// which case the template omits the attributes rather than guessing.
 	HeroW, HeroH int
+
+	// Prices is populated on the price-list route only.
+	Prices *app.PublicPriceList
 
 	// Copy is editable public wording from public_content, keyed the same way
 	// as the static catalogue. The template reads it through `c`, which falls
@@ -126,6 +130,10 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// dietArt is the decorative corner mark on a diet-type card, chosen by
 		// slug. Returns a fallback rather than nothing for an unknown slug.
 		"dietArt": dietArt,
+		// idr formats whole rupiah the Indonesian way — Rp 500.000 — through the
+		// domain formatter, so a price on a marketing page and a price on an
+		// invoice cannot be grouped differently.
+		"idr": func(v int64) string { return money.Format(money.IDR(v)) },
 		// path rewrites a locale-free path into the current locale, so a link
 		// written once in the template stays inside the language the reader
 		// chose. Without it every href would silently drop them back to
@@ -332,6 +340,46 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		}
 	}
 
+	// ── Static-copy pages ───────────────────────────────────────────────────
+	//
+	// One handler shape for all of them: the template name is the page, and
+	// every string on it comes from the catalogue or from public_content, so
+	// adding a page is a template plus its keys rather than new plumbing.
+	simplePage := func(lang i18n.Locale, tpl, path, titleKey, descKey string) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			diets, _ := publicDiets(c, d)
+			page(c, tpl, PageData{
+				L:           lang,
+				Title:       publicMessages.T(lang, titleKey),
+				Description: publicMessages.T(lang, descKey),
+				Canonical:   base() + i18n.Path(lang, path),
+				DietTypes:   diets,
+			})
+		}
+	}
+
+	priceList := func(lang i18n.Locale) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			diets, _ := publicDiets(c, d)
+			data := PageData{
+				L:           lang,
+				Title:       publicMessages.T(lang, "price.title"),
+				Description: publicMessages.T(lang, "price.description"),
+				Canonical:   base() + i18n.Path(lang, "/price-list"),
+				DietTypes:   diets,
+			}
+			// A pricing failure must not 500 the page: the template renders an
+			// empty-state instead, which is a better answer to a visitor than
+			// an error screen.
+			if list, err := d.Pricing.PublicList(c.Request.Context()); err == nil {
+				data.Prices = &list
+			} else if d.Log != nil {
+				d.Log.Warn("price list unavailable", "error", err)
+			}
+			page(c, "pricelist", data)
+		}
+	}
+
 	// One set of routes per language. The default locale keeps the bare paths
 	// it has always had, so no existing link, bookmark or indexed URL breaks;
 	// the other two live under /en and /zh. Path-prefixed rather than a cookie
@@ -345,6 +393,13 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		}
 		r.GET(prefix+"/", home(info.Locale))
 		r.GET(prefix+"/menu/:slug", menu(info.Locale))
+		r.GET(prefix+"/price-list", priceList(info.Locale))
+		r.GET(prefix+"/contact", simplePage(info.Locale, "contact", "/contact",
+			"contact.title", "contact.description"))
+		r.GET(prefix+"/about", simplePage(info.Locale, "about", "/about",
+			"about.title", "about.description"))
+		r.GET(prefix+"/career", simplePage(info.Locale, "career", "/career",
+			"career.title", "career.description"))
 	}
 
 	// ── Public company contact ──────────────────────────────────────────────
@@ -374,6 +429,10 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			"User-agent: *",
 			"Allow: /$",
 			"Allow: /menu",
+			"Allow: /price-list",
+			"Allow: /contact",
+			"Allow: /about",
+			"Allow: /career",
 			// The translated marketing pages are the same surface as the
 			// Indonesian one and are meant to be indexed too.
 			"Allow: /en",
@@ -398,7 +457,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// as xhtml:link alternates. A sitemap that lists only the Indonesian
 		// URLs leaves the other two to be discovered by luck; listing them
 		// without hreflang gets them read as duplicate content.
-		paths := []string{"/"}
+		paths := []string{"/", "/price-list", "/contact", "/about", "/career"}
 		for _, dt := range diets {
 			paths = append(paths, "/menu/"+dt.Slug)
 		}

@@ -166,6 +166,141 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "Back to home",
 		i18n.ZH: "返回首页",
 	},
+	// ── Header navigation ───────────────────────────────────────────────────
+	"nav.pricelist": {
+		i18n.ID: "Daftar harga", i18n.EN: "Price list", i18n.ZH: "价格表",
+	},
+	"nav.contact":  {i18n.ID: "Kontak", i18n.EN: "Contact", i18n.ZH: "联系我们"},
+	"nav.about":    {i18n.ID: "Tentang kami", i18n.EN: "About us", i18n.ZH: "关于我们"},
+	"nav.career":   {i18n.ID: "Karier", i18n.EN: "Career", i18n.ZH: "招聘"},
+	"nav.category": {i18n.ID: "Kategori", i18n.EN: "Category", i18n.ZH: "菜单分类"},
+
+	// ── Price list ──────────────────────────────────────────────────────────
+	"price.title": {
+		i18n.ID: "Daftar harga — Evermore",
+		i18n.EN: "Price list — Evermore",
+		i18n.ZH: "价格表 — Evermore",
+	},
+	"price.description": {
+		i18n.ID: "Harga per porsi menurut kategori dan jumlah pesanan, serta paket kredit makan Evermore.",
+		i18n.EN: "Price per portion by category and order size, and Evermore's prepaid meal-credit packages.",
+		i18n.ZH: "按菜单类别与订购数量计算的每份价格，以及 Evermore 的预付餐额套餐。",
+	},
+	"price.h1": {
+		i18n.ID: "Harga", i18n.EN: "Prices", i18n.ZH: "价格",
+	},
+	"price.lede": {
+		i18n.ID: "Harga per porsi. Semakin banyak porsi dalam satu pesanan, semakin murah harganya.",
+		i18n.EN: "Prices are per portion. The more portions in one order, the lower the price.",
+		i18n.ZH: "价格以每份计算。单次订购份数越多，单价越低。",
+	},
+	"price.meals_h2": {
+		i18n.ID: "Harga per porsi", i18n.EN: "Price per portion", i18n.ZH: "每份价格",
+	},
+	"price.meals_note": {
+		i18n.ID: "Harga sudah termasuk wadah dan pengantaran ke area layanan kami.",
+		i18n.EN: "Prices include packaging and delivery inside our service area.",
+		i18n.ZH: "价格已包含餐盒及配送区域内的配送费用。",
+	},
+	"price.col_category": {i18n.ID: "Kategori", i18n.EN: "Category", i18n.ZH: "类别"},
+	"price.col_tier":     {i18n.ID: "Jumlah porsi", i18n.EN: "Portions", i18n.ZH: "份数"},
+	"price.col_price":    {i18n.ID: "Harga per porsi", i18n.EN: "Per portion", i18n.ZH: "每份价格"},
+	"price.tiers_h3": {
+		i18n.ID: "Tingkatan jumlah", i18n.EN: "Quantity tiers", i18n.ZH: "数量分档",
+	},
+	"price.empty": {
+		i18n.ID: "Harga sedang diperbarui. Silakan hubungi kami untuk penawaran terbaru.",
+		i18n.EN: "Prices are being updated. Please contact us for a current quote.",
+		i18n.ZH: "价格正在更新中，请联系我们获取最新报价。",
+	},
+	"price.packages_h2": {
+		i18n.ID: "Paket kredit makan", i18n.EN: "Meal-credit packages", i18n.ZH: "餐额套餐",
+	},
+	"price.credits": {i18n.ID: "kredit", i18n.EN: "credits", i18n.ZH: "份餐额"},
+	"price.days":    {i18n.ID: "hari berlaku", i18n.EN: "days valid", i18n.ZH: "天有效期"},
+	"price.on_request": {
+		i18n.ID: "Hubungi kami", i18n.EN: "On request", i18n.ZH: "请咨询",
+	},
+
+	// ── Contact ─────────────────────────────────────────────────────────────
+	"contact.title": {
+		i18n.ID: "Kontak — Evermore",
+		i18n.EN: "Contact — Evermore",
+		i18n.ZH: "联系我们 — Evermore",
+	},
+	"contact.description": {
+		i18n.ID: "Hubungi Evermore untuk pertanyaan menu, pesanan kantor, atau kerja sama.",
+		i18n.EN: "Get in touch with Evermore about the menu, office orders or partnerships.",
+		i18n.ZH: "如需咨询菜单、企业订餐或合作事宜，请联系 Evermore。",
+	},
+	"contact.h1": {i18n.ID: "Hubungi kami", i18n.EN: "Contact us", i18n.ZH: "联系我们"},
+	"contact.lede": {
+		i18n.ID: "Ada pertanyaan tentang menu, pesanan kantor, atau area pengantaran? Kami senang membantu.",
+		i18n.EN: "Questions about the menu, an office order, or where we deliver? We are glad to help.",
+		i18n.ZH: "对菜单、企业订餐或配送范围有疑问？我们很乐意为您解答。",
+	},
+	"contact.reach_h2": {
+		i18n.ID: "Cara menghubungi kami", i18n.EN: "How to reach us", i18n.ZH: "联系方式",
+	},
+	"contact.email": {i18n.ID: "Email", i18n.EN: "Email", i18n.ZH: "邮箱"},
+	"contact.phone": {i18n.ID: "Telepon", i18n.EN: "Phone", i18n.ZH: "电话"},
+	"contact.hours": {
+		i18n.ID: "Kami membalas pada hari kerja, Senin sampai Sabtu, pukul 08.00–17.00 WIB.",
+		i18n.EN: "We reply on working days, Monday to Saturday, 08:00–17:00 WIB.",
+		i18n.ZH: "我们在工作日回复：周一至周六 08:00–17:00（西部印尼时间）。",
+	},
+
+	// ── About ───────────────────────────────────────────────────────────────
+	"about.title": {
+		i18n.ID: "Tentang kami — Evermore",
+		i18n.EN: "About us — Evermore",
+		i18n.ZH: "关于我们 — Evermore",
+	},
+	"about.description": {
+		i18n.ID: "Evermore memasak makanan sehat harian di Jakarta dan mengantarnya dari dapur terdekat.",
+		i18n.EN: "Evermore cooks healthy daily meals in Jakarta and delivers from the nearest kitchen.",
+		i18n.ZH: "Evermore 在雅加达制作每日健康餐，并由最近的厨房配送。",
+	},
+	"about.h1": {i18n.ID: "Tentang Evermore", i18n.EN: "About Evermore", i18n.ZH: "关于 Evermore"},
+	"about.lede": {
+		i18n.ID: "Kami memasak makanan sehat harian di Jakarta dan mengantarnya dari dapur yang paling dekat dengan Anda.",
+		i18n.EN: "We cook healthy daily meals in Jakarta and deliver them from the kitchen closest to you.",
+		i18n.ZH: "我们在雅加达制作每日健康餐，并由离您最近的厨房配送。",
+	},
+	"about.body": {
+		i18n.ID: "Evermore berawal dari satu pertanyaan sederhana: bagaimana caranya makan sehat setiap hari tanpa harus memasak sendiri. Kami menyusun menu bersama ahli gizi, memasaknya pagi hari di beberapa dapur di Jakarta, dan mengantarnya ke rumah atau kantor Anda pada hari yang sama. Setiap porsi mencantumkan kalori dan proteinnya, karena Anda berhak tahu apa yang Anda makan.",
+		i18n.EN: "Evermore started from one plain question: how do you eat well every day without having to cook. We plan the menu with nutritionists, cook it each morning across several kitchens in Jakarta, and deliver it to your home or office the same day. Every portion lists its calories and protein, because you should know what you are eating.",
+		i18n.ZH: "Evermore 源于一个朴素的问题：如何在不亲自下厨的情况下每天吃得健康。我们与营养师共同制定菜单，每天清晨在雅加达的多个厨房烹制，并于当天送达您的家中或办公室。每一份餐点都标明热量与蛋白质含量——您有权知道自己吃的是什么。",
+	},
+
+	// ── Career ──────────────────────────────────────────────────────────────
+	"career.title": {
+		i18n.ID: "Karier — Evermore",
+		i18n.EN: "Career — Evermore",
+		i18n.ZH: "招聘 — Evermore",
+	},
+	"career.description": {
+		i18n.ID: "Peluang karier di dapur, pengantaran, dan tim kantor Evermore di Jakarta.",
+		i18n.EN: "Careers in Evermore's kitchens, delivery and office teams in Jakarta.",
+		i18n.ZH: "Evermore 在雅加达的厨房、配送与办公团队招聘机会。",
+	},
+	"career.h1": {i18n.ID: "Karier", i18n.EN: "Careers", i18n.ZH: "加入我们"},
+	"career.lede": {
+		i18n.ID: "Kami sedang tumbuh, dan kami mencari orang yang peduli pada makanan yang baik.",
+		i18n.EN: "We are growing, and we are looking for people who care about good food.",
+		i18n.ZH: "我们正在成长，并寻找真正在意好食物的伙伴。",
+	},
+	"career.body": {
+		i18n.ID: "Kami membuka kesempatan untuk juru masak, staf dapur, kurir, dan tim layanan pelanggan. Kirimkan CV Anda beserta posisi yang diminati, dan ceritakan sedikit mengapa Anda ingin bergabung. Kami membalas setiap lamaran yang masuk.",
+		i18n.EN: "We have openings for cooks, kitchen staff, couriers and customer-service team members. Send us your CV with the role you are interested in, and a few words on why you want to join. We reply to every application we receive.",
+		i18n.ZH: "我们正在招聘厨师、厨房员工、配送员以及客服团队成员。请发送您的简历，注明意向职位，并简要说明您希望加入的原因。我们会回复每一份收到的申请。",
+	},
+	"career.apply": {
+		i18n.ID: "Kirim lamaran", i18n.EN: "Send an application", i18n.ZH: "投递简历",
+	},
+	"career.subject": {
+		i18n.ID: "Lamaran kerja", i18n.EN: "Job application", i18n.ZH: "求职申请",
+	},
 }
 
 // flagSVG is the flag shown beside each language in the selector.

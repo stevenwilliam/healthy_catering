@@ -27,6 +27,11 @@ func TestMoneyFieldsHaveExplicitColumnTags(t *testing.T) {
 	types := []any{
 		PriceRow{}, OrderSummary{}, OrderDetail{}, OrderLineDetail{},
 		PlaceOrderResult{}, Food{}, Meal{}, MealItem{},
+		// The public price list fell into exactly this trap on 2026-08-18:
+		// the page rendered "Rp 0" against real 55.000 and 48.000 rows,
+		// because the new structs were written without the tags. Adding them
+		// here is what stops the next new struct doing it again.
+		PublicMealPrice{}, PublicPackage{},
 	}
 
 	for _, v := range types {

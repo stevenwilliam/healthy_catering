@@ -74,7 +74,28 @@ const publicTemplates = `
          alt="Evermore">
   </a>
   <nav aria-label="{{t .L "nav.main"}}">
-    {{range .DietTypes}}<a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a>{{end}}
+    <a href="{{path .L "/price-list"}}">{{t .L "nav.pricelist"}}</a>
+    <a href="{{path .L "/contact"}}">{{t .L "nav.contact"}}</a>
+    <a href="{{path .L "/about"}}">{{t .L "nav.about"}}</a>
+    <a href="{{path .L "/career"}}">{{t .L "nav.career"}}</a>
+    <!-- Category is a submenu, same <details> disclosure as the language
+         picker and for the same reason: no JavaScript on these pages, and the
+         CSP would not run an inline handler anyway. The six diet types are
+         still plain links inside it, so they remain crawlable and each one is
+         still its own indexed page. -->
+    <details class="navdrop">
+      <summary>{{t .L "nav.category"}}
+        <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
+          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </summary>
+      <ul class="navdrop-menu">
+        {{range .DietTypes}}
+        <li><a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a></li>
+        {{end}}
+      </ul>
+    </details>
   </nav>
   {{template "langpicker" .}}
 </header>
@@ -256,6 +277,142 @@ const publicTemplates = `
     <h1>{{t .L "notfound.h1"}}</h1>
     <p class="lede">{{t .L "notfound.body"}}</p>
     <a class="cta" href="{{path .L "/"}}">{{t .L "notfound.cta"}}</a>
+  </section>
+</main>
+{{template "foot" .}}
+{{end}}
+
+{{define "pricelist"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.pricelist"}}</p>
+    <h1>{{t .L "price.h1"}}</h1>
+    <p class="lede">{{t .L "price.lede"}}</p>
+  </section>
+
+  <section class="panel">
+    <h2>{{t .L "price.meals_h2"}}</h2>
+    <p>{{t .L "price.meals_note"}}</p>
+    {{if and .Prices .Prices.Prices}}
+    <div class="table-scroll">
+      <table class="pricetable">
+        <caption class="sr-only">{{t .L "price.meals_h2"}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{t .L "price.col_category"}}</th>
+            <th scope="col">{{t .L "price.col_tier"}}</th>
+            <th scope="col" class="num">{{t .L "price.col_price"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Prices.Prices}}
+          <tr>
+            <th scope="row">{{.DietName}}</th>
+            <td>{{.TierLabel}}</td>
+            <td class="num">{{idr .UnitPriceIDR}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="empty">{{t .L "price.empty"}}</p>
+    {{end}}
+
+    {{if and .Prices .Prices.Tiers}}
+    <h3>{{t .L "price.tiers_h3"}}</h3>
+    <ul class="items">
+      {{range .Prices.Tiers}}<li>{{.Label}}</li>{{end}}
+    </ul>
+    {{end}}
+  </section>
+
+  {{if and .Prices .Prices.Packages}}
+  <section class="check">
+    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
+    <div class="grid">
+      {{range .Prices.Packages}}
+      <article class="card">
+        <h3>{{.Name}}</h3>
+        {{if .Description}}<p>{{.Description}}</p>{{end}}
+        <p class="badges">
+          <span class="badge">{{.MealCredits}} {{t $.L "price.credits"}}</span>
+          <span class="badge">{{.ValidityDays}} {{t $.L "price.days"}}</span>
+        </p>
+        <p class="price">
+          {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}
+        </p>
+      </article>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+</main>
+{{template "foot" .}}
+{{end}}
+
+{{define "contact"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.contact"}}</p>
+    <h1>{{t .L "contact.h1"}}</h1>
+    <p class="lede">{{c .Copy .L "contact.lede"}}</p>
+  </section>
+  <section class="panel">
+    <h2>{{t .L "contact.reach_h2"}}</h2>
+    <ul class="contact-list">
+      <li><strong>{{.Company.name}}</strong></li>
+      {{if .Company.email}}
+      <li>{{t .L "contact.email"}}:
+        <a href="mailto:{{.Company.email}}">{{.Company.email}}</a></li>
+      {{end}}
+      {{if .Company.phone}}
+      <li>{{t .L "contact.phone"}}:
+        <a href="tel:{{.Company.phone}}">{{.Company.phone}}</a></li>
+      {{end}}
+      {{$wa := waNumber .Company.whatsapp}}
+      {{if $wa}}
+      <li>WhatsApp:
+        <a href="https://wa.me/{{$wa}}" target="_blank" rel="noopener noreferrer">{{.Company.phone}}</a></li>
+      {{end}}
+    </ul>
+    <p>{{t .L "contact.hours"}}</p>
+  </section>
+</main>
+{{template "foot" .}}
+{{end}}
+
+{{define "about"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.about"}}</p>
+    <h1>{{t .L "about.h1"}}</h1>
+    <p class="lede">{{c .Copy .L "about.lede"}}</p>
+  </section>
+  <section class="panel">
+    <p>{{c .Copy .L "about.body"}}</p>
+  </section>
+</main>
+{{template "foot" .}}
+{{end}}
+
+{{define "career"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.career"}}</p>
+    <h1>{{t .L "career.h1"}}</h1>
+    <p class="lede">{{c .Copy .L "career.lede"}}</p>
+  </section>
+  <section class="panel">
+    <p>{{c .Copy .L "career.body"}}</p>
+    {{if .Company.email}}
+    <p><a class="cta cta-on-sheet" href="mailto:{{.Company.email}}?subject={{t .L "career.subject"}}">
+      {{t .L "career.apply"}}</a></p>
+    {{end}}
   </section>
 </main>
 {{template "foot" .}}

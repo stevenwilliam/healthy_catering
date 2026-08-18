@@ -305,3 +305,31 @@ func (s *Pricing) parseDate(field, v string) (time.Time, error) {
 	}
 	return t, nil
 }
+
+// ── The public price list ───────────────────────────────────────────────────
+
+// PublicPriceList is everything the marketing price page shows.
+type PublicPriceList struct {
+	Tiers    []postgres.PublicTier
+	Prices   []postgres.PublicMealPrice
+	Packages []postgres.PublicPackage
+}
+
+// PublicList reads the prices a visitor may see: the DEFAULT scope only, and
+// only rows valid today. Customer-type prices are negotiated corporate rates
+// and never appear here — that filtering is in the query rather than in the
+// template, so a future caller cannot forget it.
+func (s *Pricing) PublicList(ctx context.Context) (PublicPriceList, error) {
+	var out PublicPriceList
+	var err error
+	if out.Tiers, err = s.repo.PublicTiers(ctx); err != nil {
+		return out, apierror.Internal(err)
+	}
+	if out.Prices, err = s.repo.PublicMealPrices(ctx); err != nil {
+		return out, apierror.Internal(err)
+	}
+	if out.Packages, err = s.repo.PublicPackages(ctx); err != nil {
+		return out, apierror.Internal(err)
+	}
+	return out, nil
+}
