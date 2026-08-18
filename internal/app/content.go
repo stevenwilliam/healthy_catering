@@ -11,6 +11,7 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/translate"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/richtext"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 )
 
@@ -71,12 +72,39 @@ func (s *Content) ForLocale(ctx context.Context, locale i18n.Locale) (map[string
 type ContentEntry struct {
 	Key    string                        `json:"key"`
 	Source string                        `json:"source"`
+	IsHTML bool                          `json:"is_html"`
 	Values map[string]ContentTranslation `json:"values"`
+}
+
+// cleanValue sanitises a value according to what the key holds.
+//
+// A rich-text key goes through the HTML allowlist; everything else through the
+// plain-text sanitiser, which escapes rather than permits. The decision comes
+// from the KEY's stored is_html flag, never from the submitted content — a
+// caller that could declare its own value to be HTML could declare a <script>
+// to be HTML.
+func (s *Content) cleanValue(ctx context.Context, key, value string) (string, error) {
+	html, err := s.repo.IsHTML(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if html {
+		// Length is generous but bounded: rich text is still a paragraph of
+		// marketing copy, not a document store.
+		if len(value) > 20000 {
+			return "", apierror.BadRequest(apierror.CodeValidation,
+				"That is too long for a content block.")
+		}
+		return richtext.Clean(value), nil
+	}
+	return sanitize.Text("value", value, 2000)
 }
 
 // ContentTranslation is one language of one key.
 type ContentTranslation struct {
 	Value string `json:"value"`
+	// IsHTML: the back office shows a rich-text editor for this one.
+	IsHTML bool `json:"is_html"`
 	// IsOverride: written by a person, and the translator will not touch it.
 	IsOverride bool `json:"is_override"`
 	// Stale: the Indonesian has changed since this was produced. Only
@@ -106,9 +134,11 @@ func (s *Content) List(ctx context.Context) ([]ContentEntry, error) {
 	}
 
 	sources := map[string]string{}
+	htmlKeys := map[string]bool{}
 	for _, r := range rows {
 		if r.Locale == string(i18n.ID) {
-			sources[r.Key] = r.Value
+			sources[r.Key] = cleanForOutput(r.IsHTML, r.Value)
+			htmlKeys[r.Key] = r.IsHTML
 		}
 	}
 
@@ -120,6 +150,7 @@ func (s *Content) List(ctx context.Context) ([]ContentEntry, error) {
 			e = &ContentEntry{
 				Key:    r.Key,
 				Source: sources[r.Key],
+				IsHTML: htmlKeys[r.Key],
 				Values: map[string]ContentTranslation{},
 			}
 			byKey[r.Key] = e
@@ -129,7 +160,8 @@ func (s *Content) List(ctx context.Context) ([]ContentEntry, error) {
 			continue
 		}
 		e.Values[r.Locale] = ContentTranslation{
-			Value:      r.Value,
+			Value:      cleanForOutput(r.IsHTML, r.Value),
+			IsHTML:     r.IsHTML,
 			IsOverride: r.IsOverride,
 			Stale:      r.IsOverride && r.SourceHash != hashOf(sources[r.Key]),
 			Empty:      strings.TrimSpace(r.Value) == "",
@@ -167,11 +199,11 @@ func (s *Content) SetSource(ctx context.Context, key, value string, by Actor) (m
 	if key == "" {
 		return nil, apierror.BadRequest(apierror.CodeValidation, "A content key is required.")
 	}
-	clean, err := sanitize.Text("value", value, 2000)
+	clean, err := s.cleanValue(ctx, key, value)
 	if err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(clean) == "" {
+	if strings.TrimSpace(richtext.PlainText(clean)) == "" {
 		return nil, apierror.BadRequest(apierror.CodeValidation,
 			"The Indonesian text cannot be empty — it is what the other languages are made from.")
 	}
@@ -241,7 +273,7 @@ func (s *Content) SetOverride(ctx context.Context, key, locale, value string, by
 	if !ok || l == i18n.ID {
 		return apierror.BadRequest(apierror.CodeValidation, "Override a translated language, not the source.")
 	}
-	clean, err := sanitize.Text("value", value, 2000)
+	clean, err := s.cleanValue(ctx, key, value)
 	if err != nil {
 		return err
 	}
@@ -324,4 +356,21 @@ func (s *Content) audited(ctx context.Context, action, target, before, after str
 func hashOf(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
+}
+
+// cleanForOutput sanitises rich text on the way OUT of the service as well as
+// on the way in.
+//
+// The write path already sanitises, so in normal operation this changes
+// nothing. It exists for the rows that did NOT come through the write path:
+// seeded by a migration, fixed up with psql, or written by an older build. The
+// back office renders these values into a contenteditable via innerHTML, where
+// an <img onerror> from such a row would run — innerHTML does not execute
+// <script>, which is exactly the false comfort that makes this worth doing.
+// One pass over a handful of short strings per admin page load.
+func cleanForOutput(isHTML bool, value string) string {
+	if !isHTML {
+		return value
+	}
+	return richtext.Clean(value)
 }

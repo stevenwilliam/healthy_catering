@@ -23,6 +23,7 @@ type ContentRow struct {
 	Locale     string    `json:"locale"`
 	Value      string    `json:"value"`
 	IsOverride bool      `json:"is_override"`
+	IsHTML     bool      `json:"is_html"`
 	SourceHash string    `json:"source_hash"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	UpdatedBy  *string   `json:"updated_by,omitempty"`
@@ -35,11 +36,26 @@ func (r *ContentRepo) All(ctx context.Context) ([]ContentRow, error) {
 	var out []ContentRow
 	err := r.db.WithContext(ctx).
 		Table("public_content").
-		Select(`key, locale, value, is_override, source_hash, updated_at,
+		Select(`key, locale, value, is_override, is_html, source_hash, updated_at,
 		        updated_by::text AS updated_by`).
 		Order("key, locale").
 		Scan(&out).Error
 	return out, err
+}
+
+// HTMLKeys returns the set of keys whose value is markup.
+func (r *ContentRepo) HTMLKeys(ctx context.Context) (map[string]bool, error) {
+	var keys []string
+	if err := r.db.WithContext(ctx).Raw(
+		`SELECT key FROM public_content WHERE locale = 'id' AND is_html`).
+		Scan(&keys).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		out[k] = true
+	}
+	return out, nil
 }
 
 // ForLocale returns key -> value for one language, falling back to Indonesian
@@ -66,6 +82,17 @@ func (r *ContentRepo) ForLocale(ctx context.Context, locale string) (map[string]
 		out[row.Key] = row.Value
 	}
 	return out, nil
+}
+
+// IsHTML reports whether a key holds markup rather than a sentence. Read from
+// the SOURCE row, so every locale of one key agrees — a key that were plain in
+// English and HTML in Indonesian is how a raw tag reaches a page.
+func (r *ContentRepo) IsHTML(ctx context.Context, key string) (bool, error) {
+	var b bool
+	err := r.db.WithContext(ctx).Raw(
+		`SELECT COALESCE(is_html, FALSE) FROM public_content
+		  WHERE key = ? AND locale = 'id'`, key).Scan(&b).Error
+	return b, err
 }
 
 // SourceValue reads the Indonesian text for a key.
@@ -101,15 +128,19 @@ func (r *ContentRepo) PutSource(ctx context.Context, key, value string, by uuid.
 // PutTranslation writes a derived or overridden translation.
 func (r *ContentRepo) PutTranslation(ctx context.Context, key, locale, value string,
 	isOverride bool, sourceHash string, by uuid.UUID) error {
+	// is_html is copied from the source row rather than passed in: it is a
+	// property of the KEY, not of one translation, and a caller that forgot it
+	// would turn a rich-text row into a plain one on the next save.
 	return r.db.WithContext(ctx).Exec(`
-		INSERT INTO public_content (key, locale, value, is_override, source_hash, updated_by)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO public_content (key, locale, value, is_override, source_hash, updated_by, is_html)
+		VALUES (?, ?, ?, ?, ?, ?,
+		        COALESCE((SELECT is_html FROM public_content WHERE key = ? AND locale = 'id'), FALSE))
 		ON CONFLICT (key, locale) DO UPDATE
 		   SET value = EXCLUDED.value,
 		       is_override = EXCLUDED.is_override,
 		       source_hash = EXCLUDED.source_hash,
 		       updated_by = EXCLUDED.updated_by`,
-		key, locale, value, isOverride, sourceHash, uuidOrNil(by)).Error
+		key, locale, value, isOverride, sourceHash, uuidOrNil(by), key).Error
 }
 
 // IsOverride reports whether a translation is hand-written.

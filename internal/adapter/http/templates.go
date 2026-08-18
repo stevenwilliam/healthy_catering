@@ -74,10 +74,6 @@ const publicTemplates = `
          alt="Evermore">
   </a>
   <nav aria-label="{{t .L "nav.main"}}">
-    <a href="{{path .L "/price-list"}}"{{if eq .Active "pricelist"}} aria-current="page"{{end}}>{{t .L "nav.pricelist"}}</a>
-    <a href="{{path .L "/contact"}}"{{if eq .Active "contact"}} aria-current="page"{{end}}>{{t .L "nav.contact"}}</a>
-    <a href="{{path .L "/about"}}"{{if eq .Active "about"}} aria-current="page"{{end}}>{{t .L "nav.about"}}</a>
-    <a href="{{path .L "/career"}}"{{if eq .Active "career"}} aria-current="page"{{end}}>{{t .L "nav.career"}}</a>
     <!-- Category is a submenu, same <details> disclosure as the language
          picker and for the same reason: no JavaScript on these pages, and the
          CSP would not run an inline handler anyway. The six diet types are
@@ -96,6 +92,10 @@ const publicTemplates = `
         {{end}}
       </ul>
     </details>
+    <a href="{{path .L "/price-list"}}"{{if eq .Active "pricelist"}} aria-current="page"{{end}}>{{t .L "nav.pricelist"}}</a>
+    <a href="{{path .L "/contact"}}"{{if eq .Active "contact"}} aria-current="page"{{end}}>{{t .L "nav.contact"}}</a>
+    <a href="{{path .L "/about"}}"{{if eq .Active "about"}} aria-current="page"{{end}}>{{t .L "nav.about"}}</a>
+    <a href="{{path .L "/career"}}"{{if eq .Active "career"}} aria-current="page"{{end}}>{{t .L "nav.career"}}</a>
   </nav>
   {{template "langpicker" .}}
 </header>
@@ -340,6 +340,15 @@ const publicTemplates = `
   </section>
   {{end}}
 
+  <!-- Benefit. After the price list (Steven, 2026-08-18), editable in the back
+       office, and the body is rich text — hence chtml rather than c. -->
+  <section class="check">
+    <div class="panel">
+      <h2>{{c .Copy .L "benefit.title"}}</h2>
+      <div class="richtext">{{chtml .Copy .L "benefit.body"}}</div>
+    </div>
+  </section>
+
   {{if and .Prices .Prices.Packages}}
   <section class="check">
     <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
@@ -350,7 +359,6 @@ const publicTemplates = `
         {{if .Description}}<p>{{.Description}}</p>{{end}}
         <p class="badges">
           <span class="badge">{{.MealCredits}} {{t $.L "price.credits"}}</span>
-          <span class="badge">{{.ValidityDays}} {{t $.L "price.days"}}</span>
         </p>
         <p class="price">
           {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}

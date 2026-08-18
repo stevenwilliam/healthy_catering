@@ -213,11 +213,14 @@ export const messages = {
   // ── Packages ─────────────────────────────────────────────────────────────
   'packages.title': { id: 'Paket kredit', en: 'Meal-credit packages', zh: '餐额套餐' },
   'packages.mine': { id: 'Paket saya', en: 'My packages', zh: '我的套餐' },
-  'packages.credits': { id: 'kredit', en: 'credits', zh: '份餐额' },
+  // Sold as days, not credits (Steven, 2026-08-18). The label only — the
+  // balance underneath is still meal credits, which is what a booking spends.
+  'packages.credits': { id: 'hari', en: 'days', zh: '天' },
   'packages.valid_until': { id: 'berlaku sampai', en: 'valid until', zh: '有效期至' },
-  'packages.valid_for': { id: 'berlaku', en: 'valid for', zh: '有效期' },
-  'packages.days': { id: 'hari', en: 'days', zh: '天' },
-  'packages.ledger': { id: 'Riwayat kredit', en: 'Credit history', zh: '餐额记录' },
+  // "Usage" rather than "credit history": the card above it now counts days,
+  // and two different words for the same number on one screen is worse than
+  // either word alone.
+  'packages.ledger': { id: 'Riwayat pemakaian', en: 'Usage history', zh: '使用记录' },
   'packages.col_time': { id: 'Waktu', en: 'Time', zh: '时间' },
   'packages.col_type': { id: 'Jenis', en: 'Type', zh: '类型' },
   'packages.col_change': { id: 'Perubahan', en: 'Change', zh: '变动' },
@@ -454,6 +457,24 @@ export const messages = {
     id: 'Gagal memuat konten.', en: 'Could not load the content.', zh: '无法加载内容。',
   },
   'content.save_failed': { id: 'Gagal menyimpan.', en: 'Could not save.', zh: '保存失败。' },
+  // ── Rich-text editor ─────────────────────────────────────────────────────
+  'rich.toolbar': { id: 'Format teks', en: 'Text formatting', zh: '文本格式' },
+  'rich.bold': { id: 'Tebal', en: 'Bold', zh: '加粗' },
+  'rich.italic': { id: 'Miring', en: 'Italic', zh: '斜体' },
+  'rich.bullets': { id: 'Daftar poin', en: 'Bulleted list', zh: '项目符号列表' },
+  'rich.numbers': { id: 'Daftar bernomor', en: 'Numbered list', zh: '编号列表' },
+  'rich.link': { id: 'Tautan', en: 'Link', zh: '链接' },
+  'rich.clear': { id: 'Hapus format', en: 'Clear formatting', zh: '清除格式' },
+  'rich.link_prompt': {
+    id: 'Alamat tautan (http, https, atau mailto):',
+    en: 'Link address (http, https or mailto):',
+    zh: '链接地址（http、https 或 mailto）：',
+  },
+  'rich.link_invalid': {
+    id: 'Hanya tautan http, https, atau mailto yang diperbolehkan.',
+    en: 'Only http, https or mailto links are allowed.',
+    zh: '仅允许 http、https 或 mailto 链接。',
+  },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages

@@ -182,9 +182,9 @@ var publicMessages = i18n.Catalog{
 		i18n.ZH: "价格表 — Evermore",
 	},
 	"price.description": {
-		i18n.ID: "Harga per porsi menurut kategori dan jumlah pesanan, serta paket kredit makan Evermore.",
-		i18n.EN: "Price per portion by category and order size, and Evermore's prepaid meal-credit packages.",
-		i18n.ZH: "按菜单类别与订购数量计算的每份价格，以及 Evermore 的预付餐额套餐。",
+		i18n.ID: "Harga menu Evermore dan pilihan paket harian untuk makan sehat di Jakarta.",
+		i18n.EN: "Evermore's menu pricing and daily packages for eating well in Jakarta.",
+		i18n.ZH: "Evermore 的菜单价格与按天套餐，助您在雅加达吃得健康。",
 	},
 	"price.h1": {
 		i18n.ID: "Harga", i18n.EN: "Prices", i18n.ZH: "价格",
@@ -218,6 +218,17 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "Prices depend on the category, how many portions, and how long you order for. Contact us for a quote that fits.",
 		i18n.ZH: "价格取决于菜单类别、订购份数与订购周期。请联系我们获取合适的报价。",
 	},
+	// Fallbacks only — the live wording is public_content, edited in the back
+	// office. These exist so the section still renders against a database that
+	// has never been seeded.
+	"benefit.title": {
+		i18n.ID: "Kenapa Evermore", i18n.EN: "Why Evermore", i18n.ZH: "为什么选择 Evermore",
+	},
+	"benefit.body": {
+		i18n.ID: "<ul><li>Menu disusun bersama ahli gizi.</li><li>Dimasak pagi, diantar hari itu juga.</li><li>Kalori dan protein tercantum di setiap porsi.</li></ul>",
+		i18n.EN: "<ul><li>Menus planned with nutritionists.</li><li>Cooked in the morning, delivered the same day.</li><li>Calories and protein on every portion.</li></ul>",
+		i18n.ZH: "<ul><li>菜单由营养师共同制定。</li><li>清晨烹制，当天送达。</li><li>每份标明热量与蛋白质。</li></ul>",
+	},
 	"price.quote_h2": {
 		i18n.ID: "Minta penawaran", i18n.EN: "Ask for a quote", i18n.ZH: "获取报价",
 	},
@@ -230,10 +241,13 @@ var publicMessages = i18n.Catalog{
 		i18n.ID: "Hubungi kami", i18n.EN: "Contact us", i18n.ZH: "联系我们",
 	},
 	"price.packages_h2": {
-		i18n.ID: "Paket kredit makan", i18n.EN: "Meal-credit packages", i18n.ZH: "餐额套餐",
+		i18n.ID: "Paket harian", i18n.EN: "Daily packages", i18n.ZH: "按天套餐",
 	},
-	"price.credits": {i18n.ID: "kredit", i18n.EN: "credits", i18n.ZH: "份餐额"},
-	"price.days":    {i18n.ID: "hari berlaku", i18n.EN: "days valid", i18n.ZH: "天有效期"},
+	// A package is sold as a number of DAYS rather than of credits (Steven,
+	// 2026-08-18). Only the label changed: the column, the ledger and every
+	// balance underneath are still meal credits, because that is what is
+	// actually decremented when a meal is booked.
+	"price.credits": {i18n.ID: "hari", i18n.EN: "days", i18n.ZH: "天"},
 	"price.on_request": {
 		i18n.ID: "Hubungi kami", i18n.EN: "On request", i18n.ZH: "请咨询",
 	},

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiFailure, request } from '../lib/api'
 import { SearchBox, State, SubmitButton } from '../components/ui'
 import { useT } from '../lib/i18n'
+import RichText from '../components/RichText'
 
 /** The home hero copy, in three languages.
  *
@@ -14,6 +15,7 @@ import { useT } from '../lib/i18n'
 
 type Translation = {
   value: string
+  is_html: boolean
   is_override: boolean
   stale: boolean
   empty: boolean
@@ -22,6 +24,7 @@ type Translation = {
 type Entry = {
   key: string
   source: string
+  is_html: boolean
   values: Record<string, Translation>
 }
 
@@ -196,14 +199,24 @@ export default function AdminContent() {
                 <label className="label" htmlFor={`src-${e.key}`}>
                   {t('content.source_label')}
                 </label>
-                <textarea
-                  id={`src-${e.key}`}
-                  className="field min-h-[4.5rem]"
-                  value={draft[fieldKey(e.key, 'id')] ?? e.source}
-                  onChange={(ev) =>
-                    setDraft({ ...draft, [fieldKey(e.key, 'id')]: ev.target.value })
-                  }
-                />
+                {e.is_html ? (
+                  <RichText
+                    id={`src-${e.key}`}
+                    value={draft[fieldKey(e.key, 'id')] ?? e.source}
+                    onChange={(html) =>
+                      setDraft({ ...draft, [fieldKey(e.key, 'id')]: html })
+                    }
+                  />
+                ) : (
+                  <textarea
+                    id={`src-${e.key}`}
+                    className="field min-h-[4.5rem]"
+                    value={draft[fieldKey(e.key, 'id')] ?? e.source}
+                    onChange={(ev) =>
+                      setDraft({ ...draft, [fieldKey(e.key, 'id')]: ev.target.value })
+                    }
+                  />
+                )}
                 <div className="mt-2">
                   <SubmitButton
                     pending={busy === fieldKey(e.key, 'id')}
@@ -219,7 +232,9 @@ export default function AdminContent() {
               {/* Derived languages */}
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {DERIVED.map((l) => {
-                  const tr = e.values[l] ?? { value: '', is_override: false, stale: false, empty: true }
+                  const tr =
+                    e.values[l] ??
+                    { value: '', is_html: e.is_html, is_override: false, stale: false, empty: true }
                   return (
                     <div key={l}>
                       <div className="flex flex-wrap items-center gap-2">
@@ -235,15 +250,25 @@ export default function AdminContent() {
                         )}
                         {tr.empty && <span className="badge">{t('content.empty')}</span>}
                       </div>
-                      <textarea
-                        id={`${l}-${e.key}`}
-                        className="field mt-1 min-h-[4.5rem]"
-                        lang={l}
-                        value={draft[fieldKey(e.key, l)] ?? tr.value}
-                        onChange={(ev) =>
-                          setDraft({ ...draft, [fieldKey(e.key, l)]: ev.target.value })
-                        }
-                      />
+                      {e.is_html ? (
+                        <RichText
+                          id={`${l}-${e.key}`}
+                          value={draft[fieldKey(e.key, l)] ?? tr.value}
+                          onChange={(html) =>
+                            setDraft({ ...draft, [fieldKey(e.key, l)]: html })
+                          }
+                        />
+                      ) : (
+                        <textarea
+                          id={`${l}-${e.key}`}
+                          className="field mt-1 min-h-[4.5rem]"
+                          lang={l}
+                          value={draft[fieldKey(e.key, l)] ?? tr.value}
+                          onChange={(ev) =>
+                            setDraft({ ...draft, [fieldKey(e.key, l)]: ev.target.value })
+                          }
+                        />
+                      )}
                       <div className="mt-2 flex flex-wrap gap-2">
                         <SubmitButton
                           pending={busy === fieldKey(e.key, l)}

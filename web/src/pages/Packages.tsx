@@ -120,7 +120,7 @@ export default function Packages() {
               <h3 className="text-lg">{p.name}</h3>
               <p className="text-sm text-ink-muted mb-2">{p.description}</p>
               <p className="text-sm mb-3">
-                {p.meal_credits} {t('packages.credits')} · {t('packages.valid_for')} {p.validity_days} {t('packages.days')}
+                {p.meal_credits} {t('packages.credits')}
               </p>
               <SubmitButton pending={buying === p.id} type="button" onClick={() => buy(p.id)}>
                 {t('packages.buy_button')}

@@ -89,6 +89,26 @@
     outline-offset: 3px;
   }
 
+  /* ── Rich-text editor ───────────────────────────────────────────────────
+     Only on the content screen. The editable area is bounded and scrolls, so
+     a long block cannot push the save buttons off the bottom of the card. */
+  .rich { @apply rounded-lg border border-nourish-deep/60 bg-white; }
+  .rich-toolbar {
+    @apply flex flex-wrap gap-1 border-b border-nourish-deep/20 p-1;
+  }
+  .rich-btn {
+    @apply min-h-touch min-w-touch rounded px-2 font-semibold text-ink
+           hover:bg-nourish-deep/10;
+  }
+  .rich-area {
+    @apply max-h-80 min-h-[6rem] overflow-y-auto px-3 py-2 text-ink;
+  }
+  .rich-area:focus { @apply outline-none ring-2 ring-nourish-deep ring-inset; }
+  .rich-area ul { @apply list-disc pl-5; }
+  .rich-area ol { @apply list-decimal pl-5; }
+  .rich-area li { @apply mb-1; }
+  .rich-area a { @apply underline; }
+
   /* ── Language selector ─────────────────────────────────────────────────
      Sits on the mid-green bar, so its label is text-bar and its border is
      beige — #CCBDAA measures 2.25 there and would vanish. */

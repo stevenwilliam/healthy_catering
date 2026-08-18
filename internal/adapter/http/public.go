@@ -17,6 +17,7 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/domain/money"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/richtext"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/sysparam"
 )
@@ -142,6 +143,20 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// domain formatter, so a price on a marketing page and a price on an
 		// invoice cannot be grouped differently.
 		"idr": func(v int64) string { return money.Format(money.IDR(v)) },
+		// chtml is `c` for the rich-text keys: it renders stored markup
+		// UNESCAPED, which is the point of a WYSIWYG field and also the only
+		// way script could reach these pages. It goes through the same
+		// allowlist the write path used, so a value written by an older build
+		// — or straight into the database by hand — still cannot carry a tag
+		// this policy does not permit. Sanitised in, sanitised out
+		// (CLAUDE.md §4).
+		"chtml": func(copy map[string]string, l i18n.Locale, key string) template.HTML {
+			v, ok := copy[key]
+			if !ok || strings.TrimSpace(v) == "" {
+				v = publicMessages.T(l, key)
+			}
+			return richtext.Render(v)
+		},
 		// path rewrites a locale-free path into the current locale, so a link
 		// written once in the template stays inside the language the reader
 		// chose. Without it every href would silently drop them back to

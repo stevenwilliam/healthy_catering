@@ -353,6 +353,21 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   font-weight: var(--w-display);
 }
 
+/* Rich text from the back office. The editor emits only what the allowlist in
+ * internal/platform/richtext permits, so this styles that closed set — there is
+ * no arbitrary markup to defend against here. */
+.richtext > *:first-child { margin-top: 0; }
+.richtext > *:last-child { margin-bottom: 0; }
+.richtext ul, .richtext ol { margin: 0 0 var(--space-4); padding-left: 1.3rem; }
+.richtext li { margin-bottom: var(--space-2); }
+.richtext h2, .richtext h3, .richtext h4 { margin-top: var(--space-6); }
+.richtext a { color: var(--ink); text-decoration: underline; }
+.richtext blockquote {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--border);
+}
+
 /* ── Contact ────────────────────────────────────────────────────────────── */
 .contact-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
 .contact-list li { margin-bottom: var(--space-2); }

@@ -97,6 +97,16 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Benefit section and rich text, 2026-08-18 (Steven).** A Benefit block after
+the price list, editable in the back office with a WYSIWYG editor and seeded
+with initial wording in all three languages (migration 0021). `public_content`
+gained `is_html`; rich values are sanitised against an allowlist on write, on
+render and on the admin read path (`internal/platform/richtext`, bluemonday).
+The editor is hand-rolled — six buttons did not justify a 100–300 kB dependency
+on a 76 kB bundle. Package wording is days rather than credits, with the
+validity window dropped from the cards (migrations 0020, 0021), and Category
+leads the header nav.
+
 **Per-portion prices hidden, 2026-08-18 (Steven).** `public.show_meal_prices`
 is off, so the price list shows packages and a request-a-quote panel instead of
 the per-meal table. A setting rather than deleted markup — turning it back on
