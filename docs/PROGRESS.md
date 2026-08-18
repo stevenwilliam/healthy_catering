@@ -97,6 +97,16 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Editable hero copy, 2026-08-18 (Steven).** The home hero wording moved out of
+the binary into `public_content` (migration 0017) and is edited at
+`/app/admin/content`: Indonesian is the source, English and Chinese are derived
+from it, either can be overridden by hand, and an override whose Indonesian has
+since changed is flagged stale rather than silently refreshed. The picture is
+the `public.hero_image` setting. Machine translation is built behind a
+`Translator` port with a Google Cloud Translation v2 adapter — **no key is
+configured**, so translations are hand-written today and the screen says so.
+Details in `docs/11` §6.
+
 **Screenshot coverage, 2026-08-18.** The four authenticated-screen captures
 (`spa-menu`, `spa-order`, `spa-cart-mobile`, `spa-admin-payments`) were deleted
 rather than kept: they were taken on 2026-08-13 and still showed the beige

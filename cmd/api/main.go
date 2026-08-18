@@ -27,6 +27,7 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/notify"
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/postgres"
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/storage"
+	"github.com/stevenwilliam/healthy_catering/internal/adapter/translate"
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/config"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/database"
@@ -304,6 +305,21 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Params: params, TZ: tz,
 	})
 
+	// Machine translation of public copy. Off unless a provider is configured;
+	// the back office still works without it, translations just wait for a
+	// human (docs/11 §6).
+	translator := translate.New(cfg.Translate.Provider, cfg.Translate.APIKey)
+	if translator.Available() {
+		log.Info("translation enabled", "provider", translator.Name())
+	} else {
+		log.Info("translation disabled",
+			"reason", "no TRANSLATE_PROVIDER/TRANSLATE_API_KEY configured",
+			"effect", "public copy must be translated by hand in the back office")
+	}
+	contentSvc := app.NewContent(app.ContentDeps{
+		Repo: postgres.NewContentRepo(gdb), Translator: translator, Audit: audit, Log: log,
+	})
+
 	router := adapterhttp.New(adapterhttp.Deps{
 		Config:         cfg,
 		Log:            log,
@@ -317,6 +333,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Notifier:       notifier,
 		Storage:        objectStore,
 		Fulfilment:     app.NewFulfilment(deliveriesRepo, creditsRepo, audit, params, tz, time.Now),
+		Content:        contentSvc,
 		MFA:            mfa,
 		Reports:        app.NewReports(reportsRepo, params, tz),
 		Params:         params,

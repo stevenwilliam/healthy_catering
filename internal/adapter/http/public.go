@@ -57,6 +57,12 @@ type PageData struct {
 	// right box before the file arrives. Zero when they could not be read, in
 	// which case the template omits the attributes rather than guessing.
 	HeroW, HeroH int
+
+	// Copy is editable public wording from public_content, keyed the same way
+	// as the static catalogue. The template reads it through `c`, which falls
+	// back to the catalogue when a key is absent — so a database that has
+	// never been edited renders exactly what it always did.
+	Copy map[string]string
 }
 
 // langLink is one entry in the language selector.
@@ -102,6 +108,17 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// a literal string, so adding a language is a catalogue edit rather
 		// than a template rewrite (CLAUDE.md §10).
 		"t": publicMessages.T,
+		// c is t for strings the back office can edit: public_content first,
+		// the compiled catalogue second. Two layers rather than one because
+		// the catalogue is the guarantee that a page always renders — a
+		// database row that is missing, empty or not yet translated can never
+		// leave a heading blank.
+		"c": func(copy map[string]string, l i18n.Locale, key string) string {
+			if v, ok := copy[key]; ok && strings.TrimSpace(v) != "" {
+				return v
+			}
+			return publicMessages.T(l, key)
+		},
 		// dietArt is the decorative corner mark on a diet-type card, chosen by
 		// slug. Returns a fallback rather than nothing for an unknown slug.
 		"dietArt": dietArt,
@@ -198,6 +215,17 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		data.MapsKey = d.Config.Maps.BrowserKey
 		data.HeroImage = d.Params.String(ctx, sysparam.KeyPublicHeroImage,
 			defaultHeroImage)
+		// Editable copy. A failure here is not a failure of the page: the
+		// template falls back to the compiled catalogue, so a database blip
+		// costs the edits, not the site.
+		if d.Content != nil {
+			if copy, err := d.Content.ForLocale(ctx, data.L); err == nil {
+				data.Copy = copy
+			} else if d.Log != nil {
+				d.Log.Warn("public content unavailable, falling back to the catalogue",
+					"locale", data.L, "error", err)
+			}
+		}
 		data.HeroW, data.HeroH = heroSize(data.HeroImage)
 		c.HTML(status, name, data)
 	}

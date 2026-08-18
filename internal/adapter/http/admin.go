@@ -10,6 +10,7 @@ import (
 	"github.com/stevenwilliam/healthy_catering/internal/adapter/postgres"
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/i18n"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
 )
 
@@ -260,6 +261,84 @@ func registerAdmin(g *gin.RouterGroup, d Deps) {
 			return
 		}
 		OK(c, http.StatusCreated, gin.H{"id": id})
+	})
+
+	// ── Public content ──────────────────────────────────────────────────────
+	//
+	// The hero wording, in three languages. Indonesian is the source and the
+	// other two are machine-translated from it unless a human has overridden
+	// them (docs/11 §6). Same permission as settings: this is site
+	// configuration, edited by the same people.
+	admin.GET("/content", RequirePermission(security.PermSettingsRead), func(c *gin.Context) {
+		entries, err := d.Content.List(c.Request.Context())
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"entries":    entries,
+			"translator": d.Content.TranslatorStatus(),
+			"locales":    i18n.All(),
+		})
+	})
+
+	// Replace the Indonesian text. The response says what happened to each
+	// translation rather than just "ok" — "translated", "kept-override" and
+	// "no-translator" are three different things for the editor to see.
+	admin.PUT("/content/:key", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		var in struct {
+			Value string `json:"value"`
+		}
+		if err := c.ShouldBindJSON(&in); err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation, "Send a JSON body with a value."))
+			return
+		}
+		out, err := d.Content.SetSource(c.Request.Context(), c.Param("key"), in.Value, actorFrom(c))
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"translations": out})
+	})
+
+	// Pin a translation by hand. It is never overwritten afterwards.
+	admin.PUT("/content/:key/:locale", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		var in struct {
+			Value string `json:"value"`
+		}
+		if err := c.ShouldBindJSON(&in); err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation, "Send a JSON body with a value."))
+			return
+		}
+		if err := d.Content.SetOverride(c.Request.Context(),
+			c.Param("key"), c.Param("locale"), in.Value, actorFrom(c)); err != nil {
+			Fail(c, err)
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
+	// Release a translation back to the machine and re-run it immediately, so
+	// the editor sees the machine's version rather than an empty box.
+	admin.DELETE("/content/:key/:locale", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		outcome, err := d.Content.ClearOverride(c.Request.Context(),
+			c.Param("key"), c.Param("locale"), actorFrom(c))
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"outcome": outcome})
+	})
+
+	// Re-translate everything not overridden — the button for the first time a
+	// provider is configured.
+	admin.POST("/content/retranslate", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		out, err := d.Content.RetranslateAll(c.Request.Context(), actorFrom(c))
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"results": out})
 	})
 
 	// ── Settings ────────────────────────────────────────────────────────────

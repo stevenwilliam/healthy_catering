@@ -146,10 +146,10 @@ const publicTemplates = `
 <main>
   <section class="hero hero-split">
     <div class="hero-copy">
-      <p class="eyebrow">{{t .L "home.eyebrow"}}</p>
-      <h1>{{t .L "home.h1"}}</h1>
-      <p class="lede">{{.Description}}</p>
-      <a class="cta" href="{{path .L "/menu/healthy"}}">{{t .L "home.cta"}}</a>
+      <p class="eyebrow">{{c .Copy .L "home.eyebrow"}}</p>
+      <h1>{{c .Copy .L "home.h1"}}</h1>
+      <p class="lede">{{c .Copy .L "home.lede"}}</p>
+      <a class="cta" href="{{path .L "/menu/healthy"}}">{{c .Copy .L "home.cta"}}</a>
     </div>
     {{if .HeroImage}}
     <!-- The picture is a sys_parameters row, so it can be swapped without a

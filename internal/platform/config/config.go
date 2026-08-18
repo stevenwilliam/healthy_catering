@@ -22,8 +22,20 @@ type Config struct {
 	WhatsApp WhatsApp
 	Payment  Payment
 	Redis    Redis
-	Maps     Maps
-	Locale   Locale
+	Maps      Maps
+	Locale    Locale
+	Translate Translate
+}
+
+// Translate configures machine translation of public copy.
+//
+// Off by default. With no provider the back office still edits Indonesian and
+// still accepts hand-written English and Chinese; only the automatic step is
+// absent (docs/11 §6). The key is env-only, never a sys_parameters row —
+// it is a billable third-party credential (CLAUDE.md §4).
+type Translate struct {
+	Provider string // "" or "none" = off; "google" = Cloud Translation v2
+	APIKey   string
 }
 
 // Redis carries the settings cache, rate limits and the notification queue.
@@ -185,6 +197,10 @@ func Load() (*Config, error) {
 		Maps: Maps{
 			BrowserKey: getString("GOOGLE_MAPS_BROWSER_KEY", ""),
 			ServerKey:  getString("GOOGLE_MAPS_SERVER_KEY", ""),
+		},
+		Translate: Translate{
+			Provider: getString("TRANSLATE_PROVIDER", ""),
+			APIKey:   getString("TRANSLATE_API_KEY", ""),
 		},
 		Locale: Locale{
 			Timezone:       getString("APP_TIMEZONE", "Asia/Jakarta"),

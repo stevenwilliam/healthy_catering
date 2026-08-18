@@ -13,6 +13,7 @@ import Packages from './pages/Packages'
 import AdminPayments from './pages/AdminPayments'
 import AdminDeliveries from './pages/AdminDeliveries'
 import AdminSettings from './pages/AdminSettings'
+import AdminContent from './pages/AdminContent'
 import Security from './pages/Security'
 
 /** RequireAuth gates a route in the UI.
@@ -117,6 +118,7 @@ function Nav() {
             {staff && <Link to="/admin/payments">{t('nav.payments')}</Link>}
             {staff && <Link to="/admin/deliveries">{t('nav.deliveries')}</Link>}
             {staff && <Link to="/admin/settings">{t('nav.settings')}</Link>}
+            {staff && <Link to="/admin/content">{t('nav.content')}</Link>}
           </nav>
         )}
         <div
@@ -182,6 +184,7 @@ function Shell() {
           <Route path="/admin/payments" element={<RequireAuth><AdminPayments /></RequireAuth>} />
           <Route path="/admin/deliveries" element={<RequireAuth><AdminDeliveries /></RequireAuth>} />
           <Route path="/admin/settings" element={<RequireAuth><AdminSettings /></RequireAuth>} />
+          <Route path="/admin/content" element={<RequireAuth><AdminContent /></RequireAuth>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </div>

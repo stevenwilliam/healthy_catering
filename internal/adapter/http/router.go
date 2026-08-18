@@ -62,6 +62,7 @@ type Deps struct {
 	Notifier       *app.Notifier
 	Storage        *storage.Store
 	Fulfilment     *app.Fulfilment
+	Content        *app.Content
 	MFA            *app.MFA
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter

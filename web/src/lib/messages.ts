@@ -396,6 +396,64 @@ export const messages = {
     id: 'Gagal memuat pengaturan.', en: 'Could not load settings.', zh: '无法加载设置。',
   },
   'set.save_failed': { id: 'Gagal menyimpan.', en: 'Could not save.', zh: '保存失败。' },
+
+  // ── Admin: public content ────────────────────────────────────────────────
+  'nav.content': { id: 'Konten', en: 'Content', zh: '内容' },
+  'content.title': { id: 'Konten halaman depan', en: 'Home page content', zh: '首页内容' },
+  'content.intro': {
+    id: 'Tulis dalam Bahasa Indonesia. Bahasa Inggris dan Mandarin dibuat otomatis dari teks itu, dan bisa Anda timpa sendiri bila hasilnya kurang tepat.',
+    en: 'Write in Indonesian. English and Chinese are produced from it automatically, and you can override either when the machine gets it wrong.',
+    zh: '请用印尼语撰写。英文和中文将据此自动生成，如机器翻译不准确，您可以自行覆盖。',
+  },
+  'content.auto_on': { id: 'Terjemahan otomatis aktif', en: 'Auto-translation on', zh: '自动翻译已开启' },
+  'content.auto_off': { id: 'Terjemahan otomatis nonaktif', en: 'Auto-translation off', zh: '自动翻译已关闭' },
+  'content.auto_on_hint': {
+    id: 'Menyimpan teks Indonesia akan memperbarui bahasa lain, kecuali yang Anda timpa.',
+    en: 'Saving the Indonesian refreshes the other languages, except the ones you have overridden.',
+    zh: '保存印尼语文本会刷新其他语言，但不会覆盖您手动修改的内容。',
+  },
+  'content.auto_off_hint': {
+    id: 'Belum ada penyedia terjemahan yang dikonfigurasi, jadi Inggris dan Mandarin harus diisi manual.',
+    en: 'No translation provider is configured, so English and Chinese must be written by hand.',
+    zh: '尚未配置翻译服务，因此英文和中文需要手动填写。',
+  },
+  'content.retranslate_all': {
+    id: 'Terjemahkan ulang semua', en: 'Re-translate everything', zh: '重新翻译全部',
+  },
+  'content.search_placeholder': {
+    id: 'Cari kunci atau teks', en: 'Search key or text', zh: '搜索键名或文本',
+  },
+  'content.source_label': {
+    id: 'Bahasa Indonesia (sumber)', en: 'Indonesian (source)', zh: '印尼语（源语言）',
+  },
+  'content.save_source': { id: 'Simpan sumber', en: 'Save source', zh: '保存源文本' },
+  'content.save_override': { id: 'Simpan sebagai timpaan', en: 'Save as override', zh: '保存为覆盖' },
+  'content.release': {
+    id: 'Lepas ke terjemahan otomatis', en: 'Release to auto-translation', zh: '恢复自动翻译',
+  },
+  'content.override': { id: 'ditimpa manual', en: 'overridden', zh: '手动覆盖' },
+  'content.stale': {
+    id: 'teks Indonesia sudah berubah', en: 'Indonesian has changed since', zh: '印尼语原文已更改',
+  },
+  'content.empty': { id: 'kosong', en: 'empty', zh: '空' },
+  'content.empty_hint': {
+    id: 'Pengunjung akan melihat teks Bahasa Indonesia.',
+    en: 'Visitors see the Indonesian text instead.',
+    zh: '访客将看到印尼语文本。',
+  },
+  'content.out_translated': { id: 'diterjemahkan', en: 'translated', zh: '已翻译' },
+  'content.out_kept': {
+    id: 'timpaan Anda dipertahankan', en: 'your override was kept', zh: '保留了您的覆盖内容',
+  },
+  'content.out_no_translator': {
+    id: 'tidak ada penerjemah', en: 'no translator configured', zh: '未配置翻译服务',
+  },
+  'content.out_failed': { id: 'terjemahan gagal', en: 'translation failed', zh: '翻译失败' },
+  'content.out_error': { id: 'gagal', en: 'error', zh: '出错' },
+  'content.load_failed': {
+    id: 'Gagal memuat konten.', en: 'Could not load the content.', zh: '无法加载内容。',
+  },
+  'content.save_failed': { id: 'Gagal menyimpan.', en: 'Could not save.', zh: '保存失败。' },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages
