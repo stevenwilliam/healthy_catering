@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react'
+import { useT } from '../lib/i18n'
 
 /** Shared UI pieces. Small on purpose: each one exists because the house rules
  *  demand a behaviour the raw element does not give. */
@@ -16,6 +17,7 @@ export function SearchBox({
   placeholder?: string
   resultCount?: number
 }) {
+  const t = useT()
   const [local, setLocal] = useState(value)
 
   useEffect(() => {
@@ -27,17 +29,17 @@ export function SearchBox({
 
   return (
     <div className="mb-4">
-      <label className="label" htmlFor="search">Cari</label>
+      <label className="label" htmlFor="search">{t('ui.search')}</label>
       <input
         id="search"
         type="search"
         className="field"
         value={local}
-        placeholder={placeholder ?? 'Ketik untuk menyaring…'}
+        placeholder={placeholder ?? t('ui.search_placeholder')}
         onChange={(e) => setLocal(e.target.value)}
       />
       <p className="sr-only" role="status" aria-live="polite">
-        {resultCount === undefined ? '' : `${resultCount} hasil`}
+        {resultCount === undefined ? '' : `${resultCount} ${t('ui.results')}`}
       </p>
     </div>
   )
@@ -55,6 +57,7 @@ export function SubmitButton({
   pending: boolean
   className?: string
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const t = useT()
   return (
     <button
       {...rest}
@@ -63,7 +66,7 @@ export function SubmitButton({
       aria-busy={pending}
       className={className ?? 'btn-primary'}
     >
-      {pending ? 'Memproses…' : children}
+      {pending ? t('ui.processing') : children}
     </button>
   )
 }
@@ -88,7 +91,8 @@ export function State({
   emptyText?: string
   children: ReactNode
 }) {
-  if (loading) return <p className="text-ink-muted py-8">Memuat…</p>
+  const t = useT()
+  if (loading) return <p className="text-ink-muted py-8">{t('ui.loading')}</p>
   if (error) {
     return (
       <p role="alert" className="error py-8">
@@ -96,7 +100,7 @@ export function State({
       </p>
     )
   }
-  if (empty) return <p className="text-ink-muted py-8">{emptyText ?? 'Belum ada data.'}</p>
+  if (empty) return <p className="text-ink-muted py-8">{emptyText ?? t('ui.empty')}</p>
   return <>{children}</>
 }
 
@@ -126,6 +130,7 @@ export function ConfirmButton({
   onConfirm: () => void
   className?: string
 }) {
+  const t = useT()
   const [asking, setAsking] = useState(false)
   if (!asking) {
     return (
@@ -137,8 +142,10 @@ export function ConfirmButton({
   return (
     <span className="inline-flex items-center gap-2">
       <span className="text-sm">{question}</span>
-      <button type="button" className="btn-danger" onClick={onConfirm}>Ya</button>
-      <button type="button" className="btn-ghost" onClick={() => setAsking(false)}>Batal</button>
+      <button type="button" className="btn-danger" onClick={onConfirm}>{t('ui.yes')}</button>
+      <button type="button" className="btn-ghost" onClick={() => setAsking(false)}>
+        {t('ui.cancel')}
+      </button>
     </span>
   )
 }
@@ -178,13 +185,16 @@ export async function copyText(text: string): Promise<boolean> {
 /** CopyButton copies a value and confirms it in words, not just colour. */
 export function CopyButton({
   value,
-  label = 'Salin',
+  label,
   className = '',
 }: {
   value: string
+  /** Defaults to the catalogue's "Copy" — a default parameter cannot call a
+   *  hook, so the fallback is applied in the body. */
   label?: string
   className?: string
 }) {
+  const t = useT()
   const [state, setState] = useState<'idle' | 'ok' | 'fail'>('idle')
 
   async function run() {
@@ -196,12 +206,12 @@ export function CopyButton({
   return (
     <span className="inline-flex items-center gap-2">
       <button type="button" className={`btn-ghost ${className}`} onClick={() => void run()}>
-        {label}
+        {label ?? t('ui.copy')}
       </button>
       {/* Announced, so the confirmation is not colour-only (99 §8). */}
       <span role="status" aria-live="polite" className="text-xs text-ink-muted">
-        {state === 'ok' && 'Disalin'}
-        {state === 'fail' && 'Tidak dapat menyalin — salin manual'}
+        {state === 'ok' && t('ui.copied')}
+        {state === 'fail' && t('ui.copy_failed')}
       </span>
     </span>
   )

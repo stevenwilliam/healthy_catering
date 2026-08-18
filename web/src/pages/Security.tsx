@@ -8,9 +8,11 @@ import {
   mfaStatus,
 } from '../lib/api'
 import { CopyButton, FieldError, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 // Security is where a signed-in user manages their second factor.
 export default function Security() {
+  const t = useT()
   const [status, setStatus] = useState<MfaStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -27,7 +29,7 @@ export default function Security() {
     try {
       setStatus(await mfaStatus())
     } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Tidak dapat memuat status.')
+      setError(err instanceof ApiFailure ? err.message : t('security.status_failed'))
     }
   }
 
@@ -44,7 +46,7 @@ export default function Security() {
       setOtpauth(out.otpauth_url)
       setCode('')
     } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Tidak dapat memulai pendaftaran.')
+      setError(err instanceof ApiFailure ? err.message : t('security.start_failed'))
     } finally {
       setPending(false)
     }
@@ -60,7 +62,7 @@ export default function Security() {
       setSecret(null)
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Kode tidak dapat diverifikasi.')
+      setError(err instanceof ApiFailure ? err.message : t('mfa.failed'))
       setCode('')
     } finally {
       setPending(false)
@@ -77,21 +79,20 @@ export default function Security() {
       setRecovery(null)
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Tidak dapat menonaktifkan.')
+      setError(err instanceof ApiFailure ? err.message : t('security.disable_failed'))
     } finally {
       setPending(false)
     }
   }
 
-  if (!status) return <p>Memuat…</p>
+  if (!status) return <p>{t('ui.loading')}</p>
 
   if (!status.available) {
     return (
       <div className="mx-auto max-w-xl">
-        <h1 className="text-3xl mb-4">Keamanan</h1>
+        <h1 className="text-3xl mb-4">{t('security.title')}</h1>
         <p className="text-sm text-ink-muted">
-          Verifikasi dua langkah belum dikonfigurasi di server ini. Hubungi
-          administrator sistem.
+          {t('security.unavailable')}
         </p>
       </div>
     )
@@ -99,10 +100,10 @@ export default function Security() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="text-3xl mb-2">Keamanan</h1>
+      <h1 className="text-3xl mb-2">{t('security.title')}</h1>
       <p className="text-sm text-ink-muted mb-6">
-        Verifikasi dua langkah menambahkan kode dari ponsel Anda saat masuk.
-        {status.required && ' Untuk peran Anda, ini wajib.'}
+        {t('security.intro')}
+        {status.required && ` ${t('security.required')}`}
       </p>
 
       <FieldError message={error ?? undefined} />
@@ -110,10 +111,9 @@ export default function Security() {
       {/* The recovery codes are shown once and only once. */}
       {recovery && (
         <div className="mb-8 rounded border border-nourish-deep/60 p-4">
-          <h2 className="text-xl mb-2">Simpan kode pemulihan Anda</h2>
+          <h2 className="text-xl mb-2">{t('security.save_recovery')}</h2>
           <p className="text-sm text-ink-muted mb-4">
-            Setiap kode hanya dapat dipakai satu kali. Ini satu-satunya kali kode
-            ditampilkan — tanpa kode ini, ponsel yang hilang berarti akun yang hilang.
+            {t('security.recovery_note')}
           </p>
           <ul className="grid grid-cols-2 gap-2 font-mono text-sm">
             {recovery.map((c) => (
@@ -121,7 +121,7 @@ export default function Security() {
             ))}
           </ul>
           <div className="mt-4">
-            <CopyButton value={recovery.join('\n')} label="Salin semua" />
+            <CopyButton value={recovery.join('\n')} label={t('security.copy_all')} />
           </div>
         </div>
       )}
@@ -129,18 +129,18 @@ export default function Security() {
       {status.enabled ? (
         <div>
           <p className="mb-4">
-            <span className="font-medium">Aktif.</span>{' '}
+            <span className="font-medium">{t('security.on')}</span>{' '}
             {typeof status.recovery_codes_left === 'number' &&
-              `${status.recovery_codes_left} kode pemulihan tersisa.`}
+              `${status.recovery_codes_left} ${t('security.codes_left')}`}
           </p>
           {status.required ? (
             <p className="text-sm text-ink-muted">
-              Verifikasi dua langkah wajib untuk peran Anda dan tidak dapat dimatikan.
+              {t('security.locked_on')}
             </p>
           ) : (
             <form onSubmit={disable} className="mt-6">
               <label className="label" htmlFor="pw">
-                Masukkan kata sandi untuk menonaktifkan
+                {t('security.password_to_disable')}
               </label>
               <input
                 id="pw"
@@ -151,24 +151,24 @@ export default function Security() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <SubmitButton pending={pending}>Nonaktifkan</SubmitButton>
+              <SubmitButton pending={pending}>{t('security.disable')}</SubmitButton>
             </form>
           )}
         </div>
       ) : secret ? (
         <div>
-          <h2 className="text-xl mb-2">Langkah 1 — pindai atau ketik</h2>
+          <h2 className="text-xl mb-2">{t('security.step1')}</h2>
           <p className="text-sm text-ink-muted mb-3">
-            Tambahkan ini ke Google Authenticator, Authy atau sejenisnya.
+            {t('security.step1_hint')}
           </p>
           <p className="font-mono text-sm break-all rounded bg-white border border-nourish-deep/60 px-3 py-2 mb-2">
             {secret}
           </p>
           <p className="text-xs text-ink-muted mb-6 break-all">{otpauth}</p>
 
-          <h2 className="text-xl mb-2">Langkah 2 — buktikan</h2>
+          <h2 className="text-xl mb-2">{t('security.step2')}</h2>
           <form onSubmit={confirm} noValidate>
-            <label className="label" htmlFor="code">Kode enam digit</label>
+            <label className="label" htmlFor="code">{t('security.six_digit')}</label>
             <input
               id="code"
               className="field tracking-[0.4em] text-center text-xl"
@@ -181,14 +181,14 @@ export default function Security() {
               required
             />
             <p className="mt-2 mb-4 text-xs text-ink-muted">
-              Tidak ada yang berubah sampai kode ini benar.
+              {t('security.nothing_changes')}
             </p>
-            <SubmitButton pending={pending}>Aktifkan</SubmitButton>
+            <SubmitButton pending={pending}>{t('security.enable')}</SubmitButton>
           </form>
         </div>
       ) : (
         <button type="button" className="btn-primary" disabled={pending} onClick={() => void start()}>
-          Aktifkan verifikasi dua langkah
+          {t('security.turn_on')}
         </button>
       )}
     </div>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ApiFailure, Page, request } from '../lib/api'
 import { SearchBox, State } from '../components/ui'
+import { useT } from '../lib/i18n'
+import type { MessageKey } from '../lib/messages'
 
 type Row = {
   id: string; delivery_code: string; service_date: string; slot: string
@@ -11,15 +13,16 @@ type Row = {
 
 // Which button to offer next, driven by the same machine the server enforces.
 const NEXT: Record<string, { to: string; label: string }[]> = {
-  SCHEDULED: [{ to: 'PREPARING', label: 'Mulai masak' }],
-  PREPARING: [{ to: 'OUT_FOR_DELIVERY', label: 'Berangkat' }],
+  SCHEDULED: [{ to: 'PREPARING', label: 'deliv.start_cooking' }],
+  PREPARING: [{ to: 'OUT_FOR_DELIVERY', label: 'deliv.depart' }],
   OUT_FOR_DELIVERY: [
-    { to: 'DELIVERED', label: 'Terkirim' },
-    { to: 'FAILED', label: 'Gagal' },
+    { to: 'DELIVERED', label: 'deliv.delivered' },
+    { to: 'FAILED', label: 'deliv.failed' },
   ],
 }
 
 export default function AdminDeliveries() {
+  const t = useT()
   const [page, setPage] = useState<Page<Row> | null>(null)
   const [q, setQ] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
@@ -31,7 +34,7 @@ export default function AdminDeliveries() {
     setLoading(true)
     request<Page<Row>>(`/admin/deliveries?from=${date}&to=${date}&q=${encodeURIComponent(q)}`)
       .then(setPage)
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat pengiriman.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('deliv.load_failed')))
       .finally(() => setLoading(false))
   }
   useEffect(load, [q, date]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -47,24 +50,24 @@ export default function AdminDeliveries() {
       await request(`/admin/deliveries/${id}/status`, { method: 'POST', body: { status: to, reason } })
       load()
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Tidak dapat mengubah status.')
+      setError(e instanceof ApiFailure ? e.message : t('deliv.status_failed'))
     } finally { setBusy(null) }
   }
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Pengiriman</h1>
+      <h1 className="text-3xl mb-6">{t('deliv.title')}</h1>
 
       <div className="mb-4 max-w-xs">
-        <label className="label" htmlFor="date">Tanggal</label>
+        <label className="label" htmlFor="date">{t('deliv.date')}</label>
         <input id="date" type="date" className="field" value={date}
                onChange={(e) => setDate(e.target.value)} />
       </div>
-      <SearchBox value={q} onChange={setQ} placeholder="Cari kode, nama, alamat"
+      <SearchBox value={q} onChange={setQ} placeholder={t('deliv.search_placeholder')}
                  resultCount={page?.total} />
 
       <State loading={loading} error={error} empty={(page?.items.length ?? 0) === 0}
-             emptyText="Tidak ada pengiriman untuk tanggal ini.">
+             emptyText={t('deliv.empty')}>
         <ul className="grid gap-3">
           {page?.items.map((d) => (
             <li key={d.id} className="card">
@@ -73,8 +76,8 @@ export default function AdminDeliveries() {
                 <span className="badge">{d.status}</span>
                 <span>{d.slot}</span>
                 <span className="text-sm text-ink-muted">{d.kitchen}</span>
-                {d.assignment_mode === 'MANUAL' && <span className="badge">dipindah manual</span>}
-                <span className="ml-auto text-sm">{d.meals} porsi</span>
+                {d.assignment_mode === 'MANUAL' && <span className="badge">{t('deliv.manual')}</span>}
+                <span className="ml-auto text-sm">{d.meals} {t('menu.portions')}</span>
               </div>
               <p className="text-sm mt-1">{d.customer_name} · {d.phone}</p>
               <p className="text-sm text-ink-muted">{d.address_line}, {d.district}</p>
@@ -84,11 +87,11 @@ export default function AdminDeliveries() {
                 {(NEXT[d.status] ?? []).map((n) => (
                   <button key={n.to} className="btn-ghost" disabled={busy === d.id}
                           onClick={() => advance(d.id, n.to)}>
-                    {n.label}
+                    {t(n.label as MessageKey)}
                   </button>
                 ))}
                 {!NEXT[d.status] && (
-                  <span className="text-sm text-ink-muted">Tidak ada tindakan berikutnya.</span>
+                  <span className="text-sm text-ink-muted">{t('deliv.no_next')}</span>
                 )}
               </div>
             </li>

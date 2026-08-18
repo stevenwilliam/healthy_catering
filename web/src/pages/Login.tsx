@@ -2,8 +2,10 @@ import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiFailure, completeMfa, login } from '../lib/api'
 import { FieldError, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 export default function Login() {
+  const t = useT()
   const nav = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,7 +33,7 @@ export default function Login() {
     } catch (err) {
       // The API deliberately gives one message for every failure so it cannot
       // be used to discover which addresses have accounts. We show it as-is.
-      setError(err instanceof ApiFailure ? err.message : 'Tidak dapat masuk.')
+      setError(err instanceof ApiFailure ? err.message : t('login.failed'))
     } finally {
       setPending(false)
     }
@@ -46,7 +48,7 @@ export default function Login() {
       await completeMfa(challenge, code)
       nav('/menu')
     } catch (err) {
-      const message = err instanceof ApiFailure ? err.message : 'Kode tidak dapat diverifikasi.'
+      const message = err instanceof ApiFailure ? err.message : t('mfa.failed')
       setError(message)
       // An expired challenge cannot be retried with another code, so send them
       // back to the password step instead of leaving them typing into a form
@@ -63,16 +65,14 @@ export default function Login() {
   if (challenge) {
     return (
       <div className="mx-auto max-w-md">
-        <h1 className="text-3xl mb-2">Verifikasi dua langkah</h1>
-        {/* The API's mfa_hint is English, for API clients. This UI is
-            Indonesian and writes its own copy rather than rendering a server
-            string in the wrong language. */}
-        <p className="text-sm text-ink-muted mb-6">
-          Masukkan kode enam digit dari aplikasi autentikator Anda.
-        </p>
+        <h1 className="text-3xl mb-2">{t('mfa.title')}</h1>
+        {/* The API's mfa_hint is English, for API clients. This UI writes its
+            own copy from the catalogue rather than rendering a server string
+            in whatever language the API happens to use. */}
+        <p className="text-sm text-ink-muted mb-6">{t('mfa.intro')}</p>
         <form onSubmit={submitCode} noValidate>
           <div className="mb-4">
-            <label className="label" htmlFor="code">Kode</label>
+            <label className="label" htmlFor="code">{t('mfa.code')}</label>
             <input
               id="code"
               className="field tracking-[0.4em] text-center text-xl"
@@ -87,16 +87,14 @@ export default function Login() {
               onChange={(e) => setCode(e.target.value)}
               required
             />
-            <p className="mt-2 text-xs text-ink-muted">
-              Kehilangan ponsel? Masukkan salah satu kode pemulihan Anda di sini.
-            </p>
+            <p className="mt-2 text-xs text-ink-muted">{t('mfa.recovery_hint')}</p>
           </div>
           <FieldError message={error ?? undefined} />
-          <SubmitButton pending={pending}>Verifikasi</SubmitButton>
+          <SubmitButton pending={pending}>{t('mfa.verify')}</SubmitButton>
         </form>
         <p className="mt-6 text-sm">
           <button type="button" className="underline" onClick={() => { setChallenge(null); setError(null) }}>
-            Kembali
+            {t('mfa.back')}
           </button>
         </p>
       </div>
@@ -105,23 +103,24 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-3xl mb-6">Masuk</h1>
+      <h1 className="text-3xl mb-6">{t('login.title')}</h1>
       <form onSubmit={submit} noValidate>
         <div className="mb-4">
-          <label className="label" htmlFor="email">Email</label>
+          <label className="label" htmlFor="email">{t('field.email')}</label>
           <input id="email" className="field" type="email" autoComplete="email"
                  value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div className="mb-4">
-          <label className="label" htmlFor="password">Kata sandi</label>
+          <label className="label" htmlFor="password">{t('field.password')}</label>
           <input id="password" className="field" type="password" autoComplete="current-password"
                  value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
         <FieldError message={error ?? undefined} />
-        <SubmitButton pending={pending}>Masuk</SubmitButton>
+        <SubmitButton pending={pending}>{t('login.submit')}</SubmitButton>
       </form>
       <p className="mt-6 text-sm">
-        Belum punya akun? <Link className="underline" to="/register">Daftar</Link>
+        {t('login.no_account')}{' '}
+        <Link className="underline" to="/register">{t('login.register_link')}</Link>
       </p>
     </div>
   )

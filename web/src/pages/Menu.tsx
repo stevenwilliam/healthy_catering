@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiFailure, loadSession, newIdempotencyKey, request } from '../lib/api'
 import { Money as MoneyView, SearchBox, State, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 type Meal = {
   id: string
@@ -28,6 +29,7 @@ type Quote = {
 }
 
 export default function Menu() {
+  const t = useT()
   const nav = useNavigate()
   const [meals, setMeals] = useState<Meal[]>([])
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -59,7 +61,7 @@ export default function Menu() {
         setAddresses(a)
         if (a.length && !addressID) setAddressID(a[0]!.ID)
       })
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat menu.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('menu.load_failed')))
       .finally(() => setLoading(false))
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -90,7 +92,7 @@ export default function Menu() {
       })
       nav(`/orders/${out.order_id}`)
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Tidak dapat membuat pesanan.')
+      setError(e instanceof ApiFailure ? e.message : t('menu.order_failed'))
     } finally {
       setPlacing(false)
     }
@@ -101,21 +103,20 @@ export default function Menu() {
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Menu minggu ini</h1>
+      <h1 className="text-3xl mb-6">{t('menu.title')}</h1>
 
       {/* Tell them BEFORE they build a cart. Discovering the rule at checkout,
           after choosing meals and an address, is the worst moment to learn it
           (99 §8: a disabled state explains itself). */}
       {unverified && (
         <p className="card mb-4 border-brown-deep" role="status">
-          Konfirmasi email Anda sebelum pesanan pertama. Kami sudah mengirim tautannya
-          ke <strong>{session.email}</strong>.
+          {t('menu.verify_email')} <strong>{session.email}</strong>.
         </p>
       )}
-      <SearchBox value={q} onChange={setQ} placeholder="Cari lauk, mis. ayam" resultCount={meals.length} />
+      <SearchBox value={q} onChange={setQ} placeholder={t('menu.search_placeholder')} resultCount={meals.length} />
 
       <State loading={loading} error={error} empty={meals.length === 0}
-             emptyText="Menu belum dipublikasikan untuk minggu ini.">
+             emptyText={t('menu.empty')}>
         {/* Room for the sticky summary, or it sits ON TOP of the last card —
             which on a phone hides a meal the customer is trying to order. */}
         <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${totalMeals > 0 ? 'pb-64 sm:pb-40' : ''}`}>
@@ -129,15 +130,17 @@ export default function Menu() {
                   {m.items.map((it) => <li key={it.food_name}>{it.food_name}</li>)}
                 </ul>
                 <p className="flex flex-wrap gap-2 mb-3">
-                  <span className="badge">{m.nutrition.calories_kcal} kkal</span>
-                  <span className="badge">{Math.round(m.nutrition.protein_mg / 1000)} g protein</span>
-                  {!m.nutrition.complete && <span className="badge bg-ember-light">perkiraan</span>}
+                  <span className="badge">{m.nutrition.calories_kcal} {t('menu.kcal')}</span>
+                  <span className="badge">
+                    {Math.round(m.nutrition.protein_mg / 1000)} {t('menu.protein')}
+                  </span>
+                  {!m.nutrition.complete && <span className="badge bg-ember-light">{t('menu.estimated')}</span>}
                 </p>
                 {soldOut ? (
-                  <p className="text-sm text-ink-muted">Habis untuk tanggal ini.</p>
+                  <p className="text-sm text-ink-muted">{t('menu.sold_out')}</p>
                 ) : (
                   <label className="flex items-center gap-2 text-sm">
-                    Jumlah
+                    {t('menu.qty')}
                     <input
                       type="number" min={0} max={999} className="field w-24"
                       value={cart[m.id] ?? 0}
@@ -156,9 +159,9 @@ export default function Menu() {
       {totalMeals > 0 && (
         <aside
           className="card fixed inset-x-4 bottom-4 z-10 shadow-lg sm:sticky sm:inset-x-auto sm:mt-8"
-          aria-label="Ringkasan pesanan"
+          aria-label={t('menu.summary_aria')}
         >
-          <h2 className="text-lg mb-2">{totalMeals} porsi</h2>
+          <h2 className="text-lg mb-2">{totalMeals} {t('menu.portions')}</h2>
           {quote && (
             <p className="mb-3 text-sm">
               {quote.is_promo && (
@@ -167,12 +170,13 @@ export default function Menu() {
                   <span className="badge mr-2">{quote.promo_label}</span>
                 </>
               )}
-              <MoneyView formatted={quote.unit_price} /> per porsi · tarif {quote.tier}
-              {quote.savings && <> · hemat {quote.savings}</>}
+              <MoneyView formatted={quote.unit_price} /> {t('menu.per_portion')} ·{' '}
+              {t('menu.tier')} {quote.tier}
+              {quote.savings && <> · {t('menu.savings')} {quote.savings}</>}
             </p>
           )}
 
-          <label className="label" htmlFor="addr">Antar ke</label>
+          <label className="label" htmlFor="addr">{t('menu.deliver_to')}</label>
           <select id="addr" className="field mb-3" value={addressID}
                   onChange={(e) => setAddressID(e.target.value)}>
             {addresses.map((a) => (
@@ -182,12 +186,12 @@ export default function Menu() {
 
           {addresses.length === 0 ? (
             <p className="text-sm text-ink-muted">
-              Tambahkan alamat pengiriman dulu — kami perlu titik peta Anda.
+              {t('menu.need_address')}
             </p>
           ) : (
             <SubmitButton pending={placing} onClick={placeOrder} type="button"
                           disabled={unverified}>
-              Pesan sekarang
+              {t('menu.order_now')}
             </SubmitButton>
           )}
           {error && <p className="error" role="alert">{error}</p>}

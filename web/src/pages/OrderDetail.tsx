@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApiFailure, request } from '../lib/api'
 import { CopyButton, State, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 type Detail = {
   id: string; order_code: string; status: string
@@ -15,6 +16,7 @@ type Detail = {
 }
 
 export default function OrderDetail() {
+  const t = useT()
   const { id } = useParams()
   const [order, setOrder] = useState<Detail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -25,7 +27,7 @@ export default function OrderDetail() {
   function load() {
     request<Detail>(`/orders/${id}`)
       .then(setOrder)
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat pesanan.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('order.load_failed')))
       .finally(() => setLoading(false))
   }
   useEffect(load, [id])
@@ -40,7 +42,7 @@ export default function OrderDetail() {
       await request(`/orders/${id}/proof`, { method: 'POST', form })
       load()
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Unggahan gagal.')
+      setError(e instanceof ApiFailure ? e.message : t('order.upload_failed'))
     } finally {
       setUploading(false)
     }
@@ -55,16 +57,15 @@ export default function OrderDetail() {
 
           {order.status === 'AWAITING_PAYMENT' && (
             <section className="card mb-8">
-              <h2 className="text-xl mb-3">Cara membayar</h2>
-              <p className="mb-2">Transfer <strong>tepat</strong> sebesar:</p>
+              <h2 className="text-xl mb-3">{t('order.how_to_pay')}</h2>
+              <p className="mb-2">{t('order.transfer_exactly')}</p>
               <p className="text-2xl font-display mb-3">{order.payment_amount}</p>
               {/* The suffix only works if customers do not round it. */}
               <p className="text-sm text-ink-muted mb-4 max-w-prose">
-                Tiga digit terakhir adalah kode unik Anda. Mohon jangan dibulatkan —
-                angka itulah yang kami pakai untuk mencocokkan pembayaran Anda.
+                {t('order.unique_code_note')}
               </p>
               <div className="mb-4">
-                <p className="text-sm text-ink-muted">Bank {order.bank_name}</p>
+                <p className="text-sm text-ink-muted">{t('order.bank')} {order.bank_name}</p>
                 {/* The account number is the field customers mistype, so it is
                     set large, spaced, and copyable rather than buried in a
                     sentence. */}
@@ -72,39 +73,39 @@ export default function OrderDetail() {
                   {order.bank_account_number}
                 </p>
                 {order.bank_account_number && (
-                  <CopyButton value={order.bank_account_number} label="Salin nomor rekening" />
+                  <CopyButton value={order.bank_account_number} label={t('order.copy_account')} />
                 )}
-                <p className="text-sm mt-2">a.n. {order.bank_account_holder}</p>
+                <p className="text-sm mt-2">{t('order.account_holder')} {order.bank_account_holder}</p>
               </div>
 
-              <label className="label" htmlFor="proof">Unggah bukti transfer</label>
+              <label className="label" htmlFor="proof">{t('order.upload_proof')}</label>
               <input id="proof" ref={fileRef} type="file" className="field mb-3"
                      accept="image/jpeg,image/png,image/webp,application/pdf" />
-              <p className="text-xs text-ink-muted mb-3">JPEG, PNG, WebP atau PDF, maksimal 5 MB.</p>
+              <p className="text-xs text-ink-muted mb-3">{t('order.proof_formats')}</p>
               <SubmitButton pending={uploading} type="button" onClick={upload}>
-                Kirim bukti
+                {t('order.send_proof')}
               </SubmitButton>
               {error && <p className="error" role="alert">{error}</p>}
             </section>
           )}
 
           <section className="mb-8">
-            <h2 className="text-xl mb-3">Rincian</h2>
+            <h2 className="text-xl mb-3">{t('order.lines')}</h2>
             <ul className="grid gap-2">
               {order.lines.map((l) => (
                 <li key={l.line_no} className="card">
-                  <p className="font-medium">{l.meal?.name ?? 'Paket'}</p>
+                  <p className="font-medium">{l.meal?.name ?? t('orders.package')}</p>
                   {l.service_date && <p className="text-sm text-ink-muted">{l.service_date}</p>}
                   <p className="text-sm">{l.qty} × {l.unit_price} = {l.line_total}</p>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-right text-lg">Total {order.total}</p>
+            <p className="mt-3 text-right text-lg">{t('order.total')} {order.total}</p>
           </section>
 
           {order.deliveries.length > 0 && (
             <section>
-              <h2 className="text-xl mb-3">Pengiriman</h2>
+              <h2 className="text-xl mb-3">{t('order.deliveries')}</h2>
               <ul className="grid gap-2">
                 {order.deliveries.map((d) => (
                   <li key={d.id} className="card flex flex-wrap gap-3 items-center">

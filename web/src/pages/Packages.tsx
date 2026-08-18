@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiFailure, newIdempotencyKey, Page, request } from '../lib/api'
 import { SearchBox, State, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 type Pkg = { id: string; name: string; description: string; meal_credits: number; validity_days: number }
 type Mine = {
@@ -12,6 +13,7 @@ type Mine = {
 type Entry = { entry_type: string; qty: number; running_balance: number; note: string; occurred_at: string }
 
 export default function Packages() {
+  const t = useT()
   const nav = useNavigate()
   const [available, setAvailable] = useState<Pkg[]>([])
   const [mine, setMine] = useState<Mine[]>([])
@@ -27,7 +29,7 @@ export default function Packages() {
       request<Page<Mine>>('/my/packages'),
     ])
       .then(([a, m]) => { setAvailable(a.items); setMine(m.items) })
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat paket.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('packages.load_failed')))
       .finally(() => setLoading(false))
   }
   useEffect(load, [q]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -41,7 +43,7 @@ export default function Packages() {
       })
       nav(`/orders/${out.order_id}`)
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Pembelian gagal.')
+      setError(e instanceof ApiFailure ? e.message : t('packages.buy_failed'))
     } finally {
       setBuying(null)
     }
@@ -55,24 +57,24 @@ export default function Packages() {
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Paket kredit</h1>
+      <h1 className="text-3xl mb-6">{t('packages.title')}</h1>
 
       <State loading={loading} error={error} empty={false}>
         {mine.length > 0 && (
           <section className="mb-10">
-            <h2 className="text-xl mb-3">Paket saya</h2>
+            <h2 className="text-xl mb-3">{t('packages.mine')}</h2>
             <ul className="grid gap-3">
               {mine.map((p) => (
                 <li key={p.id} className="card">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="font-display text-lg">{p.package_name}</span>
                     <span className="badge">{p.status}</span>
-                    <span>{p.remaining_credits} / {p.purchased_credits} kredit</span>
+                    <span>{p.remaining_credits} / {p.purchased_credits} {t('packages.credits')}</span>
                     {p.expires_at && (
-                      <span className="text-sm text-ink-muted">berlaku sampai {p.expires_at}</span>
+                      <span className="text-sm text-ink-muted">{t('packages.valid_until')} {p.expires_at}</span>
                     )}
                     <button className="btn-ghost ml-auto" onClick={() => showLedger(p.id)}>
-                      Riwayat kredit
+                      {t('packages.ledger')}
                     </button>
                   </div>
 
@@ -81,14 +83,14 @@ export default function Packages() {
                       traced rather than argued about. */}
                   {ledger[p.id]?.length ? (
                     <table className="mt-4 w-full text-sm">
-                      <caption className="sr-only">Riwayat kredit {p.package_name}</caption>
+                      <caption className="sr-only">{t('packages.ledger')} — {p.package_name}</caption>
                       <thead>
                         <tr className="text-left border-b border-nourish-deep/30">
-                          <th scope="col" className="py-1">Waktu</th>
-                          <th scope="col">Jenis</th>
-                          <th scope="col" className="text-right">Perubahan</th>
-                          <th scope="col" className="text-right">Saldo</th>
-                          <th scope="col">Catatan</th>
+                          <th scope="col" className="py-1">{t('packages.col_time')}</th>
+                          <th scope="col">{t('packages.col_type')}</th>
+                          <th scope="col" className="text-right">{t('packages.col_change')}</th>
+                          <th scope="col" className="text-right">{t('packages.col_balance')}</th>
+                          <th scope="col">{t('packages.col_note')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -110,16 +112,18 @@ export default function Packages() {
           </section>
         )}
 
-        <h2 className="text-xl mb-3">Beli paket</h2>
-        <SearchBox value={q} onChange={setQ} placeholder="Cari paket" resultCount={available.length} />
+        <h2 className="text-xl mb-3">{t('packages.buy')}</h2>
+        <SearchBox value={q} onChange={setQ} placeholder={t('packages.search_placeholder')} resultCount={available.length} />
         <ul className="grid gap-4 sm:grid-cols-3">
           {available.map((p) => (
             <li key={p.id} className="card">
               <h3 className="text-lg">{p.name}</h3>
               <p className="text-sm text-ink-muted mb-2">{p.description}</p>
-              <p className="text-sm mb-3">{p.meal_credits} kredit · berlaku {p.validity_days} hari</p>
+              <p className="text-sm mb-3">
+                {p.meal_credits} {t('packages.credits')} · {t('packages.valid_for')} {p.validity_days} {t('packages.days')}
+              </p>
               <SubmitButton pending={buying === p.id} type="button" onClick={() => buy(p.id)}>
-                Beli
+                {t('packages.buy_button')}
               </SubmitButton>
             </li>
           ))}

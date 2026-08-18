@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { ApiFailure, request } from '../lib/api'
 import { FieldError, State, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 type Address = {
   ID: string; Label: string; RecipientName: string; RecipientPhone: string
@@ -14,6 +15,7 @@ type Saved = {
 }
 
 export default function Addresses() {
+  const t = useT()
   const [list, setList] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,7 @@ export default function Addresses() {
   function load() {
     request<Address[]>('/addresses')
       .then(setList)
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat alamat.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('addresses.load_failed')))
       .finally(() => setLoading(false))
   }
   useEffect(load, [])
@@ -54,7 +56,7 @@ export default function Addresses() {
       load()
     } catch (err) {
       if (err instanceof ApiFailure) { setError(err.message); setFields(err.details) }
-      else setError('Tidak dapat menyimpan alamat.')
+      else setError(t('addresses.save_failed'))
     } finally {
       setPending(false)
     }
@@ -62,10 +64,10 @@ export default function Addresses() {
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Alamat pengiriman</h1>
+      <h1 className="text-3xl mb-6">{t('addresses.title')}</h1>
 
       <State loading={loading} error={null} empty={list.length === 0}
-             emptyText="Belum ada alamat tersimpan.">
+             emptyText={t('addresses.empty')}>
         <ul className="grid gap-3 sm:grid-cols-2 mb-8">
           {list.map((a) => (
             <li key={a.ID} className="card">
@@ -78,7 +80,7 @@ export default function Addresses() {
         </ul>
       </State>
 
-      <h2 className="text-2xl mb-4">Tambah alamat</h2>
+      <h2 className="text-2xl mb-4">{t('addresses.add')}</h2>
 
       {/* Google Maps is not wired yet (blocked on the API keys), so the pin is
           entered as coordinates for now. The rule is unchanged: no pin, no
@@ -90,26 +92,26 @@ export default function Addresses() {
 
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 max-w-3xl" noValidate>
         <div>
-          <label className="label" htmlFor="label">Label</label>
-          <input id="label" className="field" placeholder="Rumah" value={form.label} onChange={set('label')} required />
+          <label className="label" htmlFor="label">{t('addresses.label')}</label>
+          <input id="label" className="field" placeholder={t('addresses.label_placeholder')} value={form.label} onChange={set('label')} required />
           <FieldError message={fields.label} />
         </div>
         <div>
-          <label className="label" htmlFor="rname">Nama penerima</label>
+          <label className="label" htmlFor="rname">{t('addresses.recipient')}</label>
           <input id="rname" className="field" value={form.recipient_name} onChange={set('recipient_name')} required />
           <FieldError message={fields.recipient_name} />
         </div>
         <div>
-          <label className="label" htmlFor="rphone">Nomor HP penerima</label>
+          <label className="label" htmlFor="rphone">{t('addresses.recipient_phone')}</label>
           <input id="rphone" className="field" inputMode="tel" value={form.recipient_phone} onChange={set('recipient_phone')} required />
           <FieldError message={fields.recipient_phone} />
         </div>
         <div>
-          <label className="label" htmlFor="district">Kecamatan</label>
+          <label className="label" htmlFor="district">{t('addresses.district')}</label>
           <input id="district" className="field" value={form.district} onChange={set('district')} />
         </div>
         <div className="sm:col-span-2">
-          <label className="label" htmlFor="line">Alamat lengkap</label>
+          <label className="label" htmlFor="line">{t('addresses.line')}</label>
           <input id="line" className="field" value={form.address_line} onChange={set('address_line')} required />
           <FieldError message={fields.address_line} />
         </div>
@@ -126,13 +128,13 @@ export default function Addresses() {
           <FieldError message={fields.longitude} />
         </div>
         <div className="sm:col-span-2">
-          <label className="label" htmlFor="note">Catatan untuk kurir</label>
-          <input id="note" className="field" placeholder="pagar abu-abu, bel di kanan"
+          <label className="label" htmlFor="note">{t('addresses.note')}</label>
+          <input id="note" className="field" placeholder={t('addresses.note_placeholder')}
                  value={form.driver_note} onChange={set('driver_note')} />
         </div>
         <div className="sm:col-span-2">
           <FieldError message={error ?? undefined} />
-          <SubmitButton pending={pending}>Simpan alamat</SubmitButton>
+          <SubmitButton pending={pending}>{t('addresses.save')}</SubmitButton>
         </div>
       </form>
 

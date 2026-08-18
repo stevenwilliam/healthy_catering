@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ApiFailure, Page, request } from '../lib/api'
 import { SearchBox, State, SubmitButton } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 type QueueItem = {
   payment_id: string; order_code: string; customer_name: string; customer_email: string
@@ -9,6 +10,7 @@ type QueueItem = {
 }
 
 export default function AdminPayments() {
+  const t = useT()
   const [page, setPage] = useState<Page<QueueItem> | null>(null)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
@@ -22,7 +24,7 @@ export default function AdminPayments() {
     setLoading(true)
     request<Page<QueueItem>>(`/admin/payments?q=${encodeURIComponent(q)}`)
       .then(setPage)
-      .catch((e) => setError(e instanceof ApiFailure ? e.message : 'Gagal memuat antrean.'))
+      .catch((e) => setError(e instanceof ApiFailure ? e.message : t('pay.load_failed')))
       .finally(() => setLoading(false))
   }
   useEffect(load, [q]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -33,7 +35,7 @@ export default function AdminPayments() {
       await request(`/admin/payments/${id}/verify`, { method: 'POST', body: {} })
       load()
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Verifikasi gagal.')
+      setError(e instanceof ApiFailure ? e.message : t('pay.verify_failed'))
     } finally { setBusy(null) }
   }
 
@@ -43,7 +45,7 @@ export default function AdminPayments() {
       await request(`/admin/payments/${id}/reject`, { method: 'POST', body: { reason } })
       setRejecting(null); setReason(''); load()
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Penolakan gagal.')
+      setError(e instanceof ApiFailure ? e.message : t('pay.reject_failed'))
     } finally { setBusy(null) }
   }
 
@@ -56,16 +58,16 @@ export default function AdminPayments() {
 
   return (
     <div>
-      <h1 className="text-3xl mb-2">Antrean pembayaran</h1>
+      <h1 className="text-3xl mb-2">{t('pay.title')}</h1>
       {/* Oldest first: the customer who has waited longest is the one about to
           telephone. */}
-      <p className="text-sm text-ink-muted mb-6">Diurutkan dari yang paling lama menunggu.</p>
+      <p className="text-sm text-ink-muted mb-6">{t('pay.oldest_first')}</p>
 
-      <SearchBox value={q} onChange={setQ} placeholder="Cari kode pesanan, nama, jumlah"
+      <SearchBox value={q} onChange={setQ} placeholder={t('pay.search_placeholder')}
                  resultCount={page?.total} />
 
       <State loading={loading} error={error} empty={(page?.items.length ?? 0) === 0}
-             emptyText="Tidak ada pembayaran menunggu verifikasi.">
+             emptyText={t('pay.empty')}>
         <ul className="grid gap-3">
           {page?.items.map((p) => (
             <li key={p.payment_id} className="card">
@@ -76,28 +78,33 @@ export default function AdminPayments() {
                 <span className="ml-auto text-lg tabular-nums">{p.expected_amount}</span>
               </div>
               <p className="text-sm text-ink-muted mt-1">
-                {p.bank_name} · menunggu {p.waiting_minutes} menit · {p.proof_count} bukti
-                {p.unique_code ? ` · kode unik ${p.unique_code}` : ''}
+                {p.bank_name} · {t('pay.waiting')} {p.waiting_minutes} {t('pay.minutes')} ·{' '}
+                {p.proof_count} {t('pay.proofs')}
+                {p.unique_code ? ` · ${t('pay.unique_code')} ${p.unique_code}` : ''}
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button className="btn-ghost" onClick={() => viewProof(p.payment_id)}>
-                  Lihat bukti
+                  {t('pay.view_proof')}
                 </button>
                 <SubmitButton pending={busy === p.payment_id} type="button"
                               onClick={() => verify(p.payment_id)}>
-                  Verifikasi
+                  {t('pay.verify')}
                 </SubmitButton>
                 {rejecting === p.payment_id ? (
                   <span className="flex flex-wrap items-center gap-2">
-                    <input className="field w-64" placeholder="Alasan penolakan"
+                    <input className="field w-64" placeholder={t('pay.reject_reason')}
                            value={reason} onChange={(e) => setReason(e.target.value)} />
-                    <button className="btn-danger" onClick={() => reject(p.payment_id)}>Tolak</button>
-                    <button className="btn-ghost" onClick={() => setRejecting(null)}>Batal</button>
+                    <button className="btn-danger" onClick={() => reject(p.payment_id)}>
+                      {t('pay.reject')}
+                    </button>
+                    <button className="btn-ghost" onClick={() => setRejecting(null)}>
+                      {t('ui.cancel')}
+                    </button>
                   </span>
                 ) : (
                   <button className="btn-ghost" onClick={() => setRejecting(p.payment_id)}>
-                    Tolak
+                    {t('pay.reject')}
                   </button>
                 )}
               </div>
