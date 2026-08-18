@@ -2,23 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The app shares web/public/css/tokens.css (linked from index.html), so
+ * --footer-h and the measured palette cannot drift from the public pages.
+ *
+ * Ground rule, same as the public site: the page ground is Nourish Green
+ * #468973 and nothing reaches AA 4.5 on it. The app therefore paints the
+ * ground on <body> and puts all of its content on the beige sheet in App.tsx.
+ */
+
 @layer base {
   body {
-    @apply bg-beige text-ink font-sans antialiased;
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-weight: 450;   /* Inter a touch above regular; it sits on colour */
   }
-  h1, h2, h3 { @apply font-display font-semibold; }
+
+  /* Erode is the display face, Inter is everything that gets read — the split
+     the brand guidelines set out. Erode ships discrete cuts, so display
+     weights land on 600/700 exactly rather than being synthesised. */
+  h1, h2, h3 { @apply font-display; letter-spacing: -0.015em; }
+  h1 { @apply text-3xl; font-weight: 700; }
+  h2 { @apply text-2xl; font-weight: 700; }
+  h3 { @apply text-xl; font-weight: 600; }
+  strong, b { font-weight: 600; }
 
   /* Focus is always visible (docs/10 §4). Never remove an outline without a
-     replacement that measures at least 3:1 against its surroundings. */
+     replacement that measures at least 3:1 against its surroundings. The
+     offset colour is the sheet, because that is what the app's controls
+     actually sit on. */
   :focus-visible {
-    @apply outline-none ring-2 ring-nourish-deep ring-offset-2 ring-offset-beige;
+    @apply outline-none ring-2 ring-nourish-deep ring-offset-2 ring-offset-sheet;
   }
 }
 
 @layer components {
   /* Every interactive control clears the 44px touch target. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 min-h-touch px-5
+    @apply inline-flex items-center justify-center gap-2 min-h-touch px-6
            rounded-full font-semibold transition-transform duration-200
            disabled:opacity-60 disabled:cursor-not-allowed;
   }
@@ -26,18 +45,40 @@
   .btn-ghost   { @apply btn border border-nourish-deep/60 text-ink hover:bg-nourish-deep/5; }
   .btn-danger  { @apply btn bg-berry-deep text-beige; }
 
-  .card { @apply bg-white border border-nourish-deep/60 rounded-xl p-4 shadow-sm; }
+  .card { @apply bg-white border border-nourish-deep/60 rounded-xl p-5 shadow-sm; }
 
   .field { @apply block w-full min-h-touch rounded-lg border border-nourish-deep/60
                   bg-white px-3 py-2 text-ink placeholder:text-ink-muted/70; }
-  .label { @apply block text-sm font-medium mb-1; }
+  .label { @apply block text-sm font-semibold mb-1; }
 
   /* An error is announced, not just coloured — colour is never the only
      signal (99 §8). */
   .error { @apply text-berry-deep text-sm mt-1; }
 
   .badge { @apply inline-flex items-center rounded-full border border-nourish-deep/60
-                  bg-beige px-3 py-1 text-xs; }
+                  bg-beige px-3 py-1 text-xs font-semibold; }
+
+  /* Floating WhatsApp contact — the same control as the public pages, so the
+   * same reasoning applies and the numbers are in public.css: WhatsApp's own
+   * #128C7E measures 1.00:1 against the #468973 ground (their luminances are
+   * within 0.0003 of each other), so the beige ring is what makes the button
+   * findable at all under 1.4.11, not decoration. It clears the fixed footer
+   * rather than sitting on top of it.
+   */
+  .wa-float {
+    @apply fixed right-4 z-50 inline-flex h-[68px] w-[68px] items-center
+           justify-center rounded-full text-white transition-transform
+           duration-200 hover:-translate-y-0.5 sm:h-[76px] sm:w-[76px];
+    bottom: calc(var(--footer-h) + 1rem + env(safe-area-inset-bottom, 0px));
+    background: #128C7E;
+    outline: 3px solid var(--sheet);
+    box-shadow: 0 6px 20px rgba(11, 30, 25, 0.38);
+  }
+  .wa-float svg { @apply h-[34px] w-[34px] sm:h-[38px] sm:w-[38px]; }
+  .wa-float:focus-visible {
+    outline: 3px solid var(--sheet);
+    box-shadow: 0 0 0 3px var(--nourish-deep), 0 6px 20px rgba(11, 30, 25, 0.38);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

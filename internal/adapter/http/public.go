@@ -75,6 +75,11 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	// Static assets: fonts, tokens, images. Self-hosted, never a CDN (99 §7).
 	r.Static("/fonts", "./web/public/fonts")
 	r.Static("/css", "./web/public/css")
+	// /images was never mounted, so the og:image every page has been
+	// advertising — /images/og-default.png — 404'd, and a shared link showed a
+	// card with a broken image. The brand assets under it are generated from
+	// docs/design_guideline/logo.png by scripts/mklogo.py.
+	r.Static("/images", "./web/public/images")
 
 	// The SPA, served by the same binary — one deploy unit, no Node in
 	// production (docs/02 D-2).
@@ -112,7 +117,11 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 
 	base := func() string { return strings.TrimRight(d.Config.App.BaseURL, "/") }
 
-	page := func(c *gin.Context, name string, data PageData) {
+	// render fills in everything the shared "head" and "foot" templates read.
+	// Every page has to go through it, including the 404: "foot" carries the
+	// floating WhatsApp button, which needs .Company, so a page rendered
+	// around it would come out without the button (and with an empty footer).
+	render := func(c *gin.Context, status int, name string, data PageData) {
 		data.BaseURL = base()
 		data.Year = time.Now().Year()
 		data.Lang = "id"
@@ -127,7 +136,11 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			"whatsapp": d.Params.String(ctx, sysparam.KeyCompanyWhatsApp, ""),
 		}
 		data.MapsKey = d.Config.Maps.BrowserKey
-		c.HTML(http.StatusOK, name, data)
+		c.HTML(status, name, data)
+	}
+
+	page := func(c *gin.Context, name string, data PageData) {
+		render(c, http.StatusOK, name, data)
 	}
 
 	// ── Home ────────────────────────────────────────────────────────────────
@@ -150,8 +163,12 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	r.GET("/menu/:slug", func(c *gin.Context) {
 		dt, err := d.Catalogue.DietTypeBySlug(c.Request.Context(), c.Param("slug"))
 		if err != nil {
-			c.HTML(http.StatusNotFound, "notfound", PageData{
-				Title: "Halaman tidak ditemukan — Evermore", Lang: "id", Year: time.Now().Year(),
+			diets, _ := publicDiets(c, d)
+			render(c, http.StatusNotFound, "notfound", PageData{
+				Title:       "Halaman tidak ditemukan — Evermore",
+				Description: "Tautan yang Anda buka tidak ada atau sudah dipindahkan.",
+				Canonical:   base() + "/",
+				DietTypes:   diets,
 			})
 			return
 		}
@@ -200,6 +217,24 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			JSONLD: template.JS(`{"@context":"https://schema.org","@type":"Menu",` +
 				`"name":"` + template.JSEscapeString(dt.Name) + `",` +
 				`"inLanguage":"id-ID","url":"` + base() + "/menu/" + dt.Slug + `"}`),
+		})
+	})
+
+	// ── Public company contact ──────────────────────────────────────────────
+	//
+	// The SPA needs the WhatsApp number for its floating contact button, and
+	// CLAUDE.md §7 is explicit that a value like this is a sys_parameters row
+	// rather than a constant — so it cannot be baked into the bundle at build
+	// time. Nothing here is new exposure: these four values are already
+	// rendered into the footer of every public page.
+	r.GET("/api/v1/public/company", func(c *gin.Context) {
+		ctx := c.Request.Context()
+		c.Header("Cache-Control", "public, max-age=300")
+		c.JSON(http.StatusOK, gin.H{
+			"name":     d.Params.String(ctx, sysparam.KeyCompanyLegalName, "Evermore"),
+			"email":    d.Params.String(ctx, sysparam.KeyCompanyEmail, ""),
+			"phone":    d.Params.String(ctx, sysparam.KeyCompanyPhone, ""),
+			"whatsapp": waNumber(d.Params.String(ctx, sysparam.KeyCompanyWhatsApp, "")),
 		})
 	})
 

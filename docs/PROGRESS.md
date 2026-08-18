@@ -97,6 +97,17 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Brand pass, 2026-08-18 (Steven).** Page ground is now Nourish Green `#468973`;
+the supplied wordmark replaces the text logo on both surfaces; the footer is the
+masthead's fill, fixed to the bottom and thin; the WhatsApp float is larger and
+on every page, public and app; the Erode/Inter pairing is bigger and bolder
+throughout. Two accessibility consequences are recorded in `10` §2.7: nothing
+reaches AA at reading size on the new ground, so body copy sits on beige sheets
+and white cards, and the WhatsApp teal measures **1.00:1** against it and now
+carries a beige ring. Re-verified by screenshot on home, menu, 404 and the app
+at 390px and 1280px. `/images` was also never mounted, so every page's
+`og:image` had been 404ing — fixed, and the card is generated.
+
 ## M14 — Security suite ✅
 Injection, oversell, constraint-as-last-line, append-only, price overlap,
 order reconciliation (8 orders), no negative balances, one REDEEM per delivery.

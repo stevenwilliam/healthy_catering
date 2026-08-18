@@ -3,71 +3,113 @@
  * The engineering reading of docs/10-design-system.md, which is itself the
  * engineering reading of the brand guidelines. Every colour pairing named here
  * has a MEASURED contrast ratio in the comment — calculated, never eyeballed
- * (CLAUDE.md §7).
+ * (CLAUDE.md §7). Recompute with scripts/contrast.py after any change.
  *
- * Four brand colours do not reach WCAG AA as text or as button fills. They are
- * present as tokens because the brand uses them decoratively, and each carries
- * the ratio that rules it out, so nobody rediscovers it in review.
+ * 2026-08-18 — Steven moved the page ground from Restore Beige to Nourish
+ * Green #468973. That one change re-derives the whole palette, because
+ * #468973 sits at luminance 0.204, almost exactly halfway between black and
+ * white, and NOTHING reaches AA 4.5 on it:
+ *
+ *     white  #FFFFFF on #468973 ... 4.13   (AA large / UI only)
+ *     beige  #FFFAE0 on #468973 ... 3.93   (AA large / UI only)
+ *     deep   #1C3D34 on #468973 ... 2.88   (fails everything)
+ *
+ * So the rule this file now enforces: the green is a GROUND, never a surface
+ * for body copy. Display type sits on it; anything at reading size sits on a
+ * beige sheet or a white card. That is not a workaround, it is the only
+ * arrangement that keeps the colour Steven asked for and AA at the same time.
  */
 
 :root {
   /* ── Primary: Nourish Green ──────────────────────────────────────────── */
-  --nourish-deep: #1C3D34;  /* 11.32 on beige · 11.89 on white · 11.89 as white-on */
-  --nourish: #468973;       /* ✗ 3.93 / 4.13 — DECORATION ONLY, never text or a fill */
+  --nourish-deep: #1C3D34;  /* 11.32 on beige · 11.89 on white · masthead+footer fill */
+  --nourish: #468973;       /* THE PAGE GROUND. Display type and surfaces only —
+                               2.88 against deep ink, so never ink-on-green */
 
   /* ── Secondary: Restore Beige ────────────────────────────────────────── */
-  --beige: #FFFAE0;         /* the page canvas */
+  --beige: #FFFAE0;         /* the content sheet: 3.93 against the ground ✓ as a
+                               surface boundary, and 11.32 for ink on it */
   --beige-deep: #CCBDAA;    /* ✗ 1.75 on beige — a divider between filled
-                               surfaces, NEVER an input border or focus ring */
+                               surfaces, NEVER an input border or focus ring.
+                               6.47 on the deep green, where it is the footer's
+                               muted ink ✓ */
 
   /* ── Tertiary ────────────────────────────────────────────────────────── */
   --brown-deep: #613F37;    /* 8.79 on beige ✓ */
   --brown-light: #A36E50;   /* ✗ 4.08 — background only */
   --blue-deep: #2E55A3;     /* 6.79 ✓ — informational */
-  --blue-light: #B6DAFA;    /* background; 8.15 with deep ink on it ✓ */
+  --blue-light: #B6DAFA;    /* on beige, 8.15 with deep ink on it ✓.
+                               ✗ 2.83 against the green ground — not a chip
+                               that floats on the canvas */
   --orange-deep: #E0782D;   /* ✗ 2.90 — highlight, never a label or a price */
-  --orange-light: #FFBC8F;  /* 7.27 on the dark green ✓ — this is how
-                               Energize Orange earns its place */
-  --berry-deep: #91253D;    /* 7.89 ✓ — destructive */
+  --orange-light: #FFBC8F;  /* 7.27 on the dark green ✓. ✗ 2.52 against the
+                               green ground — only ever inside a card */
+  --berry-deep: #91253D;    /* 7.89 on beige ✓ — destructive.
+                               ✗ 2.01 against the green ground */
   --berry-light: #CC6883;   /* ✗ 3.40 — background only */
 
   /* ── Semantic roles ──────────────────────────────────────────────────── */
-  --bg: var(--beige);
-  --surface: #FFFFFF;
-  --ink: var(--nourish-deep);          /* 11.32 on the canvas */
-  --ink-muted: #4A5D56;                /* 6.69 on beige ✓ AA at body size */
-  /* 0.60 alpha composites to 3.56 on the canvas. It is this heavy on purpose:
-     the first draft used 0.28, which measures 1.69 — the SAME failure as
-     --beige-deep at 1.75, reintroduced with a transparent ink one line after
-     ruling it out. Anything below 0.55 alpha fails 1.4.11 here. Calculated,
-     not eyeballed, is the rule precisely because this is easy to get wrong. */
+  --canvas: var(--nourish);            /* the page ground */
+  --sheet: var(--beige);               /* where body copy is allowed to live */
+  --surface: #FFFFFF;                  /* cards on the sheet or on the ground */
+  --bg: var(--canvas);                 /* kept: older rules still read --bg */
+  --ink: var(--nourish-deep);          /* 11.32 on the sheet · 11.89 on white */
+  --ink-muted: #4A5D56;                /* 6.69 on the sheet ✓ AA at body size */
+
+  /* On the green ground. Both are LARGE-TEXT-ONLY tokens: 3.93 and 4.13 clear
+     AA's 3:1 for text at 24px, or 18.66px bold, and clear 1.4.11 for a control
+     boundary. Neither may be used for a paragraph. */
+  --on-canvas: var(--beige);           /* 3.93 — display type on the ground */
+  --on-canvas-strong: #FFFFFF;         /* 4.13 — when it has to carry further */
+
   --border: rgba(28, 61, 52, 0.60);    /* 3.56 on beige ✓ */
   --border-subtle: rgba(28, 61, 52, 0.28); /* 1.69 — DECORATIVE ONLY: a divider
                                           between filled surfaces, never a
                                           control boundary or a focus ring */
   --focus: var(--nourish-deep);
+  --focus-on-canvas: var(--beige);     /* the ring has to be visible against the
+                                          ground, and deep ink is 2.88 there */
   --primary: var(--nourish-deep);
   --primary-ink: var(--beige);         /* 11.32 ✓ */
+  /* A dark-green button ON the green ground is 2.88:1 — it fails 1.4.11 as a
+     control that has to be findable. On the ground the CTA inverts: beige fill
+     (3.93 against the ground ✓) carrying deep ink (11.32 ✓). */
+  --cta-on-canvas: var(--beige);
+  --cta-on-canvas-ink: var(--nourish-deep);
   --danger: var(--berry-deep);
   --danger-ink: var(--beige);          /* 7.89 ✓ */
   --info: var(--blue-deep);
   --warning: var(--brown-deep);
 
-  /* On a Nourish-Green surface — the header, the footer, every dark panel */
+  /* On a deep Nourish-Green surface — the masthead, the footer, dark panels */
   --on-dark: var(--beige);             /* 11.32 ✓ */
   --on-dark-muted: var(--beige-deep);  /* 6.47 ✓ */
   --on-dark-link: var(--blue-light);   /* 8.15 ✓ */
   --on-dark-accent: var(--orange-light); /* 7.27 ✓ */
 
-  /* ── Type scale ──────────────────────────────────────────────────────── */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
-  --text-3xl: 2.25rem;
-  --text-4xl: 3rem;
+  /* ── Type scale ──────────────────────────────────────────────────────────
+     Raised a step across the board on 2026-08-18 (Steven: "more bold and
+     bigger in overall design"). Body is 17px rather than 16 because Inter at
+     450 on a coloured ground needs the extra pixel to hold its weight. */
+  --text-xs: 0.8125rem;   /* 13px */
+  --text-sm: 0.9375rem;   /* 15px */
+  --text-base: 1.0625rem; /* 17px */
+  --text-lg: 1.25rem;     /* 20px — the lede; bold here counts as LARGE text */
+  --text-xl: 1.5rem;      /* 24px — large text at any weight */
+  --text-2xl: 2rem;       /* 32px */
+  --text-3xl: 2.75rem;    /* 44px */
+  --text-4xl: 4rem;       /* 64px */
+
+  /* ── Weight ──────────────────────────────────────────────────────────────
+     Erode ships four discrete cuts (400/500/600/700), so display weights must
+     land exactly on one or the browser synthesises a fake bold. Inter is the
+     variable file and takes any value in 100–900. */
+  --w-display: 700;       /* Erode Bold — h1, h2 */
+  --w-display-sub: 600;   /* Erode Semibold — h3, card titles */
+  --w-body: 450;          /* Inter, slightly above regular for coloured grounds */
+  --w-strong: 600;
+  --w-ui: 600;            /* nav, buttons, labels */
+  --w-eyebrow: 700;       /* the small caps label that pairs against Erode */
 
   /* ── Spacing, radius, elevation ──────────────────────────────────────── */
   --space-1: 0.25rem;
@@ -82,10 +124,12 @@
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 999px;
 
   --shadow-sm: 0 1px 2px rgba(28, 61, 52, 0.08);
   --shadow: 0 4px 12px rgba(28, 61, 52, 0.10);
+  --shadow-lift: 0 10px 30px rgba(11, 30, 25, 0.22);  /* cards on the ground */
 
   /* ── Motion: one subtle tier (docs/10 §4) ────────────────────────────── */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -93,6 +137,15 @@
 
   /* Minimum touch target (docs/10 §4) */
   --touch-min: 44px;
+
+  /* The footer is fixed to the bottom of the viewport, so every scrollable
+     surface has to reserve its height or the last line hides behind it. One
+     token, read by both the public pages and the SPA. */
+  --footer-h: 44px;
+}
+
+@media (min-width: 48rem) {
+  :root { --footer-h: 48px; }
 }
 
 /* prefers-reduced-motion zeroes DELAYS as well as durations — a zero duration
@@ -111,7 +164,9 @@
 }
 
 /* Focus is always visible (docs/10 §4). Never `outline: none` without a
-   replacement that measures ≥3:1 against its surroundings. */
+   replacement that measures ≥3:1 against its surroundings. Deep ink is only
+   2.88 against the green ground, so anything sitting directly on the ground
+   overrides this with --focus-on-canvas. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
