@@ -281,6 +281,24 @@ set -a && . ./.env && set +a
 ./bin/api seed-menu 7      # a week
 ```
 
+Placeholder pictures for those menus, downloaded once and stored locally:
+
+```bash
+./bin/api seed-menu-images
+```
+
+⚠️ These are **random** photographs from Lorem Picsum (Unsplash licence, free
+commercially). They are not pictures of this food — a menu called "Ayam
+Panggang" may show a doorway. They exist so the cards are not blank during
+development and **must not reach a customer**. Clear them with:
+
+```bash
+psql "$DATABASE_URL" -c "UPDATE scheduled_meal SET hero_photo_key = NULL;"
+```
+
+The cards then fall back to the illustrated band in each diet type's colour,
+which is honest about being artwork.
+
 **Not for production once real menus are being entered.** It only ever inserts
 where nothing is scheduled, so it cannot overwrite a real menu, but a
 production calendar should be filled by the kitchen through the back office.

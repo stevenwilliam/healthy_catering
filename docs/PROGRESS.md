@@ -108,7 +108,10 @@ Menu cards now carry a picture band — a real photo when
 `scheduled_meal.hero_photo_key` is set, otherwise an illustrated band in the
 diet type's colour from the same glyph source as the home cards. **AI-generated
 food photography is still blocked on an image-generation key** (RUN-WHEN-BACK
-§A2).
+§A2); in the meantime `./bin/api seed-menu-images` attaches a random Lorem
+Picsum photograph per menu, downloaded once and served locally. Random means
+random — a chicken dish may show a doorway — so these are development
+scaffolding, not launch assets, and the handbook says how to clear them.
 
 **Editable hero copy, 2026-08-18 (Steven).** The home hero wording moved out of
 the binary into `public_content` (migration 0017) and is edited at

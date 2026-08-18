@@ -107,8 +107,11 @@ func run() error {
 			return err
 		}
 		return runSeedMenu(ctx, gdb, log, days)
+	case "seed-menu-images":
+		return runSeedMenuImages(ctx, gdb, log)
 	default:
-		return fmt.Errorf("unknown command %q (serve|migrate|create-staff|seed-menu|version)", cmd)
+		return fmt.Errorf("unknown command %q "+
+			"(serve|migrate|create-staff|seed-menu|seed-menu-images|version)", cmd)
 	}
 }
 
