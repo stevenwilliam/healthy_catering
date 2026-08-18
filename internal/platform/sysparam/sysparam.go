@@ -61,6 +61,7 @@ const (
 	KeyLockoutDuration      = "security.lockout_duration"
 	KeyRequireEmailVerified = "security.require_email_verification"
 	KeyPublicHeroImage      = "public.hero_image"
+	KeyPublicShowMealPrices = "public.show_meal_prices"
 )
 
 // Param is one row.

@@ -213,6 +213,22 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "Prices are being updated. Please contact us for a current quote.",
 		i18n.ZH: "价格正在更新中，请联系我们获取最新报价。",
 	},
+	"price.lede_quote": {
+		i18n.ID: "Harga menyesuaikan kategori, jumlah porsi, dan lama berlangganan. Hubungi kami untuk penawaran yang pas.",
+		i18n.EN: "Prices depend on the category, how many portions, and how long you order for. Contact us for a quote that fits.",
+		i18n.ZH: "价格取决于菜单类别、订购份数与订购周期。请联系我们获取合适的报价。",
+	},
+	"price.quote_h2": {
+		i18n.ID: "Minta penawaran", i18n.EN: "Ask for a quote", i18n.ZH: "获取报价",
+	},
+	"price.quote_body": {
+		i18n.ID: "Ceritakan kebutuhan Anda — kategori menu, berapa porsi per hari, dan untuk berapa lama — dan kami kirimkan penawaran beserta pilihan paketnya.",
+		i18n.EN: "Tell us what you need — which menu, how many portions a day, and for how long — and we will send a quote with the package options.",
+		i18n.ZH: "请告诉我们您的需求——所需菜单、每日份数以及订购时长——我们将为您发送报价及套餐选项。",
+	},
+	"price.quote_cta": {
+		i18n.ID: "Hubungi kami", i18n.EN: "Contact us", i18n.ZH: "联系我们",
+	},
 	"price.packages_h2": {
 		i18n.ID: "Paket kredit makan", i18n.EN: "Meal-credit packages", i18n.ZH: "餐额套餐",
 	},

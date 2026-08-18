@@ -97,6 +97,13 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Per-portion prices hidden, 2026-08-18 (Steven).** `public.show_meal_prices`
+is off, so the price list shows packages and a request-a-quote panel instead of
+the per-meal table. A setting rather than deleted markup — turning it back on
+is a value change on the settings screen, not a release. The rows are not
+fetched into the page at all when hidden, so the figures are absent from the
+HTML rather than merely unrendered.
+
 **Header navigation and four new pages, 2026-08-18 (Steven).** The masthead is
 now Price list · Contact · About us · Career · Category, with the six diet
 types moved into the Category submenu — a `<details>` disclosure like the

@@ -66,6 +66,9 @@ type PageData struct {
 
 	// Prices is populated on the price-list route only.
 	Prices *app.PublicPriceList
+	// ShowMealPrices gates the per-portion table. Off by default since
+	// 2026-08-18 (Steven); packages are shown either way.
+	ShowMealPrices bool
 
 	// Copy is editable public wording from public_content, keyed the same way
 	// as the static catalogue. The template reads it through `c`, which falls
@@ -377,10 +380,21 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 				Canonical:   base() + i18n.Path(lang, "/price-list"),
 				DietTypes:   diets,
 			}
+			data.ShowMealPrices = d.Params.Bool(c.Request.Context(),
+				sysparam.KeyPublicShowMealPrices, false)
+
 			// A pricing failure must not 500 the page: the template renders an
 			// empty-state instead, which is a better answer to a visitor than
 			// an error screen.
 			if list, err := d.Pricing.PublicList(c.Request.Context()); err == nil {
+				// The per-portion rows are not fetched into the page at all
+				// when they are hidden, rather than fetched and skipped in the
+				// template. A price that never reaches the response cannot be
+				// read out of the HTML by someone who thinks to look.
+				if !data.ShowMealPrices {
+					list.Prices = nil
+					list.Tiers = nil
+				}
 				data.Prices = &list
 			} else if d.Log != nil {
 				d.Log.Warn("price list unavailable", "error", err)

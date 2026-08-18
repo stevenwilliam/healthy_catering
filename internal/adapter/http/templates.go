@@ -288,9 +288,10 @@ const publicTemplates = `
   <section class="hero compact">
     <p class="eyebrow">{{t .L "nav.pricelist"}}</p>
     <h1>{{t .L "price.h1"}}</h1>
-    <p class="lede">{{t .L "price.lede"}}</p>
+    <p class="lede">{{if .ShowMealPrices}}{{t .L "price.lede"}}{{else}}{{t .L "price.lede_quote"}}{{end}}</p>
   </section>
 
+  {{if .ShowMealPrices}}
   <section class="panel">
     <h2>{{t .L "price.meals_h2"}}</h2>
     <p>{{t .L "price.meals_note"}}</p>
@@ -327,6 +328,17 @@ const publicTemplates = `
     </ul>
     {{end}}
   </section>
+  {{else}}
+  <!-- Per-portion prices are switched off (public.show_meal_prices). The page
+       still has to answer "what does it cost" with something, so it points at
+       the quote route rather than silently dropping the section and leaving a
+       price page with no prices on it. -->
+  <section class="panel">
+    <h2>{{t .L "price.quote_h2"}}</h2>
+    <p>{{t .L "price.quote_body"}}</p>
+    <p><a class="cta cta-on-sheet" href="{{path .L "/contact"}}">{{t .L "price.quote_cta"}}</a></p>
+  </section>
+  {{end}}
 
   {{if and .Prices .Prices.Packages}}
   <section class="check">
