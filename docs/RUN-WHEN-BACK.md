@@ -30,6 +30,61 @@ Not `http://192.168.88.101/` — port 80 on the bare IP is still ruuma's
 Keep the existing `192.168.88.0/24` rule; it covers anything on the physical
 LAN. Both rules go away when the site moves to 443 (`docs/14` §8a).
 
+## A2. Two things blocked on a key you have to supply
+
+**AI images.** Asked for twice now — the hero picture (which you then supplied
+yourself as a photograph) and a picture per menu. Neither can be generated on
+this box: there is no `GEMINI_API_KEY` anywhere, the `google-genai` package is
+not installed, and there is no `pip` to install it. The network is open, so a
+key is the only missing piece — the REST endpoint can be called with `curl` and
+the image decoded with the standard library, no SDK needed.
+
+```bash
+export GEMINI_API_KEY='...'      # or add it to ~/.claude/.env
+```
+
+Until then the menu cards show an illustrated band in each diet type's colour,
+drawn from the same glyph source as the home page corner marks. A real
+photograph replaces it per meal by setting `scheduled_meal.hero_photo_key` —
+the card already prefers it when present.
+
+**Machine translation.** Same shape of problem: the back office at
+`/app/admin/content` edits the hero copy in three languages, but with no
+provider configured English and Chinese have to be typed by hand.
+
+```bash
+TRANSLATE_PROVIDER=google
+TRANSLATE_API_KEY='...'
+```
+
+Billable per character; see `docs/11` §6.
+
+## A3. Chrome on this box is broken
+
+Headless Chrome worked for the first half of 2026-08-18 and then stopped. It
+now times out on every URL including `about:blank`, and with `--single-process`
+it core-dumps outright:
+
+```
+Trace/breakpoint trap (core dumped)   ... exit=133
+```
+
+dbus errors are in the log but they were there when it worked, so they are
+probably not the cause. Both Playwright builds under
+`~/.cache/ms-playwright/` fail identically, which points at something in the
+environment rather than at one binary.
+
+The consequence is on the record in the commits: several UI changes since then
+were verified from served HTML and calculated contrast, **not by eye**, which
+is weaker than CLAUDE.md §6 requires. Worth fixing before the next visual pass:
+
+```bash
+# A quick first look
+/home/dev/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome \
+  --headless=new --no-sandbox --dump-dom about:blank
+dmesg | tail -30        # the core dump should say what died
+```
+
 ## B. Re-take the signed-in screenshots
 
 The four authenticated-screen captures were deleted on 2026-08-18: they dated

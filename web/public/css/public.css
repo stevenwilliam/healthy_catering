@@ -351,6 +351,35 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
 .card h3 a:hover { text-decoration: underline; }
 .card p:last-child { margin-bottom: 0; }
 
+/* The picture band on a meal card.
+ *
+ * A fixed 16:9 box whether it holds a photograph or the fallback glyph, so the
+ * grid does not reflow when some meals have photos and others do not — which
+ * is the normal state while photos are being added one at a time.
+ *
+ * The tints are decorative fills, not text or controls, so the palette's
+ * text-contrast rules do not apply to them; the beige glyph on each is a
+ * graphic with no informational role of its own. */
+.meal-art {
+  position: relative;
+  margin: calc(var(--space-6) * -1) calc(var(--space-6) * -1) var(--space-4);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--nourish);
+}
+.meal-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.meal-art svg { width: 38%; height: 38%; fill: var(--beige); opacity: 0.9; }
+
+.meal-art-healthy      { background: #468973; }
+.meal-art-weight-gain  { background: #E0782D; }
+.meal-art-weight-loss  { background: #2E55A3; }
+.meal-art-high-protein { background: #613F37; }
+.meal-art-special-diet { background: #91253D; }
+.meal-art-keto         { background: #A36E50; }
+
 .meal .when {
   font-size: var(--text-sm);
   font-weight: var(--w-ui);

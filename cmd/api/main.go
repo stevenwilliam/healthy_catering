@@ -101,8 +101,14 @@ func run() error {
 		return serve(ctx, cfg, gdb, log)
 	case "create-staff":
 		return runCreateStaff(ctx, gdb, log)
+	case "seed-menu":
+		days, err := seedDays(os.Args)
+		if err != nil {
+			return err
+		}
+		return runSeedMenu(ctx, gdb, log, days)
 	default:
-		return fmt.Errorf("unknown command %q (serve|migrate|create-staff|version)", cmd)
+		return fmt.Errorf("unknown command %q (serve|migrate|create-staff|seed-menu|version)", cmd)
 	}
 }
 

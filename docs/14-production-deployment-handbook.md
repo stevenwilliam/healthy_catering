@@ -269,6 +269,22 @@ database on the network. That is fine for a lab box behind a router and is
 wrong on anything public — bind Postgres to `127.0.0.1` and drop the rule, or
 scope it to a single admin address.
 
+## 8b. Sample menu (non-production convenience)
+
+Fills the calendar so the public menu pages are not empty on a fresh
+environment. Idempotent — it never touches a menu that already exists.
+
+```bash
+cd /home/dev/projects/healthy_catering
+set -a && . ./.env && set +a
+./bin/api seed-menu        # today and the next two days
+./bin/api seed-menu 7      # a week
+```
+
+**Not for production once real menus are being entered.** It only ever inserts
+where nothing is scheduled, so it cannot overwrite a real menu, but a
+production calendar should be filled by the kitchen through the back office.
+
 ## 9. Verify the deployment
 
 ```bash

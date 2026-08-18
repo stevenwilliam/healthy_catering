@@ -212,6 +212,19 @@ const publicTemplates = `
     <div class="grid">
       {{range .Meals}}
       <article class="card meal">
+        <!-- The meal's picture. A real photograph once one is uploaded
+             (scheduled_meal.hero_photo_key); until then an illustrated band in
+             the diet type's colour, drawn from the SAME glyph source as the
+             corner marks on the home cards so the two cannot drift. The
+             fallback is decoration and is aria-hidden; a real photo carries
+             the dish name as its alt. -->
+        <div class="meal-art meal-art-{{$.Diet.Slug}}">
+          {{if .PhotoKey}}
+          <img src="{{.PhotoKey}}" alt="{{.Name}}" loading="lazy" decoding="async">
+          {{else}}
+          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">{{dietArt $.Diet.Slug}}</svg>
+          {{end}}
+        </div>
         <p class="when">{{.Date}} · {{.Slot}}</p>
         <h3>{{if .Name}}{{.Name}}{{else}}{{index .Items 0}}{{end}}</h3>
         <ul class="items">{{range .Items}}<li>{{.}}</li>{{end}}</ul>

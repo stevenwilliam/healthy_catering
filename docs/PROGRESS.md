@@ -97,6 +97,19 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Sample menu, 2026-08-18 (Steven).** `./bin/api seed-menu [days]` fills the
+calendar: 18 dishes with full nutrition panels, and one published lunch menu
+per diet type per day, cycling three variants so a week is not the same plate
+seven times. A command rather than a migration because the dates are relative —
+a migration with a hard date in it is wrong the next morning. Idempotent on
+both halves. Verified: 3 meals live per category, and the nutrition aggregate
+is exact (220+78+55 = 353 kcal, 31+6.3+3.7 = 41 g protein).
+Menu cards now carry a picture band — a real photo when
+`scheduled_meal.hero_photo_key` is set, otherwise an illustrated band in the
+diet type's colour from the same glyph source as the home cards. **AI-generated
+food photography is still blocked on an image-generation key** (RUN-WHEN-BACK
+§A2).
+
 **Editable hero copy, 2026-08-18 (Steven).** The home hero wording moved out of
 the binary into `public_content` (migration 0017) and is edited at
 `/app/admin/content`: Indonesian is the source, English and Chinese are derived

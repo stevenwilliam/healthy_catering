@@ -89,6 +89,10 @@ type mealCard struct {
 	ProteinG string
 	Items    []string
 	Complete bool
+	// PhotoKey is the meal's own picture when one has been uploaded. Empty is
+	// the normal case today — object storage is not wired (M9) — and the card
+	// then falls back to the diet type's illustrated band.
+	PhotoKey string
 }
 
 // registerPublic mounts the server-rendered marketing and menu pages.
@@ -286,11 +290,15 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 				if m.Name != nil {
 					name = *m.Name
 				}
+				photo := ""
+				if m.HeroPhotoKey != nil {
+					photo = *m.HeroPhotoKey
+				}
 				cards = append(cards, mealCard{
 					Name: name, DietType: m.DietTypeName, Slot: m.SlotAlias,
 					Date: m.ServiceDate, Kcal: m.Nutrition.CaloriesKcal,
 					ProteinG: gramsOf(m.Nutrition.ProteinMg), Items: items,
-					Complete: m.Nutrition.Complete,
+					Complete: m.Nutrition.Complete, PhotoKey: photo,
 				})
 			}
 
