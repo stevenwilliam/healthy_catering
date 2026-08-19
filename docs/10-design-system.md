@@ -189,6 +189,14 @@ background, turns everything that differs from it into alpha, and finds the
 tile period by autocorrelation — a crop of a pattern is almost never a whole
 number of repeats, and tiling the raw 959×569 file would seam every screen.
 
+The tile is painted at **60% of its native size** (`background-size: 272px
+93px` against a 453×155 file). The browser does the scaling rather than the
+file being re-exported smaller: downscaling at paint time supersamples the
+one-pixel linework, where a pre-shrunk PNG would have it resampled once and
+permanently. Both axes are integers so the tile lands on whole pixels — an
+`auto` height computes 93.07 and tiles on a fraction, which is its own faint
+seam — at a cost of 0.07% aspect change, which is not perceptible.
+
 Measured cost: the linework peaks at 14.9% alpha, which over the ground gives
 `#3E594E`, where beige text is **7.29** and white **7.65** — both still AA, and
 only where a glyph actually crosses a line.

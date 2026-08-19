@@ -35,6 +35,17 @@ body {
      the colour survives the image failing to load. */
   background-image: url("/images/pattern.png");
   background-repeat: repeat;
+  /* 60% of the tile's native 453x155 (Steven, 2026-08-19: 40% smaller).
+     Scaled by the BROWSER from the full-resolution file rather than by
+     re-exporting a smaller one — downscaling at paint time supersamples the
+     linework, where a pre-shrunk PNG would have thin one-pixel strokes
+     resampled once and permanently. Both axes are given as integers so the
+     tile lands on whole pixels; letting the height go `auto` computes 93.07
+     and tiles on a fraction, which is its own faint seam. The 0.07% aspect
+     change that rounding costs is not perceptible.
+     Side effect worth having: the source's vertical wrap artefact
+     (docs/10 §2.8) shrinks with everything else. */
+  background-size: 272px 93px;
   /* fixed, so the texture does not slide against the content while scrolling
      and read as a second moving layer. */
   background-attachment: fixed;
