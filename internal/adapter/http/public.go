@@ -173,6 +173,15 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		// domain formatter, so a price on a marketing page and a price on an
 		// invoice cannot be grouped differently.
 		"idr": func(v int64) string { return money.Format(money.IDR(v)) },
+		// perDay divides a package price by its number of days, in INTEGER
+		// rupiah. Rounded down, so the figure shown can never overstate what a
+		// day costs. Floating point never touches money (CLAUDE.md §4).
+		"perDay": func(total *int64, days int) int64 {
+			if total == nil || days <= 0 {
+				return 0
+			}
+			return *total / int64(days)
+		},
 		// chtml is `c` for the rich-text keys: it renders stored markup
 		// UNESCAPED, which is the point of a WYSIWYG field and also the only
 		// way script could reach these pages. It goes through the same

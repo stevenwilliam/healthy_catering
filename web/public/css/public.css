@@ -359,6 +359,13 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 /* Money is right-aligned and tabular so the columns of digits line up — a
    price list is read by comparing down the column, not across the row. */
 .pricetable .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* A second line inside the row header, for the package's own description. */
+.row-note {
+  display: block;
+  font-weight: var(--w-body);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
 .price {
   margin: var(--space-3) 0 0;
   font-family: var(--font-display);

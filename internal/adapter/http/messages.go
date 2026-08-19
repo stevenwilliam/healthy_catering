@@ -62,6 +62,18 @@ var publicMessages = i18n.Catalog{
 		i18n.ZH: "健康的每日餐点，配送到您在雅加达的家或办公室。" +
 			"按需选择菜单：Healthy、Weight Loss、High Protein 等。",
 	},
+	// The hero lede. Editable as public_content (migration 0017), but it needs
+	// a catalogue entry too: without one, a database missing that row renders
+	// the literal string "home.lede" as the headline's subtitle. Same wording
+	// as home.description, which is the meta description for the same page.
+	"home.lede": {
+		i18n.ID: "Makanan sehat harian diantar ke rumah atau kantor Anda di Jakarta. " +
+			"Pilih menu sesuai kebutuhan: Healthy, Weight Loss, High Protein dan lainnya.",
+		i18n.EN: "Healthy daily meals delivered to your home or office in Jakarta. " +
+			"Choose the menu that fits: Healthy, Weight Loss, High Protein and more.",
+		i18n.ZH: "健康的每日餐点，配送到您在雅加达的家或办公室。" +
+			"按需选择菜单：Healthy、Weight Loss、High Protein 等。",
+	},
 	"home.eyebrow": {
 		i18n.ID: "Katering sehat harian · Jakarta",
 		i18n.EN: "Daily healthy catering · Jakarta",
@@ -204,7 +216,14 @@ var publicMessages = i18n.Catalog{
 	},
 	"price.col_category": {i18n.ID: "Kategori", i18n.EN: "Category", i18n.ZH: "类别"},
 	"price.col_tier":     {i18n.ID: "Jumlah porsi", i18n.EN: "Portions", i18n.ZH: "份数"},
-	"price.col_price":    {i18n.ID: "Harga per porsi", i18n.EN: "Per portion", i18n.ZH: "每份价格"},
+	// The package table's own price header. NOT price.col_price, which reads
+	// "per portion" and belongs to the per-meal table — reusing it labelled a
+	// package total as a portion price.
+	"price.col_amount":  {i18n.ID: "Harga", i18n.EN: "Price", i18n.ZH: "价格"},
+	"price.col_package": {i18n.ID: "Paket", i18n.EN: "Package", i18n.ZH: "套餐"},
+	"price.col_days":    {i18n.ID: "Hari", i18n.EN: "Days", i18n.ZH: "天数"},
+	"price.col_per_day": {i18n.ID: "Per hari", i18n.EN: "Per day", i18n.ZH: "每天"},
+	"price.col_price":   {i18n.ID: "Harga per porsi", i18n.EN: "Per portion", i18n.ZH: "每份价格"},
 	"price.tiers_h3": {
 		i18n.ID: "Tingkatan jumlah", i18n.EN: "Quantity tiers", i18n.ZH: "数量分档",
 	},

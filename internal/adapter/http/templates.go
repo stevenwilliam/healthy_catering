@@ -324,19 +324,42 @@ const publicTemplates = `
   {{if and .Prices .Prices.Packages}}
   <section class="check">
     <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
-    <div class="grid">
-      {{range .Prices.Packages}}
-      <article class="card">
-        <h3>{{.Name}}</h3>
-        {{if .Description}}<p>{{.Description}}</p>{{end}}
-        <p class="badges">
-          <span class="badge">{{.MealCredits}} {{t $.L "price.credits"}}</span>
-        </p>
-        <p class="price">
-          {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}
-        </p>
-      </article>
-      {{end}}
+    <!-- A table, not cards (Steven, 2026-08-19). Prices are read by comparing
+         DOWN a column — the whole point is to see which package costs what per
+         day — and cards force the eye to jump between boxes to do that. -->
+    <div class="table-scroll">
+      <table class="pricetable">
+        <caption class="sr-only">{{t .L "price.packages_h2"}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{t .L "price.col_package"}}</th>
+            <th scope="col" class="num">{{t .L "price.col_days"}}</th>
+            <th scope="col" class="num">{{t .L "price.col_amount"}}</th>
+            <th scope="col" class="num">{{t .L "price.col_per_day"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Prices.Packages}}
+          <tr>
+            <th scope="row">
+              {{.Name}}
+              {{if .Description}}<span class="row-note">{{.Description}}</span>{{end}}
+            </th>
+            <td class="num">{{.MealCredits}}</td>
+            <td class="num">
+              {{if .PriceIDR}}{{idr .PriceIDR}}{{else}}{{t $.L "price.on_request"}}{{end}}
+            </td>
+            <!-- Per-day is the number a customer is actually comparing, and
+                 working it out in the head across three rows is exactly the
+                 friction a price table exists to remove. Integer division on
+                 whole rupiah — no floats anywhere near money (CLAUDE.md §4). -->
+            <td class="num">
+              {{if and .PriceIDR .MealCredits}}{{idr (perDay .PriceIDR .MealCredits)}}{{else}}—{{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
     </div>
   </section>
   {{end}}
