@@ -852,28 +852,18 @@ main > section + section { margin-top: var(--space-16); }
   gap: var(--space-3);
   max-width: 14rem;
 }
+/* The badge is an IMAGE now, so the disc styling belongs to the file rather
+   than to CSS — a certifying body's logo is not a circle and must not be
+   forced into one. The box is fixed so the row does not reflow as three
+   differently shaped files load, and object-fit: contain means a wide or tall
+   logo is letterboxed rather than cropped or stretched. */
 .cert-badge {
-  display: grid;
-  place-content: center;
+  display: block;
   width: 150px;
   height: 150px;
-  border-radius: 50%;
-  background: var(--sheet);
-  color: var(--ink);
-  /* The double ring is what makes it read as a seal rather than a circle. */
-  box-shadow: 0 0 0 4px var(--sheet), 0 0 0 6px rgba(255, 250, 224, 0.45),
-              var(--shadow-lift);
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: var(--w-display);
-  letter-spacing: 0.04em;
-  line-height: 1.05;
-  text-align: center;
+  object-fit: contain;
 }
-/* ISO 22000 is two words; stacking keeps the disc round rather than forcing a
-   wider pill for one of the three. */
-.cert-badge-two { font-size: var(--text-lg); }
-.cert-badge abbr { text-decoration: none; border-bottom: 0; }
+
 .cert-note {
   font-size: var(--text-sm);
   color: var(--on-canvas-muted);   /* 6.47 on the ground ✓ */
@@ -882,6 +872,5 @@ main > section + section { margin-top: var(--space-16); }
 
 @media (max-width: 30rem) {
   .cert-badges { gap: var(--space-6); }
-  .cert-badge { width: 120px; height: 120px; font-size: var(--text-lg); }
-  .cert-badge-two { font-size: var(--text-base); }
+  .cert-badge { width: 120px; height: 120px; }
 }

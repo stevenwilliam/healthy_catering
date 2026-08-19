@@ -72,6 +72,9 @@ type PageData struct {
 	// Certifications gates the badge row on the home page. See migration 0024:
 	// these are regulated claims, not decoration.
 	Certifications bool
+	// Certs is the badge row itself: label, image and caption per badge. An
+	// entry with no image is dropped rather than rendered broken.
+	Certs []certBadge
 
 	// Ribbon is the corner banner. Off is a supported state, and the wording
 	// comes from public_content like the rest of the public copy.
@@ -93,6 +96,16 @@ type PageData struct {
 	// back to the catalogue when a key is absent — so a database that has
 	// never been edited renders exactly what it always did.
 	Copy map[string]string
+}
+
+// certBadge is one food-safety mark on the home page.
+type certBadge struct {
+	// Key names the caption in public_content, so the certificate number is
+	// edited on the Content screen rather than in the markup.
+	Key   string
+	Label string
+	Image string
+	W, H  int
 }
 
 // langLink is one entry in the language selector.
@@ -281,6 +294,31 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		data.HeroW, data.HeroH = heroSize(data.HeroImage)
 		data.Ribbon = d.Params.Bool(ctx, sysparam.KeyPublicRibbonEnabled, true)
 		data.Certifications = d.Params.Bool(ctx, sysparam.KeyPublicCertsEnabled, true)
+		if data.Certifications {
+			// NO code-side default for these paths, deliberately. Store.String
+			// returns its default whenever the stored value is EMPTY, not just
+			// when the row is missing — so passing a fallback here would make
+			// clearing a badge impossible: the seal would come straight back.
+			// Migration 0025 seeds the paths; this reads whatever is there.
+			//
+			// Failing closed is also the right direction for a certification
+			// claim: a deleted row shows no badge rather than an unbacked one.
+			for _, b := range []certBadge{
+				{Key: "cert.halal_note", Label: "HALAL",
+					Image: d.Params.String(ctx, sysparam.KeyPublicCertHalalImage, "")},
+				{Key: "cert.haccp_note", Label: "HACCP",
+					Image: d.Params.String(ctx, sysparam.KeyPublicCertHACCPImage, "")},
+				{Key: "cert.iso_note", Label: "ISO 22000",
+					Image: d.Params.String(ctx, sysparam.KeyPublicCertISOImage, "")},
+			} {
+				if strings.TrimSpace(b.Image) == "" {
+					// Cleared or absent — that badge is off, not broken.
+					continue
+				}
+				b.W, b.H = heroSize(b.Image)
+				data.Certs = append(data.Certs, b)
+			}
+		}
 		c.HTML(status, name, data)
 	}
 

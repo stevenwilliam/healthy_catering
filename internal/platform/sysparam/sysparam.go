@@ -64,6 +64,9 @@ const (
 	KeyPublicShowMealPrices = "public.show_meal_prices"
 	KeyPublicRibbonEnabled  = "public.ribbon_enabled"
 	KeyPublicCertsEnabled   = "public.certifications_enabled"
+	KeyPublicCertHalalImage = "public.cert_halal_image"
+	KeyPublicCertHACCPImage = "public.cert_haccp_image"
+	KeyPublicCertISOImage   = "public.cert_iso_image"
 )
 
 // Param is one row.

@@ -227,27 +227,23 @@ const publicTemplates = `
     </div>
   </section>
 
-  {{if .Certifications}}
-  <!-- Certification badges. Typographic, NOT the certifying bodies' logos —
-       those are trademarks issued with their own usage rules and have to come
-       from the issuer. The <abbr> carries the full name so the initialism is
-       expanded for a screen reader and on hover; the caption under each is
+  {{if .Certs}}
+  <!-- Certification badges, as images. Each path is a sys_parameter, so the
+       certifying body's own logo file replaces the default seal without a
+       deploy — those marks are trademarks and arrive from the issuer.
+       The alt text is the standard's name: the badge IS the information, so it
+       is not decorative and must not be alt="". The caption below each is
        editable content, which is where the certificate number goes. -->
   <section class="certs">
     <h2>{{c .Copy .L "cert.heading"}}</h2>
     <ul class="cert-badges">
+      {{range .Certs}}
       <li>
-        <span class="cert-badge">HALAL</span>
-        <span class="cert-note">{{c .Copy .L "cert.halal_note"}}</span>
+        <img class="cert-badge" src="{{.Image}}" alt="{{.Label}}" loading="lazy"
+             {{if and .W .H}}width="{{.W}}" height="{{.H}}"{{end}}>
+        <span class="cert-note">{{c $.Copy $.L .Key}}</span>
       </li>
-      <li>
-        <span class="cert-badge"><abbr title="{{t .L "cert.haccp_full"}}">HACCP</abbr></span>
-        <span class="cert-note">{{c .Copy .L "cert.haccp_note"}}</span>
-      </li>
-      <li>
-        <span class="cert-badge cert-badge-two"><span>ISO</span><span>22000</span></span>
-        <span class="cert-note">{{c .Copy .L "cert.iso_note"}}</span>
-      </li>
+      {{end}}
     </ul>
   </section>
   {{end}}

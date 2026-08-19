@@ -97,6 +97,15 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Certification badges are images, 2026-08-19 (Steven).** Each of the three is
+an `<img>` whose path is its own `sys_parameters` row (migration 0025), so the
+certifying body's own logo file replaces the default without a deploy — those
+marks are trademarks and come from the issuer, never redrawn here. The defaults
+are Evermore's own seal artwork from `scripts/mkseals.py`. Clearing a path
+hides that badge; that needed the code to pass NO default, because
+`Store.String` returns its default whenever a value is empty, which would have
+made a cleared badge reappear. Proved by clearing one and counting.
+
 **Corner ribbon and certification badges, 2026-08-19 (Steven).** A gold
 diagonal ribbon in the top-right of every public page with an animated shine,
 and three large HALAL / HACCP / ISO 22000 badges at the foot of the home page.
