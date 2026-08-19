@@ -19,7 +19,20 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  background: var(--canvas);
+  /* The ground, plus a tiled motif so it is not a flat slab (Steven,
+     2026-08-19). Colour AND image on one shorthand would be fragile — the
+     colour must survive the image failing to load, or the page renders beige
+     text on white. Declared separately for that reason.
+     Beige at 5% lifts the ground to about #27473D, where beige text still
+     measures 9.88 and white 10.38 — both AAA. The opacity lives in the SVG,
+     so this is the only place the two are combined and there is one number to
+     change. */
+  background-color: var(--canvas);
+  background-image: url("/images/pattern.svg");
+  background-repeat: repeat;
+  /* fixed, so the motif does not slide against the content while scrolling —
+     which reads as a texture rather than as a second moving layer. */
+  background-attachment: fixed;
   color: var(--on-canvas);
   font-family: var(--font-body);
   font-size: var(--text-base);

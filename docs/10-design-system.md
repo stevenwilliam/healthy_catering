@@ -174,6 +174,28 @@ beige, because the resting ring is already beige and an outer deep-green ring
 would be invisible against the page — focus and resting would look identical.
 The ring is an accessibility mechanism, not styling. Do not remove it.
 
+### 2.8 The background motif (Steven, 2026-08-19)
+
+The deep-green ground carries a tiled motif — `web/public/images/pattern.svg`,
+food and wellbeing shapes in the same flat style as the diet-card marks — so it
+is not a flat slab. Same idea as a chat wallpaper.
+
+**Beige at 5% opacity**, and that number is load-bearing rather than taste. It
+lifts the ground from `#1C3D34` to roughly `#27473D`, where beige text still
+measures **9.88** and white **10.38** — both still AAA. Raising it is not free:
+
+| Motif opacity | Effective ground | Beige text | White text |
+|---|---|---:|---:|
+| 0% (plain) | `#1C3D34` | 11.32 | 11.89 |
+| 3% | `#234339` | 10.35 | 10.86 |
+| **5%** | **`#27473D`** | **9.88** | **10.38** |
+| 10% | `#335045` | 8.43 | 8.85 |
+
+The opacity lives in the SVG, so there is one number to change and the CSS
+cannot disagree with it. `background-color` and `background-image` are declared
+separately rather than in the shorthand: the colour has to survive the image
+failing to load, or the page renders beige text on white.
+
 ## 3. Typography
 
 Two faces, both **self-hosted** — never a font CDN, which leaks every visitor's
