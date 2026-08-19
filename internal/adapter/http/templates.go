@@ -81,7 +81,15 @@ const publicTemplates = `
     <img src="/images/evermore-wordmark-light.png" width="560" height="60"
          alt="Evermore">
   </a>
-  <nav aria-label="{{t .L "nav.main"}}">
+  <!-- The menu is rendered TWICE and one is always display:none.
+       Below 48rem it is a burger; above, a plain row. A single copy toggled by
+       CSS is not possible without JavaScript: <details> hides its own content
+       when closed, and no CSS property reliably un-hides it, so the desktop
+       row could not be forced open. Duplicating the markup is the honest
+       trade — the hidden copy is display:none, which takes it out of the
+       accessibility tree too, so a screen reader is offered exactly one menu.
+       Both come from the same .Nav loop, so they cannot drift. -->
+  <nav class="nav-wide" aria-label="{{t .L "nav.main"}}">
     <!-- Data-driven (migration 0026): which items appear and in what order is
          configuration, not markup. CATEGORY is the diet-type dropdown; the
          rest are plain links. Labels come from the message catalogue by
@@ -117,6 +125,51 @@ const publicTemplates = `
     {{end}}
     {{end}}
   </nav>
+
+  <details class="burger">
+    <summary aria-label="{{t .L "nav.main"}}">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </summary>
+    <nav class="nav-drawer" aria-label="{{t .L "nav.main"}}">
+    <!-- Data-driven (migration 0026): which items appear and in what order is
+         configuration, not markup. CATEGORY is the diet-type dropdown; the
+         rest are plain links. Labels come from the message catalogue by
+         label_key, because a label typed into an admin box would exist in one
+         language only. -->
+    {{range .Nav}}
+    {{if eq .Kind "CATEGORY"}}
+    <details class="navdrop"{{if eq $.Active .ActiveKey}} data-current="true"{{end}}>
+      <summary>{{t $.L .LabelKey}}
+        <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
+          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </summary>
+      <ul class="navdrop-menu">
+        {{range $.DietTypes}}
+        <li><a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a></li>
+        {{end}}
+      </ul>
+    </details>
+    {{else}}
+    <a href="{{if .IsLocalised}}{{path $.L .Path}}{{else}}{{.Path}}{{end}}"{{if eq $.Active .ActiveKey}} aria-current="page"{{end}}>
+      {{if eq .Icon "cart"}}
+      <!-- The icon is decoration beside a real label, so it is aria-hidden:
+           a screen reader reads "Pesan", not "cart Pesan". -->
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M2 3h3l2.6 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 7H6.2"
+              fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="10" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/>
+      </svg>
+      {{end}}{{t $.L .LabelKey}}</a>
+    {{end}}
+    {{end}}
+    </nav>
+  </details>
   {{template "langpicker" .}}
 </header>
 {{end}}

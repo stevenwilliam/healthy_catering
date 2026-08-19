@@ -21,11 +21,11 @@
        product. See web/public/css/public.css for the contrast arithmetic. */
     background-image: url("/images/pattern.png");
     background-repeat: repeat;
-    /* 60% of native, matching the public pages exactly — the two surfaces are
+    /* 36% of native, matching the public pages exactly — the two surfaces are
        one product and a different texture scale would read as a different
        site. See web/public/css/public.css for why the browser does the
        scaling. */
-    background-size: 272px 93px;
+    background-size: 164px 56px;
     background-attachment: fixed;
   }
 

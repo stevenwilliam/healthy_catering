@@ -35,17 +35,19 @@ body {
      the colour survives the image failing to load. */
   background-image: url("/images/pattern.png");
   background-repeat: repeat;
-  /* 60% of the tile's native 453x155 (Steven, 2026-08-19: 40% smaller).
+  /* 36% of the tile's native 453x155 — 60% twice over (Steven asked for
+     40% smaller, then 40% smaller again).
      Scaled by the BROWSER from the full-resolution file rather than by
      re-exporting a smaller one — downscaling at paint time supersamples the
      linework, where a pre-shrunk PNG would have thin one-pixel strokes
      resampled once and permanently. Both axes are given as integers so the
-     tile lands on whole pixels; letting the height go `auto` computes 93.07
-     and tiles on a fraction, which is its own faint seam. The 0.07% aspect
-     change that rounding costs is not perceptible.
+     tile lands on whole pixels; an `auto` height tiles on a
+     fraction, which is its own faint seam. 164x56 rather than the literal
+     163x56: half a pixel wider, and half the aspect error (0.21% against
+     0.41%) — at this size the rounding matters more than it did.
      Side effect worth having: the source's vertical wrap artefact
      (docs/10 §2.8) shrinks with everything else. */
-  background-size: 272px 93px;
+  background-size: 164px 56px;
   /* fixed, so the texture does not slide against the content while scrolling
      and read as a second moving layer. */
   background-attachment: fixed;
@@ -130,17 +132,20 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   border-bottom: 1px solid rgba(11, 30, 25, 0.25);
   padding: var(--space-4);
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* burger | wordmark | picker. The burger collapses to a zero-width column
+     above 48rem, where it is display:none. */
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--space-3) var(--space-4);
 }
-.masthead .wordmark { grid-column: 1; grid-row: 1; }
-.masthead .langpick { grid-column: 2; grid-row: 1; justify-self: end; }
-.masthead nav      { grid-column: 1 / -1; grid-row: 2; }
+.masthead .burger   { grid-column: 1; grid-row: 1; }
+.masthead .wordmark { grid-column: 2; grid-row: 1; }
+.masthead .langpick { grid-column: 3; grid-row: 1; justify-self: end; }
+.masthead .nav-wide { grid-column: 1 / -1; grid-row: 2; }
 /* Below 80rem the nav sits on its own row, so it gets a rule above it to
    separate it from the wordmark rather than floating in the same block. */
 @media (max-width: 79.99rem) {
-  .masthead nav {
+  .masthead .nav-wide {
     border-top: 1px solid rgba(11, 30, 25, 0.22);
     padding-top: var(--space-2);
     margin-left: calc(var(--space-4) * -1);
@@ -155,9 +160,73 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
    ~230px, so below 80rem something has to give and it should be the nav
    dropping to its own row. */
 @media (min-width: 80rem) {
-  .masthead { grid-template-columns: auto 1fr auto; }
-  .masthead nav { grid-column: 2; grid-row: 1; justify-self: start; }
+  .masthead .wordmark { grid-column: 1; }
+  .masthead .nav-wide { grid-column: 2; grid-row: 1; justify-self: start; }
   .masthead .langpick { grid-column: 3; grid-row: 1; }
+}
+
+/* ── Burger ───────────────────────────────────────────────────────────────
+ * Below 48rem the row of links is replaced by a drawer on the LEFT, with the
+ * wordmark still in the bar beside it (Steven, 2026-08-19).
+ *
+ * A <details>, like every other disclosure here: these pages ship no
+ * JavaScript, and the CSP would not run an inline handler anyway. Exactly one
+ * of the two menus is in the DOM's rendered tree at any width, so a screen
+ * reader is never offered the same navigation twice.
+ */
+.burger { display: none; position: relative; }
+.burger > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  border-radius: var(--radius-sm);
+  color: var(--on-bar);
+  cursor: pointer;
+  list-style: none;
+}
+.burger > summary::-webkit-details-marker { display: none; }
+.burger > summary svg { width: 26px; height: 26px; }
+.burger > summary:hover { background: rgba(255, 250, 224, 0.14); }
+
+/* The drawer hangs from the bar rather than pushing the page down, so opening
+   it never moves the content underneath. */
+.nav-drawer {
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--space-3));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 15rem;
+  padding: var(--space-2);
+  background: var(--sheet);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+}
+/* Inside the drawer the links sit on the beige sheet, where deep ink is 11.32
+   — so unlike the bar they do not need to be large-text sized. */
+.nav-drawer a,
+.nav-drawer .navdrop > summary {
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: var(--w-ui);
+  border-left: 0;
+  padding: var(--space-3);
+}
+.nav-drawer a:hover,
+.nav-drawer .navdrop > summary:hover { background: rgba(28, 61, 52, 0.08); }
+.nav-drawer a[aria-current="page"] { text-decoration-thickness: 2px; }
+/* The category submenu opens in flow inside the drawer rather than floating
+   over it, which on a phone would land off-screen. */
+.nav-drawer .navdrop-menu {
+  position: static;
+  box-shadow: none;
+  background: transparent;
+  padding-left: var(--space-4);
+  min-width: 0;
 }
 .masthead a { color: var(--on-bar); text-decoration: none; }
 
@@ -172,7 +241,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
  * Colour alone is never the only signal (99 §8), and weight cannot carry it
  * here because everything on this bar is already 700 — the contrast floor of
  * the mid-green fill leaves no lighter step to contrast against. */
-.masthead nav {
+.masthead .nav-wide {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -188,15 +257,15 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
  * breakpoint that moves the nav out of its own row), so the borders are safe
  * there and a plain gap does the dividing below it. */
 @media (min-width: 80rem) {
-  .masthead nav > * + * {
+  .masthead .nav-wide > * + * {
     border-left: 1px solid rgba(255, 250, 224, 0.35);
   }
 }
 @media (max-width: 79.99rem) {
-  .masthead nav { gap: var(--space-1) var(--space-2); }
+  .masthead .nav-wide { gap: var(--space-1) var(--space-2); }
 }
-.masthead nav a,
-.masthead nav > .navdrop > summary {
+.masthead .nav-wide a,
+.masthead .nav-wide > .navdrop > summary {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch-min);
@@ -212,19 +281,31 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   fill: currentColor;
   vertical-align: -3px;
 }
-.masthead nav a:hover,
-.masthead nav > .navdrop > summary:hover {
+.masthead .nav-wide a:hover,
+.masthead .nav-wide > .navdrop > summary:hover {
   background: rgba(255, 250, 224, 0.14);
   text-decoration: none;
 }
 /* Current page. text-underline-offset keeps the rule clear of the descenders
    in "Kategori" and "Karier". */
-.masthead nav a[aria-current="page"],
-.masthead nav > .navdrop[data-current="true"] > summary {
+.masthead .nav-wide a[aria-current="page"],
+.masthead .nav-wide > .navdrop[data-current="true"] > summary {
   text-decoration: underline;
   text-decoration-thickness: 3px;
   text-underline-offset: 6px;
 }
+
+/* ── Burger takes over below 48rem ────────────────────────────────────────
+ * Placed HERE, after every base .nav-wide rule, deliberately. Both rules are
+ * `.masthead .nav-wide` — identical specificity — so which wins is decided by
+ * SOURCE ORDER alone. Written earlier in the file, this `display: none` loses
+ * to the `display: flex` above it and a phone shows the burger AND the full
+ * row of links. Verified by resolving the cascade, not by eye. */
+@media (max-width: 47.99rem) {
+  .masthead .burger { display: block; }
+  .masthead .nav-wide { display: none; }
+}
+
 
 /* The wordmark is the supplied artwork, reversed out for the dark fill
    (web/public/images/, generated by scripts/mklogo.py). Height-constrained
