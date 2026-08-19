@@ -80,6 +80,10 @@ type PageData struct {
 	// comes from public_content like the rest of the public copy.
 	Ribbon bool
 
+	// Nav is the configurable header menu (migration 0026): which items show,
+	// and in what order.
+	Nav []postgres.NavItem
+
 	// Active names the current section, so the masthead can mark which page
 	// you are on. Without it every nav item looks identical on every page,
 	// which is the one thing a visitor most wants the header to tell them.
@@ -302,6 +306,15 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		}
 		data.HeroW, data.HeroH = heroSize(data.HeroImage)
 		data.Ribbon = d.Params.Bool(ctx, sysparam.KeyPublicRibbonEnabled, true)
+		// A nav failure must not take the page down: an empty menu is a
+		// degraded header, an error page is no site at all.
+		if d.Nav != nil {
+			if items, err := d.Nav.Visible(ctx); err == nil {
+				data.Nav = items
+			} else if d.Log != nil {
+				d.Log.Warn("header menu unavailable", "error", err)
+			}
+		}
 		data.Certifications = d.Params.Bool(ctx, sysparam.KeyPublicCertsEnabled, true)
 		if data.Certifications {
 			// NO code-side default for these paths, deliberately. Store.String
@@ -339,7 +352,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	home := func(loc i18n.Locale) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			diets, _ := publicDiets(c, d)
-			page(c, "home", PageData{
+			data := PageData{
 				L:           loc,
 				Active:      "home",
 				Title:       publicMessages.T(loc, "home.title"),
@@ -350,7 +363,20 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 					`"name":"Evermore","servesCuisine":"Healthy","priceRange":"$$",` +
 					`"address":{"@type":"PostalAddress","addressLocality":"Jakarta","addressCountry":"ID"},` +
 					`"url":"` + base() + `"}`),
-			})
+			}
+			// The home page now carries the package table too, so it needs the
+			// same data the price-list route loads. A pricing failure drops the
+			// section rather than the page.
+			if list, err := d.Pricing.PublicList(c.Request.Context()); err == nil {
+				if !d.Params.Bool(c.Request.Context(), sysparam.KeyPublicShowMealPrices, false) {
+					list.Prices = nil
+					list.Tiers = nil
+				}
+				data.Prices = &list
+			} else if d.Log != nil {
+				d.Log.Warn("home price table unavailable", "error", err)
+			}
+			page(c, "home", data)
 		}
 	}
 

@@ -82,29 +82,30 @@ const publicTemplates = `
          alt="Evermore">
   </a>
   <nav aria-label="{{t .L "nav.main"}}">
-    <!-- Category is a submenu, same <details> disclosure as the language
-         picker and for the same reason: no JavaScript on these pages, and the
-         CSP would not run an inline handler anyway. The six diet types are
-         still plain links inside it, so they remain crawlable and each one is
-         still its own indexed page. -->
-    <details class="navdrop"{{if eq .Active "category"}} data-current="true"{{end}}>
-      <summary>{{t .L "nav.category"}}
+    <!-- Data-driven (migration 0026): which items appear and in what order is
+         configuration, not markup. CATEGORY is the diet-type dropdown; the
+         rest are plain links. Labels come from the message catalogue by
+         label_key, because a label typed into an admin box would exist in one
+         language only. -->
+    {{range .Nav}}
+    {{if eq .Kind "CATEGORY"}}
+    <details class="navdrop"{{if eq $.Active .ActiveKey}} data-current="true"{{end}}>
+      <summary>{{t $.L .LabelKey}}
         <svg class="langpick-caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
           <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
                 stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </summary>
       <ul class="navdrop-menu">
-        {{range .DietTypes}}
+        {{range $.DietTypes}}
         <li><a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a></li>
         {{end}}
       </ul>
     </details>
-    <a href="{{path .L "/price-list"}}"{{if eq .Active "pricelist"}} aria-current="page"{{end}}>{{t .L "nav.pricelist"}}</a>
-    <a href="{{path .L "/benefits"}}"{{if eq .Active "benefits"}} aria-current="page"{{end}}>{{t .L "nav.benefits"}}</a>
-    <a href="{{path .L "/contact"}}"{{if eq .Active "contact"}} aria-current="page"{{end}}>{{t .L "nav.contact"}}</a>
-    <a href="{{path .L "/about"}}"{{if eq .Active "about"}} aria-current="page"{{end}}>{{t .L "nav.about"}}</a>
-    <a href="{{path .L "/career"}}"{{if eq .Active "career"}} aria-current="page"{{end}}>{{t .L "nav.career"}}</a>
+    {{else}}
+    <a href="{{path $.L .Path}}"{{if eq $.Active .ActiveKey}} aria-current="page"{{end}}>{{t $.L .LabelKey}}</a>
+    {{end}}
+    {{end}}
   </nav>
   {{template "langpicker" .}}
 </header>
@@ -198,6 +199,25 @@ const publicTemplates = `
            fetchpriority="high" decoding="async">
     </div>
     {{end}}
+  </section>
+
+  {{if and .Prices .Prices.Packages}}
+  <!-- Price table on the home page (Steven, 2026-08-19), the same partial the
+       price-list page renders — one table, two placements, so the two can
+       never disagree about what a package costs. -->
+  <section class="home-prices">
+    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
+    {{template "packagetable" .}}
+  </section>
+  {{end}}
+
+  <!-- Why Evermore, below the prices. Same editable content as the Benefits
+       page; rich text, so chtml rather than c. -->
+  <section class="check">
+    <div class="panel">
+      <h2>{{c .Copy .L "benefit.title"}}</h2>
+      <div class="richtext">{{chtml .Copy .L "benefit.body"}}</div>
+    </div>
   </section>
 
   <section class="diets">
@@ -312,18 +332,7 @@ const publicTemplates = `
 {{template "foot" .}}
 {{end}}
 
-{{define "pricelist"}}
-{{template "head" .}}
-<main>
-  <section class="hero compact">
-    <p class="eyebrow">{{t .L "nav.pricelist"}}</p>
-    <h1>{{t .L "price.h1"}}</h1>
-    <p class="lede">{{if .ShowMealPrices}}{{t .L "price.lede"}}{{else}}{{t .L "price.lede_quote"}}{{end}}</p>
-  </section>
-
-  {{if and .Prices .Prices.Packages}}
-  <section class="check">
-    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
+{{define "packagetable"}}
     <!-- A table, not cards (Steven, 2026-08-19). Prices are read by comparing
          DOWN a column — the whole point is to see which package costs what per
          day — and cards force the eye to jump between boxes to do that. -->
@@ -361,6 +370,21 @@ const publicTemplates = `
         </tbody>
       </table>
     </div>
+{{end}}
+
+{{define "pricelist"}}
+{{template "head" .}}
+<main>
+  <section class="hero compact">
+    <p class="eyebrow">{{t .L "nav.pricelist"}}</p>
+    <h1>{{t .L "price.h1"}}</h1>
+    <p class="lede">{{if .ShowMealPrices}}{{t .L "price.lede"}}{{else}}{{t .L "price.lede_quote"}}{{end}}</p>
+  </section>
+
+  {{if and .Prices .Prices.Packages}}
+  <section class="check">
+    <div class="section-head"><h2>{{t .L "price.packages_h2"}}</h2></div>
+    {{template "packagetable" .}}
   </section>
   {{end}}
   {{if .ShowMealPrices}}

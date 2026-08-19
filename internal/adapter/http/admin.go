@@ -263,6 +263,61 @@ func registerAdmin(g *gin.RouterGroup, d Deps) {
 		OK(c, http.StatusCreated, gin.H{"id": id})
 	})
 
+	// ── Header menu ─────────────────────────────────────────────────────────
+	//
+	// Show/hide and reorder only. Path, kind and label_key are wiring, not
+	// configuration: a label typed here would exist in one language on a
+	// trilingual site, and a path typed here could point at a route that does
+	// not exist.
+	admin.GET("/nav-items", RequirePermission(security.PermSettingsRead), func(c *gin.Context) {
+		rows, err := d.Nav.All(c.Request.Context())
+		if err != nil {
+			Fail(c, apierror.Internal(err))
+			return
+		}
+		if c.Query("format") == "csv" {
+			out := make([][]string, 0, len(rows))
+			for _, n := range rows {
+				vis := "no"
+				if n.IsVisible {
+					vis = "yes"
+				}
+				out = append(out, []string{
+					strconv.Itoa(n.SortOrder), n.Key, n.Kind, n.Path, n.LabelKey, vis,
+				})
+			}
+			csvOut(c, "header-menu",
+				[]string{"order", "key", "kind", "path", "label key", "visible"}, out)
+			return
+		}
+		OK(c, http.StatusOK, rows)
+	})
+
+	admin.PATCH("/nav-items/:id", RequirePermission(security.PermSettingsWrite), func(c *gin.Context) {
+		id, err := uuid.Parse(c.Param("id"))
+		if err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation, "Not a valid id."))
+			return
+		}
+		// Pointers, so "hide this" and "move this" can be sent independently
+		// without the other field reverting to its zero value.
+		var in struct {
+			IsVisible *bool `json:"is_visible"`
+			SortOrder *int  `json:"sort_order"`
+		}
+		if err := c.ShouldBindJSON(&in); err != nil {
+			Fail(c, apierror.BadRequest(apierror.CodeValidation,
+				"Send is_visible and/or sort_order."))
+			return
+		}
+		if err := d.Nav.Update(c.Request.Context(), id, in.IsVisible, in.SortOrder,
+			actorFrom(c)); err != nil {
+			Fail(c, err)
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
 	// ── Career: openings and applications ───────────────────────────────────
 	//
 	// Both are data grids, so both export (99 §8). The export honours the

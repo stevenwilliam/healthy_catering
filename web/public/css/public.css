@@ -648,6 +648,13 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
  * spacing no longer depends on which wrapper a page reached for. */
 main > section + section { margin-top: var(--space-16); }
 .check { margin-top: var(--space-12); }
+/* The price table on the home page sits on the dark ground rather than inside
+   a panel, so it needs the light ink the ground takes. */
+.home-prices .pricetable { color: var(--on-canvas); }
+.home-prices .pricetable th,
+.home-prices .pricetable td { border-bottom-color: rgba(255, 250, 224, 0.25); }
+.home-prices .pricetable thead th { border-bottom-color: rgba(255, 250, 224, 0.55); }
+.home-prices .row-note { color: var(--on-canvas-muted); }
 .section-head { margin-bottom: var(--space-6); }
 
 /* ── Footer ──────────────────────────────────────────────────────────────

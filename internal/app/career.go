@@ -44,13 +44,13 @@ func (s *Career) AllOpenings(ctx context.Context) ([]postgres.JobOpening, error)
 // ApplicationInput is what the form sends. There is no file field, and adding
 // one is a product decision, not an implementation detail.
 type ApplicationInput struct {
-	FullName string
-	Email    string
-	Phone    string
-	Position string
-	Message  string
-	Locale   i18n.Locale
-	IP       string
+	FullName  string
+	Email     string
+	Phone     string
+	Position  string
+	Message   string
+	Locale    i18n.Locale
+	IP        string
 	UserAgent string
 }
 

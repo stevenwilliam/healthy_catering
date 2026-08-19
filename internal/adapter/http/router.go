@@ -64,6 +64,7 @@ type Deps struct {
 	Fulfilment     *app.Fulfilment
 	Content        *app.Content
 	Career         *app.Career
+	Nav            *app.Nav
 	MFA            *app.MFA
 	Signer         *security.TokenSigner
 	Limiter        *ratelimit.Limiter

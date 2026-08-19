@@ -344,6 +344,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Fulfilment:     app.NewFulfilment(deliveriesRepo, creditsRepo, audit, params, tz, time.Now),
 		Content:        contentSvc,
 		Career:         app.NewCareer(postgres.NewCareerRepo(gdb), audit),
+		Nav:            app.NewNav(postgres.NewNavRepo(gdb), audit),
 		MFA:            mfa,
 		Reports:        app.NewReports(reportsRepo, params, tz),
 		Params:         params,

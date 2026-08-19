@@ -182,9 +182,13 @@ var publicMessages = i18n.Catalog{
 	"nav.pricelist": {
 		i18n.ID: "Daftar harga", i18n.EN: "Price list", i18n.ZH: "价格表",
 	},
-	"nav.contact":  {i18n.ID: "Kontak", i18n.EN: "Contact", i18n.ZH: "联系我们"},
-	"nav.about":    {i18n.ID: "Tentang kami", i18n.EN: "About us", i18n.ZH: "关于我们"},
-	"nav.career":   {i18n.ID: "Karier", i18n.EN: "Career", i18n.ZH: "招聘"},
+	"nav.contact": {i18n.ID: "Kontak", i18n.EN: "Contact", i18n.ZH: "联系我们"},
+	"nav.about":   {i18n.ID: "Tentang kami", i18n.EN: "About us", i18n.ZH: "关于我们"},
+	"nav.career":  {i18n.ID: "Karier", i18n.EN: "Career", i18n.ZH: "招聘"},
+	// A single "Menu" entry pointing straight at one category, for when the
+	// header is reduced to one destination rather than a dropdown of six.
+	"nav.home":     {i18n.ID: "Beranda", i18n.EN: "Home", i18n.ZH: "首页"},
+	"nav.menu":     {i18n.ID: "Menu", i18n.EN: "Menu", i18n.ZH: "菜单"},
 	"nav.category": {i18n.ID: "Kategori", i18n.EN: "Category", i18n.ZH: "菜单分类"},
 
 	// ── Price list ──────────────────────────────────────────────────────────

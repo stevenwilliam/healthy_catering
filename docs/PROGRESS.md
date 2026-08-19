@@ -97,6 +97,21 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Configurable header menu, 2026-08-19 (Steven).** The header is data
+(migration 0026): `nav_item` rows with visibility and sort order, edited
+through `/api/v1/admin/nav-items` with a CSV export like every other grid. What
+is NOT editable is the label, the path or the kind — a label typed into an
+admin box would exist in one language on a trilingual site, and a typed path
+could point at a route that does not exist; the wording stays in the message
+catalogue. On Steven's instruction the header is now just **Home | Menu**
+(migrations 0027, 0028), Menu pointing straight at the Healthy category. The
+hidden pages still exist, still render in three languages and are still in the
+sitemap — only the header stopped linking to them.
+
+The home page gained the package price TABLE after the hero and the Benefits
+block below it, both rendered from the same partial and the same editable
+content as their standalone pages, so the two placements cannot disagree.
+
 **Certification badges are images, 2026-08-19 (Steven).** Each of the three is
 an `<img>` whose path is its own `sys_parameters` row (migration 0025), so the
 certifying body's own logo file replaces the default without a deploy — those
