@@ -22,13 +22,19 @@ type NavItem struct {
 	ActiveKey string `json:"active_key"`
 	SortOrder int    `json:"sort_order"`
 	IsVisible bool   `json:"is_visible"`
+	// IsLocalised is false for links outside the locale-prefixed public site,
+	// e.g. the app at /app — prefixing those produces a 404.
+	IsLocalised bool `json:"is_localised"`
+	// Icon is a named mark the stylesheet knows, not a path, so it cannot 404.
+	Icon string `json:"icon"`
 }
 
 // Visible is what the public header renders.
 func (r *NavRepo) Visible(ctx context.Context) ([]NavItem, error) {
 	out := []NavItem{}
 	err := r.db.WithContext(ctx).Raw(`
-		SELECT id::text, key, kind, path, label_key, active_key, sort_order, is_visible
+		SELECT id::text, key, kind, path, label_key, active_key, sort_order,
+		       is_visible, is_localised, icon
 		  FROM nav_item WHERE is_visible ORDER BY sort_order, key`).Scan(&out).Error
 	return out, err
 }
@@ -37,7 +43,8 @@ func (r *NavRepo) Visible(ctx context.Context) ([]NavItem, error) {
 func (r *NavRepo) All(ctx context.Context) ([]NavItem, error) {
 	out := []NavItem{}
 	err := r.db.WithContext(ctx).Raw(`
-		SELECT id::text, key, kind, path, label_key, active_key, sort_order, is_visible
+		SELECT id::text, key, kind, path, label_key, active_key, sort_order,
+		       is_visible, is_localised, icon
 		  FROM nav_item ORDER BY sort_order, key`).Scan(&out).Error
 	return out, err
 }

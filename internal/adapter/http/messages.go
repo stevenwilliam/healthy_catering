@@ -187,6 +187,9 @@ var publicMessages = i18n.Catalog{
 	"nav.career":  {i18n.ID: "Karier", i18n.EN: "Career", i18n.ZH: "招聘"},
 	// A single "Menu" entry pointing straight at one category, for when the
 	// header is reduced to one destination rather than a dropdown of six.
+	// Steven asked for it as "order"; rendered per language like every other
+	// label, since the header is trilingual.
+	"nav.order":    {i18n.ID: "Pesan", i18n.EN: "Order", i18n.ZH: "订购"},
 	"nav.home":     {i18n.ID: "Beranda", i18n.EN: "Home", i18n.ZH: "首页"},
 	"nav.menu":     {i18n.ID: "Menu", i18n.EN: "Menu", i18n.ZH: "菜单"},
 	"nav.category": {i18n.ID: "Kategori", i18n.EN: "Category", i18n.ZH: "菜单分类"},

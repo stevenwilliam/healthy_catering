@@ -103,7 +103,17 @@ const publicTemplates = `
       </ul>
     </details>
     {{else}}
-    <a href="{{path $.L .Path}}"{{if eq $.Active .ActiveKey}} aria-current="page"{{end}}>{{t $.L .LabelKey}}</a>
+    <a href="{{if .IsLocalised}}{{path $.L .Path}}{{else}}{{.Path}}{{end}}"{{if eq $.Active .ActiveKey}} aria-current="page"{{end}}>
+      {{if eq .Icon "cart"}}
+      <!-- The icon is decoration beside a real label, so it is aria-hidden:
+           a screen reader reads "Pesan", not "cart Pesan". -->
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M2 3h3l2.6 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 7H6.2"
+              fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="10" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/>
+      </svg>
+      {{end}}{{t $.L .LabelKey}}</a>
     {{end}}
     {{end}}
   </nav>
