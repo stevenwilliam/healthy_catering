@@ -180,7 +180,29 @@ The deep-green ground carries a tiled motif — `web/public/images/pattern.svg`,
 food and wellbeing shapes in the same flat style as the diet-card marks — so it
 is not a flat slab. Same idea as a chat wallpaper.
 
-**Beige at 5% opacity**, and that number is load-bearing rather than taste. It
+**Since 2026-08-19 the artwork is Steven's own pattern**
+(`docs/design_guideline/pattern-source.jpg`), extracted to beige-on-transparent
+by `scripts/mkpattern`. The supplied file is a JPEG: it has no alpha and
+carries its own background, so used directly it would COVER the ground colour
+rather than overlay it. The tool takes the most common colour as the
+background, turns everything that differs from it into alpha, and finds the
+tile period by autocorrelation — a crop of a pattern is almost never a whole
+number of repeats, and tiling the raw 959×569 file would seam every screen.
+
+Measured cost: the linework peaks at 14.9% alpha, which over the ground gives
+`#3E594E`, where beige text is **7.29** and white **7.65** — both still AA, and
+only where a glyph actually crosses a line.
+
+**Known imperfection, measured rather than assumed:** the source is a crop, not
+a tile, and is not exactly periodic vertically. The best tile (453×155) has a
+wrap discontinuity 5× a typical adjacent row — about a 2% alpha step, a faint
+line every 155px. A sub-pixel resample and a cross-fade were both tried and
+neither helped, because the source rows genuinely differ rather than being
+misaligned. The real fix is a properly seamless tile exported from wherever the
+pattern was made.
+
+The earlier hand-drawn motif used **beige at 5% opacity**, and that number was
+load-bearing rather than taste. It
 lifts the ground from `#1C3D34` to roughly `#27473D`, where beige text still
 measures **9.88** and white **10.38** — both still AAA. Raising it is not free:
 

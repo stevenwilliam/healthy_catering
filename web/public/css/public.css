@@ -28,10 +28,15 @@ body {
      so this is the only place the two are combined and there is one number to
      change. */
   background-color: var(--canvas);
-  background-image: url("/images/pattern.svg");
+  /* Steven's pattern, extracted to beige-on-transparent by
+     scripts/mkpattern so the GROUND COLOUR still shows through — the supplied
+     JPEG carries its own background and would otherwise cover it, which is the
+     opposite of an overlay. Colour and image stay on separate declarations so
+     the colour survives the image failing to load. */
+  background-image: url("/images/pattern.png");
   background-repeat: repeat;
-  /* fixed, so the motif does not slide against the content while scrolling —
-     which reads as a texture rather than as a second moving layer. */
+  /* fixed, so the texture does not slide against the content while scrolling
+     and read as a second moving layer. */
   background-attachment: fixed;
   color: var(--on-canvas);
   font-family: var(--font-body);

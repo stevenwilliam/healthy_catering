@@ -19,7 +19,7 @@
     font-weight: 450;   /* Inter a touch above regular; it sits on colour */
     /* Same tiled motif as the public pages, so the two surfaces look like one
        product. See web/public/css/public.css for the contrast arithmetic. */
-    background-image: url("/images/pattern.svg");
+    background-image: url("/images/pattern.png");
     background-repeat: repeat;
     background-attachment: fixed;
   }
