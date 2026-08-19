@@ -325,6 +325,24 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "We have openings for cooks, kitchen staff, couriers and customer-service team members. Send us your CV with the role you are interested in, and a few words on why you want to join. We reply to every application we receive.",
 		i18n.ZH: "我们正在招聘厨师、厨房员工、配送员以及客服团队成员。请发送您的简历，注明意向职位，并简要说明您希望加入的原因。我们会回复每一份收到的申请。",
 	},
+	// Fallback only — the live wording is public_content, edited on the Content
+	// screen, so the offer can change without a deploy.
+	// Fallbacks; the live wording is public_content.
+	"cert.heading": {
+		i18n.ID: "Standar keamanan pangan kami",
+		i18n.EN: "Our food-safety standards",
+		i18n.ZH: "我们的食品安全标准",
+	},
+	"cert.haccp_full": {
+		i18n.ID: "Hazard Analysis and Critical Control Points",
+		i18n.EN: "Hazard Analysis and Critical Control Points",
+		i18n.ZH: "危害分析与关键控制点",
+	},
+
+	"ribbon.text": {
+		i18n.ID: "Gratis ongkir", i18n.EN: "Free delivery", i18n.ZH: "免费配送",
+	},
+
 	"nav.benefits": {i18n.ID: "Keunggulan", i18n.EN: "Benefits", i18n.ZH: "我们的优势"},
 
 	// ── Benefits page ───────────────────────────────────────────────────────

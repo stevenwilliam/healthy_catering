@@ -69,6 +69,14 @@ type PageData struct {
 	FormErrors map[string]string
 	Form       map[string]string
 
+	// Certifications gates the badge row on the home page. See migration 0024:
+	// these are regulated claims, not decoration.
+	Certifications bool
+
+	// Ribbon is the corner banner. Off is a supported state, and the wording
+	// comes from public_content like the rest of the public copy.
+	Ribbon bool
+
 	// Active names the current section, so the masthead can mark which page
 	// you are on. Without it every nav item looks identical on every page,
 	// which is the one thing a visitor most wants the header to tell them.
@@ -271,6 +279,8 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			}
 		}
 		data.HeroW, data.HeroH = heroSize(data.HeroImage)
+		data.Ribbon = d.Params.Bool(ctx, sysparam.KeyPublicRibbonEnabled, true)
+		data.Certifications = d.Params.Bool(ctx, sysparam.KeyPublicCertsEnabled, true)
 		c.HTML(status, name, data)
 	}
 

@@ -62,6 +62,8 @@ const (
 	KeyRequireEmailVerified = "security.require_email_verification"
 	KeyPublicHeroImage      = "public.hero_image"
 	KeyPublicShowMealPrices = "public.show_meal_prices"
+	KeyPublicRibbonEnabled  = "public.ribbon_enabled"
+	KeyPublicCertsEnabled   = "public.certifications_enabled"
 )
 
 // Param is one row.

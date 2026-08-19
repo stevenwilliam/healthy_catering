@@ -65,6 +65,14 @@ const publicTemplates = `
 {{if .JSONLD}}<script type="application/ld+json">{{.JSONLD}}</script>{{end}}
 </head>
 <body>
+{{if .Ribbon}}
+<!-- Corner ribbon. Real text in the DOM rather than a background image, so a
+     screen reader announces the offer and a translation can change its length
+     without redrawing anything. pointer-events are off in CSS: it sits over
+     the top-right corner, and a decorative banner must not swallow clicks
+     meant for what is underneath it. -->
+<div class="ribbon"><span>{{c .Copy .L "ribbon.text"}}</span></div>
+{{end}}
 <header class="masthead">
   <!-- The supplied wordmark, reversed out for the dark fill. width/height are
        the intrinsic pixels so the masthead does not reflow as it loads; the
@@ -218,6 +226,31 @@ const publicTemplates = `
       <p>{{t .L "home.check_body"}}</p>
     </div>
   </section>
+
+  {{if .Certifications}}
+  <!-- Certification badges. Typographic, NOT the certifying bodies' logos —
+       those are trademarks issued with their own usage rules and have to come
+       from the issuer. The <abbr> carries the full name so the initialism is
+       expanded for a screen reader and on hover; the caption under each is
+       editable content, which is where the certificate number goes. -->
+  <section class="certs">
+    <h2>{{c .Copy .L "cert.heading"}}</h2>
+    <ul class="cert-badges">
+      <li>
+        <span class="cert-badge">HALAL</span>
+        <span class="cert-note">{{c .Copy .L "cert.halal_note"}}</span>
+      </li>
+      <li>
+        <span class="cert-badge"><abbr title="{{t .L "cert.haccp_full"}}">HACCP</abbr></span>
+        <span class="cert-note">{{c .Copy .L "cert.haccp_note"}}</span>
+      </li>
+      <li>
+        <span class="cert-badge cert-badge-two"><span>ISO</span><span>22000</span></span>
+        <span class="cert-note">{{c .Copy .L "cert.iso_note"}}</span>
+      </li>
+    </ul>
+  </section>
+  {{end}}
 </main>
 {{template "foot" .}}
 {{end}}

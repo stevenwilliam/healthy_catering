@@ -97,6 +97,18 @@ HTML (verified with `curl`), robots.txt, sitemap.xml, JSON-LD.
 **Verified by looking at it**: screenshots at 360px and 1280px in
 `docs/screenshots/`, fonts confirmed resolved from the DOM.
 
+**Corner ribbon and certification badges, 2026-08-19 (Steven).** A gold
+diagonal ribbon in the top-right of every public page with an animated shine,
+and three large HALAL / HACCP / ISO 22000 badges at the foot of the home page.
+Both are `sys_parameters` switches (`public.ribbon_enabled`,
+`public.certifications_enabled`) with wording editable on the Content screen —
+the ribbon because "free delivery" is only true while `delivery.fee_bands` says
+so, the badges because certificates expire. Steven confirms Evermore holds all
+three certificates. Contrast measured on both: deep ink on the base gold is
+5.65 and the shimmer only ever sweeps lighter, so no frame of the animation
+drops below it; the beige badge discs are 11.32 against the ground and 11.32
+for the ink on them.
+
 **CSV exports, career form, Benefits page, 2026-08-18 (Steven).** New standing
 rule in `99` §8 and CLAUDE.md §7: every report and data grid exports to CSV,
 **pipe-delimited**. Audited and fixed — the delimiter was a comma everywhere,
