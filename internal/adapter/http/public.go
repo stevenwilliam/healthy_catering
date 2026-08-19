@@ -1,6 +1,8 @@
 package http
 
 import (
+	"fmt"
+	"hash/fnv"
 	"html/template"
 	"image"
 	_ "image/jpeg" // registers the JPEG decoder for image.DecodeConfig
@@ -8,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -75,6 +78,11 @@ type PageData struct {
 	// Certs is the badge row itself: label, image and caption per badge. An
 	// entry with no image is dropped rather than rendered broken.
 	Certs []certBadge
+
+	// AssetV busts caches on the stylesheets and the wordmark. See
+	// assetVersion — a stable filename plus a long cache is how a CSS change
+	// becomes invisible to anyone who has already visited.
+	AssetV string
 
 	// Ribbon is the corner banner. Off is a supported state, and the wording
 	// comes from public_content like the rest of the public copy.
@@ -305,6 +313,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 			}
 		}
 		data.HeroW, data.HeroH = heroSize(data.HeroImage)
+		data.AssetV = assetVersion()
 		data.Ribbon = d.Params.Bool(ctx, sysparam.KeyPublicRibbonEnabled, true)
 		// A nav failure must not take the page down: an empty menu is a
 		// degraded header, an error page is no site at all.
@@ -825,3 +834,34 @@ func heroSize(webPath string) (int, int) {
 	heroSizes.Store(webPath, [2]int{w, h})
 	return w, h
 }
+
+// assetVersion is a short fingerprint of the files the templates link, so a
+// changed stylesheet arrives at a NEW URL.
+//
+// This exists because of a real failure: nginx marked every .css `immutable`
+// for 30 days, which tells a browser not to revalidate even conditionally. A
+// visitor who had loaded the site once kept that stylesheet through every
+// subsequent change, and the symptom was a menu with no button in it — the
+// markup was current and the CSS was months of edits behind.
+//
+// Modification time and size rather than a content hash: it is one stat per
+// file instead of reading them, it changes whenever the file does, and the
+// value only has to be DIFFERENT between builds, not meaningful.
+//
+// Computed once. A deploy restarts the process, which is exactly when these
+// files can have changed.
+var assetVersion = sync.OnceValue(func() string {
+	h := fnv.New64a()
+	for _, p := range []string{
+		"./web/public/css/tokens.css",
+		"./web/public/css/public.css",
+		"./web/public/fonts/fonts.css",
+		"./web/public/images/pattern.png",
+		"./web/public/images/evermore-wordmark-light.png",
+	} {
+		if st, err := os.Stat(p); err == nil {
+			fmt.Fprintf(h, "%s:%d:%d;", p, st.ModTime().UnixNano(), st.Size())
+		}
+	}
+	return strconv.FormatUint(h.Sum64(), 36)
+})

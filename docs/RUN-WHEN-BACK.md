@@ -30,6 +30,30 @@ Not `http://192.168.88.101/` — port 80 on the bare IP is still ruuma's
 Keep the existing `192.168.88.0/24` rule; it covers anything on the physical
 LAN. Both rules go away when the site moves to 443 (`docs/14` §8a).
 
+## A1. If a change does not appear, HARD-RELOAD once
+
+Fixed on 2026-08-19, but one hard reload is still needed to escape a cache
+already poisoned.
+
+nginx was serving every `.css`, `.js`, `.png`, `.jpg` and `.svg` with
+`Cache-Control: public, immutable` for 30 days. `immutable` tells a browser
+never to revalidate — not even a conditional request — so a visitor who loaded
+the site once kept that stylesheet through every later change. The symptom was
+"the burger menu is not showing any button": the markup was current and the
+stylesheet was many edits behind.
+
+Two fixes, both in place:
+
+- nginx now only marks the woff2 fonts immutable, since those are the only
+  files whose bytes never change under a stable name. Everything else is
+  `must-revalidate` with a one-hour freshness.
+- The templates append `?v=<fingerprint>` to the stylesheets and the wordmark,
+  so a changed file is a NEW URL and arrives immediately regardless of any
+  cache header.
+
+Your browser may still be holding the poisoned copy, because the old response
+said not to ask again. **Ctrl-Shift-R once** and it will never recur.
+
 ## A2. Two things blocked on a key you have to supply
 
 **AI images.** Asked for twice now — the hero picture (which you then supplied

@@ -57,9 +57,9 @@ const publicTemplates = `
 <link rel="icon" href="/images/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
 <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-<link rel="stylesheet" href="/fonts/fonts.css">
-<link rel="stylesheet" href="/css/tokens.css">
-<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/fonts/fonts.css?v={{.AssetV}}">
+<link rel="stylesheet" href="/css/tokens.css?v={{.AssetV}}">
+<link rel="stylesheet" href="/css/public.css?v={{.AssetV}}">
 <link rel="preload" href="/fonts/erode/Erode-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
 {{if .JSONLD}}<script type="application/ld+json">{{.JSONLD}}</script>{{end}}
@@ -78,7 +78,7 @@ const publicTemplates = `
        the intrinsic pixels so the masthead does not reflow as it loads; the
        stylesheet constrains the displayed height. -->
   <a class="wordmark" href="{{path .L "/"}}" aria-label="{{t .L "nav.home_aria"}}">
-    <img src="/images/evermore-wordmark-light.png" width="560" height="60"
+    <img src="/images/evermore-wordmark-light.png?v={{.AssetV}}" width="560" height="60"
          alt="Evermore">
   </a>
   <!-- The menu is rendered TWICE and one is always display:none.
