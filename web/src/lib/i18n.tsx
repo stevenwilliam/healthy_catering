@@ -22,6 +22,11 @@ export const DEFAULT_LOCALE: Locale = 'id'
 
 export type LocaleInfo = {
   locale: Locale
+  /** Path prefix of the PUBLIC site for this language. The app is not
+   *  locale-prefixed — it stores a preference — but the public site is, so a
+   *  link leaving /app has to carry the language across or the reader silently
+   *  lands in Indonesian. */
+  publicPrefix: string
   /** BCP-47, for <html lang>. Chinese carries the script: "zh" alone does not
    *  say Simplified or Traditional. */
   tag: string
@@ -31,9 +36,9 @@ export type LocaleInfo = {
 }
 
 export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
-  id: { locale: 'id', tag: 'id-ID', endonym: 'Bahasa Indonesia' },
-  en: { locale: 'en', tag: 'en', endonym: 'English' },
-  zh: { locale: 'zh', tag: 'zh-Hans', endonym: '中文' },
+  id: { locale: 'id', tag: 'id-ID', endonym: 'Bahasa Indonesia', publicPrefix: '/' },
+  en: { locale: 'en', tag: 'en', endonym: 'English', publicPrefix: '/en/' },
+  zh: { locale: 'zh', tag: 'zh-Hans', endonym: '中文', publicPrefix: '/zh/' },
 }
 
 const STORAGE_KEY = 'evermore.lang'

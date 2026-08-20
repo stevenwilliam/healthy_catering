@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { loadSession, logout } from './lib/api'
-import { I18nProvider, useT } from './lib/i18n'
+import { I18nProvider, LOCALE_INFO, useI18n, useT } from './lib/i18n'
 import LanguageSelector from './components/LanguageSelector'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -70,8 +70,23 @@ function WhatsAppFloat() {
   )
 }
 
+/** The wordmark image. Served from /images by the Go server, not bundled by
+ *  Vite, so it is the same file the public pages use. */
+function Wordmark() {
+  return (
+    <img
+      src="/images/evermore-wordmark-light.png"
+      width={560}
+      height={60}
+      alt="Evermore"
+      className="block h-6 w-auto sm:h-7"
+    />
+  )
+}
+
 function Nav() {
   const t = useT()
+  const { locale } = useI18n()
   const session = loadSession()
   const staff = session?.roles.some((r) => r !== 'customer')
 
@@ -87,21 +102,35 @@ function Nav() {
         className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4
                    gap-y-3 px-4 py-3 xl:grid-cols-[auto_1fr_auto]"
       >
-        <Link
-          to="/"
-          className="col-start-1 row-start-1 flex items-center"
-          aria-label={t('nav.home_aria')}
-        >
-          {/* The supplied wordmark, reversed out for the dark fill. Served
-              from /images by the Go server, not bundled by Vite. */}
-          <img
-            src="/images/evermore-wordmark-light.png"
-            width={560}
-            height={60}
-            alt="Evermore"
-            className="block h-6 w-auto sm:h-7"
-          />
-        </Link>
+        {/* Where the wordmark leads depends on whether there is a session.
+            Signed in it is the app's own home. Signed out — the login screen
+            above all — it leaves for the public site, because `to="/"` inside
+            the app redirects to /menu, which requires auth and bounces
+            straight back to login: clicking it there did nothing at all.
+
+            The signed-out case is a plain <a>, not a <Link>. The public site
+            is served by Go, not by the router, so a client-side navigation
+            would rewrite the URL and render nothing. It also carries the
+            language across — the app STORES its locale while the public site
+            PREFIXES it, so without this a Chinese reader lands on the
+            Indonesian home page. */}
+        {session ? (
+          <Link
+            to="/menu"
+            className="col-start-1 row-start-1 flex items-center"
+            aria-label={t('nav.home_aria')}
+          >
+            <Wordmark />
+          </Link>
+        ) : (
+          <a
+            href={LOCALE_INFO[locale].publicPrefix}
+            className="col-start-1 row-start-1 flex items-center"
+            aria-label={t('nav.home_aria')}
+          >
+            <Wordmark />
+          </a>
+        )}
         {/* text-bar, not text-sm: beige on the mid-green bar is 3.93, which is
             AA for LARGE text only (docs/10 §2.7). */}
         {session && (
