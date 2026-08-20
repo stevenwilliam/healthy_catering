@@ -208,17 +208,23 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 }
 /* Inside the drawer the links sit on the beige sheet, where deep ink is 11.32
    — so unlike the bar they do not need to be large-text sized. */
-.nav-drawer a,
-.nav-drawer .navdrop > summary {
+/* Every one of these panel rules carries .masthead deliberately.
+ * `.masthead a { color: var(--on-bar) }` is beige-for-the-bar and matches
+ * these links too; at equal specificity it wins on source order, and it sits
+ * later in the file. The drawer therefore rendered beige text on the beige
+ * sheet — invisible. Winning on SPECIFICITY instead survives the file being
+ * reordered, which is how this broke in the first place. */
+.masthead .nav-drawer a,
+.masthead .nav-drawer .navdrop > summary {
   color: var(--ink);
   font-size: var(--text-base);
   font-weight: var(--w-ui);
   border-left: 0;
   padding: var(--space-3);
 }
-.nav-drawer a:hover,
-.nav-drawer .navdrop > summary:hover { background: rgba(28, 61, 52, 0.08); }
-.nav-drawer a[aria-current="page"] { text-decoration-thickness: 2px; }
+.masthead .nav-drawer a:hover,
+.masthead .nav-drawer .navdrop > summary:hover { background: rgba(28, 61, 52, 0.08); }
+.masthead .nav-drawer a[aria-current="page"] { text-decoration-thickness: 2px; }
 /* The category submenu opens in flow inside the drawer rather than floating
    over it, which on a phone would land off-screen. */
 .nav-drawer .navdrop-menu {
@@ -377,7 +383,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   border-radius: var(--radius);
   box-shadow: var(--shadow-lift);
 }
-.langpick-menu a {
+.masthead .langpick-menu a {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -389,7 +395,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   font-size: var(--text-sm);
   font-weight: var(--w-ui);
 }
-.langpick-menu a:hover { background: rgba(28, 61, 52, 0.08); }
+.masthead .langpick-menu a:hover { background: rgba(28, 61, 52, 0.08); }
 /* The tick is the second signal for the current language — aria-current is the
    first. Never colour alone (99 §8). */
 .langpick-tick { width: 14px; height: 14px; margin-left: auto; }
@@ -424,7 +430,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   border-radius: var(--radius);
   box-shadow: var(--shadow-lift);
 }
-.navdrop-menu a {
+.masthead .navdrop-menu a {
   display: flex;
   align-items: center;
   min-height: var(--touch-min);
@@ -437,7 +443,7 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   font-weight: var(--w-ui);
   text-decoration: none;
 }
-.navdrop-menu a:hover { background: rgba(28, 61, 52, 0.08); }
+.masthead .navdrop-menu a:hover { background: rgba(28, 61, 52, 0.08); }
 /* The menu opens over the page, which on the narrowest screens is wider than
    the viewport if it opens leftward from a right-hand item. */
 @media (max-width: 30rem) {
