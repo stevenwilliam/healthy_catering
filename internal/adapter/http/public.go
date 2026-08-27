@@ -265,9 +265,15 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 	// Every page has to go through it, including the 404: "foot" carries the
 	// floating WhatsApp button, which needs .Company, so a page rendered
 	// around it would come out without the button (and with an empty footer).
+	// The operating timezone, resolved once. A page rendered on a UTC server
+	// between 00:00 and 07:00 WIB on 1 January would otherwise carry LAST
+	// year in its footer — server-local time is never the business calendar
+	// (CLAUDE.md §10).
+	siteTZ := tzOf(d)
+
 	render := func(c *gin.Context, status int, name string, data PageData) {
 		data.BaseURL = base()
-		data.Year = time.Now().Year()
+		data.Year = time.Now().In(siteTZ).Year()
 		data.Lang = i18n.Meta(data.L).Tag
 
 		// The same page in every language: the selector's links and the
