@@ -16,7 +16,7 @@ brand is not. A new project gets its own `design.md` in the same place.
 | --- | --- | --- |
 | Display | **Erode** | titles, headlines, the wordmark's character |
 | Body / UI | **Inter** (variable) | everything a customer reads |
-| CJK | platform fonts | PingFang SC · Hiragino Sans GB · Microsoft YaHei · Noto Sans CJK SC |
+| CJK | platform fonts | PingFang SC · Hiragino Sans GB · Microsoft YaHei · Noto Sans CJK SC · Noto Sans SC · Source Han Sans SC · WenQuanYi Micro Hei |
 
 Both are **self-hosted** in `web/public/fonts/`. Never a font CDN — it hands a
 third party every visitor's IP and the page they are on.
@@ -108,8 +108,31 @@ needs the extra pixel to hold its weight.
 | `#4A5D56` ink muted | 6.69 | — |
 | `#E0782D` orange deep | **2.90 ✗** | — |
 
-**Other pairings in use:** deep ink on the ribbon gold `#D4AF37` is **5.65**;
-deep ink on blue-light **8.15** and on orange-light **7.27**.
+**Non-text contrast — WCAG 1.4.11, the 3:1 boundary.** A border that has to be
+*found* is a control boundary and must clear 3:1; a border that merely separates
+two filled surfaces need not. Confusing the two is how an input ends up with an
+edge nobody can see.
+
+| Token | over the sheet | |
+| --- | ---: | --- |
+| `--border` `rgba(28,61,52,.60)` → `#778979` | 3.55 | ✓ the real control boundary |
+| `--border-subtle` `rgba(28,61,52,.28)` → `#BFC5B0` | 1.69 | ✗ **decorative only** — never a control edge or a focus ring |
+| `--beige-deep` `#CCBDAA` | 1.75 | ✗ **never a border here** — it is a deep-ground token (6.47 there) |
+
+**The corner ribbon.** Deep ink on the base gold `#D4AF37` is **5.65**, and the
+animated shimmer only ever lifts it — `#FFF3C4` is **10.68** and `#FFFDF0` is
+**11.64**. The base gold is therefore the worst case and the one that governs;
+the sweep can never make the ribbon less readable than it is at rest.
+
+**The WhatsApp float.** Its `#128C7E` fill measures **2.87** against the deep
+ground — that is deliberate and not a defect, because the affordance is the
+**beige ring**, which measures **11.32** against the ground and **3.94** against
+the teal. Both clear 1.4.11. The white glyph on the teal is **4.14**: an icon,
+so 3:1 applies, not 4.5. Do not "fix" the fill; it is WhatsApp's own colour and
+recolouring it stops the mark reading as WhatsApp.
+
+**Other pairings in use:** deep ink on blue-light **8.15** and on orange-light
+**7.27**.
 
 ---
 
@@ -117,9 +140,12 @@ deep ink on blue-light **8.15** and on orange-light **7.27**.
 
 - **Two grounds.** The page is deep green and body copy sits straight on it.
   The bars are mid green and everything on them is large text.
-- **The CTA inverts by surface.** On the ground: beige fill, deep ink. On a
-  beige panel: deep-green fill, beige ink. A deep-green button on the ground
-  measures 2.88 and fails 1.4.11 as a control you must be able to find.
+- **The CTA inverts by surface.** On the ground: beige fill, deep ink (11.32).
+  On a beige panel: deep-green fill, beige ink (11.32). The inversion dates
+  from when the ground was the MID green, where a deep-green fill measured 2.88
+  and failed 1.4.11 as a control you must be able to find. On today's deep
+  ground a deep-green fill would be 1.00 — the same colour — so the rule stands
+  for a stronger reason than the one it was written for.
 - **Focus rings**: deep ink normally, **beige on the ground** — deep ink there
   is an indicator you cannot see.
 - **Colour is never the only signal.** The current nav item carries an
@@ -140,8 +166,11 @@ deep ink on blue-light **8.15** and on orange-light **7.27**.
   `r`s are normal orientation. Never recolour, restretch or redraw it.
   Generated in both cuts by `scripts/mklogo.py` from
   `docs/design_guideline/logo.png`.
-- **Favicon** is the wordmark's leading `e` on the masthead fill — the full
-  lockup is 104:11 and turns to mush at 16px.
+- **Favicon** is the wordmark's leading `e` on the masthead fill — the shipped
+  lockup is 560×60 (**9.33:1**; `mklogo.py` draws the glyph run at 104:11 and
+  pads to the round canvas) and turns to mush at 16px. The templates declare
+  `width="560" height="60"`, which matches the file exactly — that is what stops
+  the header shifting as the PNG arrives.
 - **Background**: Steven's tile, extracted to beige-on-transparent by
   `scripts/mkpattern`, painted at 36% of native over the ground colour. Peak
   14.9% alpha, which leaves beige text at 7.29 where a glyph crosses a line.

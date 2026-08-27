@@ -11,13 +11,24 @@ docs/10-design-system.md — the comment beside a token IS the record.
 import sys
 
 # The ground, the surfaces, and the inks. Keep in step with tokens.css.
-CANVAS = '#468973'   # page ground (Nourish Green)
-DEEPGREEN = '#1C3D34'  # masthead + footer fill, and the ink everywhere else
+#
+# 2026-08-18: Steven SWAPPED the two greens. The GROUND is now deep #1C3D34 and
+# the BARS (masthead + footer) are mid #468973. The names below were left
+# describing the old arrangement for nine days, which is how design.md came to
+# say "a deep-green button on the ground measures 2.88" — a pairing that no
+# longer exists. The ratios were never wrong; the labels were.
+GROUND = '#1C3D34'   # THE PAGE GROUND — deep green
+BAR = '#468973'      # masthead + footer fill — mid green
 SHEET = '#FFFAE0'    # beige content sheet
 WHITE = '#FFFFFF'
 MUTED = '#4A5D56'
 BEIGE_DEEP = '#CCBDAA'
 WA_TEAL = '#128C7E'  # WhatsApp's darker brand teal
+GOLD = '#D4AF37'     # the corner ribbon's base
+GOLD_HI = '#FFF3C4'  # the ribbon shimmer, mid sweep
+GOLD_PEAK = '#FFFDF0'  # the ribbon shimmer, peak
+BORDER = '#778979'   # --border rgba(28,61,52,.60) composited over the sheet
+BORDER_SUBTLE = '#BFC5B0'  # --border-subtle rgba(28,61,52,.28) over the sheet
 
 
 def _lin(c):
@@ -45,22 +56,45 @@ def verdict(v):
 
 
 PAIRS = [
-    ('body copy on the green ground — beige', SHEET, CANVAS),
-    ('body copy on the green ground — white', WHITE, CANVAS),
-    ('body copy on the green ground — deep ink', DEEPGREEN, CANVAS),
-    ('beige sheet as a surface on the ground', SHEET, CANVAS),
-    ('white card as a surface on the ground', WHITE, CANVAS),
-    ('deep ink on the beige sheet', DEEPGREEN, SHEET),
+    # ── On the deep ground, where body copy may sit directly ──────────────
+    ('beige on the deep ground', SHEET, GROUND),
+    ('white on the deep ground', WHITE, GROUND),
+    ('beige-deep (muted) on the deep ground', BEIGE_DEEP, GROUND),
+    ('the beige sheet as a surface on the ground', SHEET, GROUND),
+    ('the white card as a surface on the ground', WHITE, GROUND),
+
+    # ── On the BARS. Nothing here reaches AA at reading size, which is what
+    #    --text-bar (19px/700) exists to work around. ───────────────────────
+    ('beige on a bar  [LARGE TEXT ONLY]', SHEET, BAR),
+    ('white on a bar  [LARGE TEXT ONLY]', WHITE, BAR),
+    ('deep ink on a bar  [never]', GROUND, BAR),
+    ('beige-deep on a bar  [never — deep-ground token]', BEIGE_DEEP, BAR),
+    ('a bar against the ground (the seam)', BAR, GROUND),
+
+    # ── On the beige sheet and white cards ────────────────────────────────
+    ('deep ink on the beige sheet', GROUND, SHEET),
     ('muted ink on the beige sheet', MUTED, SHEET),
-    ('deep ink on a white card', DEEPGREEN, WHITE),
-    ('beige on the masthead/footer fill', SHEET, DEEPGREEN),
-    ('beige-deep on the masthead/footer fill', BEIGE_DEEP, DEEPGREEN),
-    ('masthead fill against the ground', DEEPGREEN, CANVAS),
-    ('WhatsApp teal against the ground', WA_TEAL, CANVAS),
+    ('deep ink on a white card', GROUND, WHITE),
+
+    # ── Non-text contrast, WCAG 1.4.11 — the 3:1 boundary ─────────────────
+    ('--border on the sheet  [control boundary]', BORDER, SHEET),
+    ('--border-subtle on the sheet  [DECORATIVE ONLY]', BORDER_SUBTLE, SHEET),
+    ('beige-deep on the sheet  [never a border]', BEIGE_DEEP, SHEET),
+
+    # ── The corner ribbon. The shimmer only ever LIFTS the ratio, so the
+    #    base gold is the worst case and the one that governs. ─────────────
+    ('ribbon ink on the base gold  [worst case]', GROUND, GOLD),
+    ('ribbon ink on the shimmer, mid', GROUND, GOLD_HI),
+    ('ribbon ink on the shimmer, peak', GROUND, GOLD_PEAK),
+
+    # ── The WhatsApp float. Its fill is 1.00 against the ground by design;
+    #    the BEIGE RING is the affordance, and it is what must clear 3:1. ──
+    ('WhatsApp teal against the ground  [the ring carries it]', WA_TEAL, GROUND),
     ('white glyph on WhatsApp teal', WHITE, WA_TEAL),
-    ('beige ring against WhatsApp teal', SHEET, WA_TEAL),
-    ('beige ring against the ground', SHEET, CANVAS),
+    ('the beige ring against WhatsApp teal', SHEET, WA_TEAL),
+    ('the beige ring against the ground', SHEET, GROUND),
 ]
+
 
 if len(sys.argv) == 3:
     a, b = sys.argv[1], sys.argv[2]
