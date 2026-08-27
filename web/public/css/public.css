@@ -454,7 +454,15 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 /* Wide content scrolls inside its own box; the page body never scrolls
    sideways (99 §8). */
 .table-scroll { overflow-x: auto; margin: var(--space-4) 0; }
-.pricetable { border-collapse: collapse; width: 100%; min-width: 32rem; }
+/* NO min-width. `min-width: 32rem` (512px) sat here, and at 390px it forced
+   the table 154px wider than its 358px frame: HARGA was cut mid-number —
+   "Rp 500.0…", "Rp 1.200.0…" — and PER HARI was off-screen entirely, with
+   nothing on screen saying it scrolled. A price page truncating prices.
+   Measured with the floor removed, the same four columns fit 358px exactly
+   (93/65/113/87) with no cell overflowing, so the floor bought nothing.
+   `.table-scroll` remains the safety net below that. The same partial renders
+   on /price-list, which was truncating for the same reason. */
+.pricetable { border-collapse: collapse; width: 100%; }
 .pricetable th, .pricetable td {
   text-align: left;
   padding: var(--space-3);
@@ -764,11 +772,106 @@ main > section + section { margin-top: var(--space-16); }
 .check { margin-top: var(--space-12); }
 /* The price table on the home page sits on the dark ground rather than inside
    a panel, so it needs the light ink the ground takes. */
+/* ── The home price table ────────────────────────────────────────────────
+ * Four columns of plain text floating on the ground, with the prices cut off.
+ * It is still a TABLE and not cards — prices are read by comparing down a
+ * column (Steven, 2026-08-19) — but it now sits on a surface and has an order
+ * of importance.
+ *
+ * Every tint composited over the deep ground and measured, not chosen by eye:
+ *
+ *     panel      beige  6%  ->  #2A483E   beige 9.55 AAA · muted 5.45 AA
+ *     hover      beige  9%  ->  #304E43   beige 8.71 AAA · muted 4.98 AA
+ *     row rule   beige 25%  ->  #556C5F   2.09 vs the ground, decorative
+ *     head rule  beige 55%  ->  #99A593   4.62 vs the ground
+ *
+ * The muted row-note on the hover band is the tightest at 4.98, which still
+ * clears AA at body size.
+ *
+ * Fitting four money columns onto a phone, measured at every step. The padding
+ * gives first, then the figures drop one step; a price NEVER wraps, because a
+ * wrapped price stops reading as a figure and a column of them stops being
+ * comparable, which is the entire reason this is a table.
+ *
+ *     768 / 430 / 390 / 375 / 360 px   fits, no scroll
+ *     320 px                           308 into 286 — scrolls, and the frame
+ *                                      carries a brand scrollbar for it
+ *
+ * Zero money cells wrap at any of those widths, counted by line boxes rather
+ * than by element height — height includes padding, which makes every cell
+ * look wrapped and is a measurement that always agrees with you. */
+.home-prices .table-scroll {
+  background: rgba(255, 250, 224, 0.06);
+  border: 1px solid rgba(255, 250, 224, 0.18);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-4);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 250, 224, 0.45) transparent;
+}
 .home-prices .pricetable { color: var(--on-canvas); }
+
+/* One property for the inline padding, because the tracking compensation on
+   the right-aligned headers subtracts from whatever it currently is.
+   0.08em, not 0.10: measured, the header is a single 55px line box in a 106px
+   cell either way — nothing is truncated — but at 13px the wider step opens a
+   gap before the last letter that reads as "HARG A", a typo rather than
+   tracking. This is taste, and it is the only line in this block that is. */
+.home-prices .pricetable { --cell-x: var(--space-3); --head-track: 0.08em; }
+.home-prices .pricetable th,
+.home-prices .pricetable td { padding-inline: var(--cell-x); }
+
 .home-prices .pricetable th,
 .home-prices .pricetable td { border-bottom-color: rgba(255, 250, 224, 0.25); }
-.home-prices .pricetable thead th { border-bottom-color: rgba(255, 250, 224, 0.55); }
-.home-prices .row-note { color: var(--on-canvas-muted); }
+.home-prices .pricetable thead th {
+  border-bottom-color: rgba(255, 250, 224, 0.55);
+  color: var(--on-canvas-muted);
+  font-size: var(--text-xs);
+  letter-spacing: var(--head-track);
+}
+/* letter-spacing adds its space after the LAST letter too, and on a
+   right-aligned header that trailing gap reads as "HARG A" — a typo rather
+   than tracking. Subtract exactly one tracking step from the right padding. */
+.home-prices .pricetable thead th.num { padding-right: calc(var(--cell-x) - var(--head-track)); }
+
+/* The package name is the row's label, so it carries the display face. */
+.home-prices .pricetable tbody th[scope="row"] {
+  font-family: var(--font-display);
+  font-weight: var(--w-display-sub);
+}
+.home-prices .row-note {
+  color: var(--on-canvas-muted);
+  white-space: normal;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+/* PER HARI is the number a customer is actually comparing — the reason this is
+   a table at all — so it reads as a figure rather than as another cell. */
+.home-prices .pricetable td.num:last-child {
+  font-family: var(--font-display);
+  font-weight: var(--w-display-sub);
+  font-size: var(--text-base);
+}
+.home-prices .pricetable .num,
+.home-prices .pricetable tbody th[scope="row"],
+.home-prices .pricetable thead th { white-space: nowrap; }
+.home-prices .pricetable tbody tr:last-child th,
+.home-prices .pricetable tbody tr:last-child td { border-bottom: 0; }
+/* Reading across a row on a phone is where a price table loses people. */
+.home-prices .pricetable tbody tr { transition: background-color var(--duration) var(--ease); }
+.home-prices .pricetable tbody tr:hover { background: rgba(255, 250, 224, 0.09); }
+
+@media (max-width: 30rem) {
+  .home-prices .table-scroll { padding-inline: var(--space-2); }
+  .home-prices .pricetable { --cell-x: 6px; }
+  /* Both money columns drop a step. Per-day keeps the display face, so it is
+     still the figure the eye lands on without needing the extra 2px. */
+  .home-prices .pricetable td.num,
+  .home-prices .pricetable td.num:last-child { font-size: var(--text-sm); }
+}
+@media (max-width: 23rem) {
+  .home-prices .pricetable { --cell-x: 4px; }
+}
 .section-head { margin-bottom: var(--space-6); }
 
 /* ── Footer ──────────────────────────────────────────────────────────────
