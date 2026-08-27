@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { ApiFailure, request } from '../lib/api'
-import { FieldError, State, SubmitButton } from '../components/ui'
+import { FieldError, SearchBox, State, SubmitButton } from '../components/ui'
 import { useT } from '../lib/i18n'
 
 type Address = {
@@ -17,6 +17,7 @@ type Saved = {
 export default function Addresses() {
   const t = useT()
   const [list, setList] = useState<Address[]>([])
+  const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fields, setFields] = useState<Record<string, string>>({})
@@ -62,19 +63,32 @@ export default function Addresses() {
     }
   }
 
+  const needle = q.trim().toLowerCase()
+  const shown = needle === ''
+    ? list
+    : list.filter((a) =>
+        [a.Label, a.RecipientName, a.RecipientPhone, a.AddressLine, a.District, a.City, a.DriverNote]
+          .some((v) => (v ?? '').toLowerCase().includes(needle)))
+
   return (
     <div>
       <h1 className="text-3xl mb-6">{t('addresses.title')}</h1>
 
-      <State loading={loading} error={null} empty={list.length === 0}
-             emptyText={t('addresses.empty')}>
+      {/* CLAUDE.md §7: every screen that renders a list carries a search box
+          that filters it. Filtering is client-side because the whole list is
+          already loaded — an address book is a handful of rows, not a page. */}
+      <SearchBox value={q} onChange={setQ} placeholder={t('addresses.search_placeholder')}
+                 resultCount={shown.length} />
+
+      <State loading={loading} error={null} empty={shown.length === 0}
+             emptyText={list.length === 0 ? t('addresses.empty') : t('addresses.no_matches')}>
         <ul className="grid gap-3 sm:grid-cols-2 mb-8">
-          {list.map((a) => (
+          {shown.map((a) => (
             <li key={a.ID} className="card">
               <h2 className="text-lg">{a.Label}</h2>
               <p className="text-sm">{a.RecipientName} · {a.RecipientPhone}</p>
               <p className="text-sm text-ink-muted">{a.AddressLine}, {a.District} {a.City}</p>
-              {a.DriverNote && <p className="text-sm mt-1">Catatan: {a.DriverNote}</p>}
+              {a.DriverNote && <p className="text-sm mt-1">{t('addresses.note_label')}: {a.DriverNote}</p>}
             </li>
           ))}
         </ul>
@@ -116,13 +130,13 @@ export default function Addresses() {
           <FieldError message={fields.address_line} />
         </div>
         <div>
-          <label className="label" htmlFor="lat">Latitude</label>
+          <label className="label" htmlFor="lat">{t('addresses.latitude')}</label>
           <input id="lat" className="field" inputMode="decimal" placeholder="-6.2607"
                  value={form.latitude} onChange={set('latitude')} required />
           <FieldError message={fields.latitude} />
         </div>
         <div>
-          <label className="label" htmlFor="lng">Longitude</label>
+          <label className="label" htmlFor="lng">{t('addresses.longitude')}</label>
           <input id="lng" className="field" inputMode="decimal" placeholder="106.8145"
                  value={form.longitude} onChange={set('longitude')} required />
           <FieldError message={fields.longitude} />

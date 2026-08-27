@@ -251,6 +251,17 @@ export const messages = {
     zh: '灰色大门，门铃在右侧',
   },
   'addresses.save': { id: 'Simpan alamat', en: 'Save address', zh: '保存地址' },
+  'addresses.note_label': { id: 'Catatan', en: 'Note', zh: '备注' },
+  'addresses.latitude': { id: 'Lintang', en: 'Latitude', zh: '纬度' },
+  'addresses.longitude': { id: 'Bujur', en: 'Longitude', zh: '经度' },
+  'addresses.search_placeholder': {
+    id: 'Cari label, penerima, kecamatan…', en: 'Search label, recipient, district…',
+    zh: '搜索标签、收件人、区…',
+  },
+  'addresses.no_matches': {
+    id: 'Tidak ada alamat yang cocok dengan pencarian.',
+    en: 'No address matches that search.', zh: '没有符合搜索条件的地址。',
+  },
   'addresses.load_failed': { id: 'Gagal memuat alamat.', en: 'Could not load addresses.', zh: '无法加载地址。' },
   'addresses.save_failed': {
     id: 'Tidak dapat menyimpan alamat.', en: 'Could not save the address.', zh: '无法保存地址。',

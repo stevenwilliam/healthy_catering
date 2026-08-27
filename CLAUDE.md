@@ -234,8 +234,11 @@ Settled by the brief, 2026-08-12:
   date (delivery date, price validity, menu date) is a `DATE`, and any comparison
   against "now" — the 18:00 cut-off above all — converts through `Asia/Jakarta`
   explicitly, never through the server's local time.
-- **Languages: `id-ID` (default) and `en`**, message catalogues from the first
-  string, never inline.
+- **Languages: `id-ID` (default), `en`, and `zh-Hans`** (Simplified Chinese,
+  added 2026-08-18 — `docs/11-i18n.md`), message catalogues from the first
+  string, never inline. Two catalogues carry those three languages and must
+  move together: the server's `publicMessages` and the SPA's
+  `web/src/lib/messages.ts`.
 - **Production domain: `www.evermore.co.id`**, hosted in the Jakarta region —
   UU PDP data residency, and **coordinates are PII** under it.
 - **Evermore is the customer-facing brand**; `healthy_catering` is the repo
