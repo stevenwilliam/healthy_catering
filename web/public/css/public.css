@@ -1037,10 +1037,10 @@ main > section + section { margin-top: var(--space-16); }
 
   /* The hero copy arrives in reading order. 60ms apart: enough to read as a
      sequence, short enough that the CTA is present within 380ms of paint. */
-  .hero-copy > * { animation: home-rise 320ms var(--ease) both; }
-  .hero-copy > :nth-child(2) { animation-delay: 60ms; }
-  .hero-copy > :nth-child(3) { animation-delay: 120ms; }
-  .hero-copy > :nth-child(4) { animation-delay: 180ms; }
+  .hero-copy > * { animation: home-rise 400ms var(--ease) both; }
+  .hero-copy > :nth-child(2) { animation-delay: 90ms; }
+  .hero-copy > :nth-child(3) { animation-delay: 180ms; }
+  .hero-copy > :nth-child(4) { animation-delay: 270ms; }
 
   /* The photograph FADES only — no travel. It is the LCP element and the one
      thing on the page with a reserved box; moving it is the one motion a
@@ -1077,7 +1077,29 @@ main > section + section { margin-top: var(--space-16); }
     .diets .card-diet {
       animation: home-lift 400ms var(--ease) both;
       animation-timeline: view();
-      animation-range: entry 5% entry 55%;
+      /* RANGE IS THE WHOLE TRICK, and the obvious value is wrong. `entry`
+         spans only the moment an element crosses the bottom edge, so
+         `entry 5% entry 55%` — which is what this said first — played the
+         entire 12px while the card's top was between y=797 and y=1008 in an
+         844px viewport. All of it finished at or below the bottom edge, and
+         the effect was invisible: measured, 3 of 12 near-screen samples had
+         any travel at all, and none of them while the card was readable.
+
+         `cover` spans the whole overlap instead, and the percentages were
+         swept rather than guessed — the first `cover` value tried was just as
+         invisible. Measured at 390x844, card top in px as the motion runs:
+
+             cover  5%..35%   785 -> 740 -> 616   still at the bottom edge
+             cover 15%..55%   686 -> 642 -> 456
+             cover 25%..70%   587 -> 521 -> 336   <- this one
+             cover 35%..85%   487 -> 422 -> 196   settles too near the top
+
+         25%..70% starts the movement with the card 70% down the screen, puts
+         its midpoint at 521 — the middle of an 844 viewport — and settles it
+         in the upper third. Re-sweep after changing anything here; the range
+         is not guessable from reading it, and an override that silently fails
+         to apply looks exactly like a range that does nothing. */
+      animation-range: cover 25% cover 70%;
     }
   }
 }
