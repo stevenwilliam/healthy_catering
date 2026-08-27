@@ -375,11 +375,41 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
    and auto-width so the aspect ratio can never be squashed by a layout
    change; the intrinsic size is set on the element so the masthead does not
    reflow when it loads. */
-.wordmark { display: inline-flex; align-items: center; }
+/* The top-left lockup: a bold square mark, then the wordmark at 30% less
+ * height than it used to carry (26px -> 18px, and 30px -> 21px above 48rem).
+ *
+ * The mark is the wordmark's OWN leading glyph, masked and re-inked by
+ * scripts/mklogo.py — the same operation the favicon has always used. Nothing
+ * redraws or restretches the letterforms, which design.md §5 forbids outright.
+ * Beige field with deep ink because this sits on the mid-green bar: measured,
+ * beige on #468973 is 3.93 and clears 1.4.11's 3:1 for the badge's edge, while
+ * deep ink on the beige field is 11.32. The other way round would be 2.88 and
+ * the badge would have no findable edge.
+ *
+ * HEIGHT IS SET ON THE CLASSES, AND `.wordmark img` DELIBERATELY SETS NONE.
+ * `.wordmark img` is (0,1,1); a bare `.wordmark-type` is (0,1,0) and would
+ * LOSE, silently, leaving the wordmark at its old size while every measurement
+ * said the rule was there. This project has shipped that exact class of bug
+ * three times. Nothing here wins on source order. */
+.wordmark { display: inline-flex; align-items: center; gap: var(--space-2); }
 .wordmark img {
   display: block;
-  height: 26px;
   width: auto;
+  /* A FALLBACK HEIGHT, and it is not redundant. The stylesheet and the
+     templates deploy at different moments: the CSS is read from disk on the
+     next request, the markup is compiled into the binary and needs a restart.
+     In that window the old markup — a classless <img> — matched this rule, and
+     with no height here it fell back to the file's intrinsic 560x60 and pushed
+     the page to 717px wide inside a 390px viewport. Measured, on the running
+     service. The classes below both win on specificity ((0,2,0) over (0,1,1)),
+     so this only ever applies to markup that has not caught up yet. */
+  height: 18px;
+}
+.wordmark .wordmark-type { height: 18px; }
+.wordmark .wordmark-mark {
+  height: 26px;
+  width: 26px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Language selector ───────────────────────────────────────────────────
@@ -972,7 +1002,8 @@ main > section + section { margin-top: var(--space-16); }
 @media (min-width: 48rem) {
   h1 { font-size: var(--text-4xl); }
   main { padding: var(--space-12) var(--space-6); }
-  .wordmark img { height: 30px; }
+  .wordmark .wordmark-type { height: 21px; }
+  .wordmark .wordmark-mark { height: 30px; width: 30px; }
   .panel { padding: var(--space-12) var(--space-8); }
 }
 

@@ -78,8 +78,14 @@ const publicTemplates = `
        the intrinsic pixels so the masthead does not reflow as it loads; the
        stylesheet constrains the displayed height. -->
   <a class="wordmark" href="{{path .L "/"}}" aria-label="{{t .L "nav.home_aria"}}">
-    <img src="/images/evermore-wordmark-light.png?v={{.AssetV}}" width="560" height="60"
-         alt="Evermore">
+    <!-- The mark is DECORATION here: alt="" deliberately. The link already
+         carries an aria-label, and the wordmark beside it carries alt.
+         Without the empty alt a screen reader announces the brand three
+         times for one link. -->
+    <img class="wordmark-mark" src="/images/evermore-mark-128.png?v={{.AssetV}}"
+         width="128" height="128" alt="">
+    <img class="wordmark-type" src="/images/evermore-wordmark-light.png?v={{.AssetV}}"
+         width="560" height="60" alt="Evermore">
   </a>
   <!-- The menu is rendered TWICE and one is always display:none.
        Below 48rem it is a burger; above, a plain row. A single copy toggled by

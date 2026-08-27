@@ -138,6 +138,26 @@ curl -s http://127.0.0.1:8090/ | grep -oE 'public\.css\?v=[a-z0-9]+'
 The fingerprint should differ from `q95cuvfac046`, which is what it was serving
 when the home-screen animation was added on 2026-08-27.
 
+## A5. The masthead markup needs a REBUILD, not just a restart
+
+The templates are Go string constants compiled into the binary, so the new
+logo lockup (`wordmark-mark` + `wordmark-type`, 2026-08-27) does not appear
+until the binary is rebuilt and the unit restarted — a plain `systemctl
+restart` of the old binary is not enough:
+
+```bash
+cd /home/dev/projects/healthy_catering
+/usr/local/go/bin/go build -o bin/api ./cmd/api
+sudo systemctl restart evermore
+curl -s http://127.0.0.1:8090/ | grep -o 'wordmark-mark'
+```
+
+That last line should print `wordmark-mark`. Until it does, the page serves the
+OLD markup with the NEW stylesheet. That combination is safe — `.wordmark img`
+carries an 18px fallback height for exactly this window — but the mark is
+absent. Without that fallback the classless `<img>` fell back to its intrinsic
+560×60 and pushed a 390px page out to 717px; measured, on the running service.
+
 ## B. Re-take the signed-in screenshots
 
 The four authenticated-screen captures were deleted on 2026-08-18: they dated

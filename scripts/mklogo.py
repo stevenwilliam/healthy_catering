@@ -318,6 +318,22 @@ def main():
                    square_icon(cov, w, gbox, size, DEEP, BEIGE))
         print(f'  {name} {size}x{size} {n} bytes', file=sys.stderr)
 
+    # ── Masthead mark ───────────────────────────────────────────────────────
+    # The same 'e', INVERTED: a beige field carrying deep-green ink, because
+    # this one sits on the mid-green bar rather than on a browser tab strip.
+    # Measured, that is the only way round it works: beige on #468973 is 3.93,
+    # which clears 1.4.11's 3:1 for a graphic's edge, and deep ink on the beige
+    # field is 11.32. A deep-green field on the bar would be 2.88 and the badge
+    # would have no findable edge at all.
+    #
+    # 128px for a mark drawn at roughly 28 CSS px, so it still resolves on a 3x
+    # phone. Nothing here redraws the letterform: it is the wordmark's own
+    # leading glyph, masked and re-inked, which is the same operation the
+    # favicon has always used (design.md §5 — never redraw the mark).
+    n = encode('web/public/images/evermore-mark-128.png', 128, 128,
+               square_icon(cov, w, gbox, 128, BEIGE, DEEP))
+    print(f'  evermore-mark-128.png 128x128 {n} bytes', file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

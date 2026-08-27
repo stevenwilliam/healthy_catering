@@ -182,11 +182,23 @@ recolouring it stops the mark reading as WhatsApp.
   `r`s are normal orientation. Never recolour, restretch or redraw it.
   Generated in both cuts by `scripts/mklogo.py` from
   `docs/design_guideline/logo.png`.
-- **Favicon** is the wordmark's leading `e` on the masthead fill — the shipped
-  lockup is 560×60 (**9.33:1**; `mklogo.py` draws the glyph run at 104:11 and
-  pads to the round canvas) and turns to mush at 16px. The templates declare
-  `width="560" height="60"`, which matches the file exactly — that is what stops
-  the header shifting as the PNG arrives.
+- **The masthead lockup** (2026-08-27) is the square **mark** then the wordmark:
+  26px mark + 18px type on phones, 30px + 21px above 48rem. The type is **30%
+  shorter** than the 26px/30px it used to carry. Shrinking it also cleared two
+  things: the ribbon used to cover the reversed final `e` by 46.7px at 390px,
+  and the page no longer scrolls horizontally (390/390, was 400/390).
+- **The mark** is the wordmark's own leading `e`, masked and re-inked by
+  `scripts/mklogo.py` — the identical operation the favicon has always used.
+  **It is not a redraw**, which §5 forbids. On the mid-green bar it is a
+  **beige field with deep ink**: beige on `#468973` is 3.93 and clears 1.4.11's
+  3:1 for the badge's edge, deep ink on the beige field is 11.32. The other way
+  round measures 2.88 and the badge would have no findable edge.
+- **Favicon** is the same `e` the other way up — deep field, beige ink — on the
+  masthead fill, because a tab strip may be light or dark. The full lockup is
+  560×60 (**9.33:1**; `mklogo.py` draws the glyph run at 104:11 and pads to the
+  round canvas) and turns to mush at 16px. The templates declare the intrinsic
+  `width`/`height` of every logo file exactly, which is what stops the header
+  shifting as the PNGs arrive.
 - **Background** (2026-08-27): two drifting layers of **produce linework** —
   citrus, leaves, berries, wheat, avocado, broccoli, carrot — generated
   deterministically by `scripts/mkfoodpattern.py`. Far layer 340px at 0.06,

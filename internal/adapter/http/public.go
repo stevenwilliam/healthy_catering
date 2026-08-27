@@ -866,6 +866,7 @@ var assetVersion = sync.OnceValue(func() string {
 		"./web/public/images/produce-far.svg",
 		"./web/public/images/produce-near.svg",
 		"./web/public/images/evermore-wordmark-light.png",
+		"./web/public/images/evermore-mark-128.png",
 	} {
 		if st, err := os.Stat(p); err == nil {
 			fmt.Fprintf(h, "%s:%d:%d;", p, st.ModTime().UnixNano(), st.Size())
