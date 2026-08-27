@@ -133,6 +133,14 @@ frameworks, CSS-in-JS.
 
 ## 6. Working conventions
 
+- **`.claude/skills/impeccable/SKILL.md` is the standard of work.** Read it
+  before writing a change and again before reporting one as done. Its rules are
+  not general advice — each was written after the matching bug reached the
+  running site, and the incident log names them. When a new class of silent
+  failure bites, add the row and the rule. It is mirrored in
+  `docs/99-steven-preference.md` §15 so it carries to the next project.
+
+
 - **Owner is Steven, nickname "ven".** When he answers a quoted list of
   questions, a line beginning `ven:` is his answer to the question above it.
 - **`coding stop` means change nothing** — no edits, no new files, no commits,
