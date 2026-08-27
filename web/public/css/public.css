@@ -15,42 +15,23 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+/* The GROUND lives on html, not body. A body background propagates to the
+   canvas and would then paint over anything at z-index:-1, which is where the
+   produce layers sit — putting the colour here is what lets them exist without
+   giving every content element a stacking context of its own. */
+html {
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--canvas);
+}
 
 body {
   margin: 0;
-  /* The ground, plus a tiled motif so it is not a flat slab (Steven,
-     2026-08-19). Colour AND image on one shorthand would be fragile — the
-     colour must survive the image failing to load, or the page renders beige
-     text on white. Declared separately for that reason.
-     Beige at 5% lifts the ground to about #27473D, where beige text still
-     measures 9.88 and white 10.38 — both AAA. The opacity lives in the SVG,
-     so this is the only place the two are combined and there is one number to
-     change. */
-  background-color: var(--canvas);
-  /* Steven's pattern, extracted to beige-on-transparent by
-     scripts/mkpattern so the GROUND COLOUR still shows through — the supplied
-     JPEG carries its own background and would otherwise cover it, which is the
-     opposite of an overlay. Colour and image stay on separate declarations so
-     the colour survives the image failing to load. */
-  background-image: url("/images/pattern.png");
-  background-repeat: repeat;
-  /* 36% of the tile's native 453x155 — 60% twice over (Steven asked for
-     40% smaller, then 40% smaller again).
-     Scaled by the BROWSER from the full-resolution file rather than by
-     re-exporting a smaller one — downscaling at paint time supersamples the
-     linework, where a pre-shrunk PNG would have thin one-pixel strokes
-     resampled once and permanently. Both axes are given as integers so the
-     tile lands on whole pixels; an `auto` height tiles on a
-     fraction, which is its own faint seam. 164x56 rather than the literal
-     163x56: half a pixel wider, and half the aspect error (0.21% against
-     0.41%) — at this size the rounding matters more than it did.
-     Side effect worth having: the source's vertical wrap artefact
-     (docs/10 §2.8) shrinks with everything else. */
-  background-size: 164px 56px;
-  /* fixed, so the texture does not slide against the content while scrolling
-     and read as a second moving layer. */
-  background-attachment: fixed;
+  /* No background here. The ground is on html (above) and the texture is the
+     two produce layers below. The old tiled motif was a PNG at 36% of native,
+     peaking at 14.9% alpha — where its linework crossed muted text the
+     composite left --beige-deep at 4.16, under AA's 4.50. Only beige had ever
+     been checked there (7.29, and that figure was right). Replaced rather than
+     re-tuned, because Steven asked for something on the food theme. */
   color: var(--on-canvas);
   font-family: var(--font-body);
   font-size: var(--text-base);
@@ -60,6 +41,82 @@ body {
      behind it. env() covers the iOS home indicator on top of that. */
   padding-bottom: calc(var(--footer-h) + env(safe-area-inset-bottom, 0px));
 }
+
+/* ── The produce background ───────────────────────────────────────────────
+ * Evermore sells healthy catering, so the page's texture is produce: citrus
+ * slices, leaves, berries, wheat, avocado, broccoli, carrot — drawn as
+ * LINEWORK by scripts/mkfoodpattern.py, deterministically, so a diff in those
+ * files means somebody changed the drawing.
+ *
+ * Two layers drifting at different speeds and scales. Neither is strong enough
+ * to notice alone; the depth between them is what reads.
+ *
+ * THE ALPHA IS A CONTRAST DECISION, NOT A TASTE ONE. Text on the public pages
+ * sits directly on the ground, so anything painted over it costs contrast, and
+ * the binding token is --beige-deep rather than beige. Composited over
+ * #1C3D34, combined peak = 1-(1-0.06)(1-0.05) = 0.107 -> #345146:
+ *
+ *     ink          bound   rendered
+ *     beige        8.29     8.43   AAA
+ *     white        8.71     8.85   AAA
+ *     beige-deep   4.74     4.82   AA   <- this is the one that binds
+ *
+ * "rendered" is the lightest pixel actually found in a 400x400 capture of the
+ * background with all content hidden (#335044); "bound" is the arithmetic
+ * worst case. They agree to within a hundredth, which is the point: an earlier
+ * pass measured 4.89 at 0.09/0.07 and looked safe, but that was ONE paused
+ * frame in which no two strokes happened to cross. The bound governs, because
+ * over a 150-second drift across a whole viewport the crossing does happen.
+ *
+ * The tile being replaced peaked at 14.9%, which left --beige-deep at 4.16,
+ * BELOW AA — and only beige had ever been checked there. Do not raise these
+ * two numbers: 0.08/0.06 already puts the muted token at 4.31 and fails.
+ *
+ * VISIBILITY IS BOUGHT WITH COVERAGE, NOT OPACITY. The per-pixel peak is what
+ * costs contrast; a heavier stroke and a larger glyph put more of the drawing
+ * on screen without moving the peak at all. That is why the strokes in
+ * mkfoodpattern.py are 2.6/2.0 rather than hairlines.
+ *
+ * position: fixed and transform-only, so the drift never triggers layout or a
+ * repaint of the content above it. The layers are oversized by exactly one
+ * tile and translate by exactly one tile, so the loop is seamless with no
+ * jump. background-position is deliberately NOT animated: it repaints a
+ * full-viewport image every frame, on a page mostly read on mid-range Android.
+ */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  /* Oversized by one tile in each axis so the translate never exposes an edge. */
+  top: -360px;
+  left: -360px;
+  width: calc(100% + 360px);
+  height: calc(100% + 360px);
+  background-repeat: repeat;
+}
+body::before {
+  background-image: url("/images/produce-far.svg");
+  background-size: 340px 340px;
+  opacity: 0.06;
+}
+body::after {
+  background-image: url("/images/produce-near.svg");
+  background-size: 220px 220px;
+  opacity: 0.05;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Slow enough to be weather rather than movement: a glyph crosses its own
+     width in about 40 seconds. The two directions differ so the layers
+     separate instead of moving as one sheet. */
+  body::before { animation: produce-drift-far 150s linear infinite; }
+  body::after  { animation: produce-drift-near 95s linear infinite; }
+}
+/* Translating by exactly one tile lands the pattern back on itself. */
+@keyframes produce-drift-far  { to { translate: 340px 340px; } }
+@keyframes produce-drift-near { to { translate: -220px 220px; } }
 
 /* ── Type ────────────────────────────────────────────────────────────────
  * Erode is the display face and Inter is everything a customer reads — the

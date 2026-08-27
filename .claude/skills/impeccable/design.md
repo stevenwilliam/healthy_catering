@@ -187,9 +187,19 @@ recolouring it stops the mark reading as WhatsApp.
   pads to the round canvas) and turns to mush at 16px. The templates declare
   `width="560" height="60"`, which matches the file exactly — that is what stops
   the header shifting as the PNG arrives.
-- **Background**: Steven's tile, extracted to beige-on-transparent by
-  `scripts/mkpattern`, painted at 36% of native over the ground colour. Peak
-  14.9% alpha, which leaves beige text at 7.29 where a glyph crosses a line.
+- **Background** (2026-08-27): two drifting layers of **produce linework** —
+  citrus, leaves, berries, wheat, avocado, broccoli, carrot — generated
+  deterministically by `scripts/mkfoodpattern.py`. Far layer 340px at 0.06,
+  near layer 220px at 0.05, drifting 150s and 95s in different directions,
+  stopped by `prefers-reduced-motion`. **The binding token is `--beige-deep`,
+  not beige**: at the combined peak the lightest rendered pixel is `#335044`,
+  where beige is 8.43, white 8.85 and beige-deep **4.82** against AA's 4.50.
+  Raise the coverage — heavier strokes, larger glyphs — never the opacity; the
+  per-pixel peak is what costs contrast.
+  This replaced Steven's tile (`scripts/mkpattern`, 36% of native, peak 14.9%).
+  That tile left beige at 7.29, which was measured and correct, but nobody had
+  checked the muted token: it was at **4.16, below AA**, wherever the linework
+  crossed muted text.
 - **Certification badges** are the issuer's own files when supplied — never
   redrawn, never sourced from image search. Defaults are Evermore's own seals
   from `scripts/mkseals.py`.
