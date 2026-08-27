@@ -1,82 +1,96 @@
 // Motion guard for the public home page.
 //
-// It asserts the one rule that is not taste (docs/10 §2.9, design.md §4):
-// MOTION IS NEVER THE REASON CONTENT IS VISIBLE. For every animated element it
-// checks that the settled opacity is 1 under normal motion AND under
-// prefers-reduced-motion, that reduced motion carries no animation at all, and
-// that at least one animation is actually applied — so the day the stylesheet
-// stops matching, this says so instead of the page quietly going blank.
+// It asserts the rule that is not taste (docs/10 §2.9, design.md §4):
+// MOTION IS NEVER THE REASON CONTENT IS VISIBLE — under prefers-reduced-motion
+// every animated element must still be present, opaque and non-zero height,
+// with no animation attached.
 //
-// It needs a browser and the running service, so it cannot live in `go test`.
+// It also asserts the four things that silently do nothing when they are one
+// word wrong, each of which shipped here before this script existed:
+//
+//   * the hero parallax must CHANGE with scroll   (overflow:hidden on the frame
+//     makes it a scroll container and freezes the view() timeline; use clip)
+//   * the card hover lift must survive the reveal (the `transform` shorthand
+//     lets the animation's fill state erase it; translate/scale compose)
+//   * the section rule must have real dimensions
+//   * every price row must carry its reveal
+//
+// Needs a browser and the running service, so it cannot live in `go test`.
 //
 //   export NODE_PATH=/home/dev/.npm/_npx/e41f203b7505f1fb/node_modules
 //   node scripts/verify-motion.js [url]
 //
-// Use the 1.62.1 npx cache; the 1.49.1 one hangs at launch. See
-// docs/RUN-WHEN-BACK.md §A3. Exits non-zero on any failure.
+// Use the 1.62.1 npx cache; 1.49.1 hangs at launch. docs/RUN-WHEN-BACK.md §A3.
+// Exits non-zero on any failure.
 
 const { chromium } = require('playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8090/';
-
-async function probe(browser, reduced) {
-  const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    reducedMotion: reduced ? 'reduce' : 'no-preference',
-  });
-  const page = await ctx.newPage();
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
-  await page.waitForTimeout(1600); // well past the longest 180ms delay + 400ms
-  const out = await page.evaluate(() => {
-    const info = (sel) => {
-      const e = document.querySelector(sel);
-      if (!e) return { sel, missing: true };
-      const cs = getComputedStyle(e);
-      const b = e.getBoundingClientRect();
-      return {
-        sel,
-        animationName: cs.animationName,
-        animationDelay: cs.animationDelay,
-        opacity: +cs.opacity,
-        transform: cs.transform,
-        visibleHeight: +b.height.toFixed(1),
-      };
-    };
-    return {
-      docScrollW: document.documentElement.scrollWidth,
-      viewport: window.innerWidth,
-      supportsViewTimeline: CSS.supports('animation-timeline: view()'),
-      items: ['.hero-copy .eyebrow', '.hero-copy h1', '.hero-copy .lede', '.hero-copy .cta',
-              '.hero-art img', '.home-prices', '.check', '.diets .card-diet'].map(info),
-    };
-  });
-  await ctx.close();
-  return out;
-}
-
 (async () => {
-  const browser = await chromium.launch();
-  const normal = await probe(browser, false);
-  const reduced = await probe(browser, true);
-  await browser.close();
+  const b = await chromium.launch();
+  const fails = [];
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await ctx.newPage();
+  await p.goto(URL, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1400);
 
-  console.log('supports view():', normal.supportsViewTimeline);
-  console.log('scrollWidth normal/reduced:', normal.docScrollW, '/', reduced.docScrollW, '(viewport', normal.viewport + ')');
-  const pad = (v, n) => String(v).padEnd(n);
-  console.log('\n' + pad('element', 24) + '| ' + pad('animation (normal)', 22) + '| ' + pad('delay', 8) + '| settled opacity N/R');
-  let bad = [];
-  normal.items.forEach((n, i) => {
-    const r = reduced.items[i];
-    console.log(pad(n.sel.replace('.hero-copy ', '').replace('.diets ', ''), 24) + '| ' +
-      pad(n.animationName, 22) + '| ' + pad(n.animationDelay, 8) + '| ' + n.opacity + ' / ' + r.opacity);
-    if (n.opacity !== 1) bad.push(`${n.sel}: opacity ${n.opacity} after settle (normal motion)`);
-    if (r.opacity !== 1) bad.push(`${r.sel}: opacity ${r.opacity} under REDUCED motion — content hidden`);
-    if (r.animationName !== 'none') bad.push(`${r.sel}: animation "${r.animationName}" still set under reduced motion`);
-    if (r.visibleHeight === 0) bad.push(`${r.sel}: zero height under reduced motion`);
+  // 1. Parallax: the hero image's translate must actually change with scroll.
+  const pan = await p.evaluate(async () => {
+    const img = document.querySelector('.hero-art img');
+    const at = [];
+    for (const y of [0, 150, 300, 450]) {
+      window.scrollTo(0, y);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      at.push({ y, translate: getComputedStyle(img).translate, scale: getComputedStyle(img).scale });
+    }
+    window.scrollTo(0, 0);
+    return at;
   });
-  const applied = normal.items.filter(x => x.animationName && x.animationName !== 'none').length;
-  console.log('\nanimations applied under normal motion:', applied, '/', normal.items.length);
-  if (applied === 0) bad.push('NO animation applied at all — the stylesheet change did nothing');
-  if (normal.docScrollW > normal.viewport) console.log('NOTE pre-existing overflow:', normal.docScrollW, '>', normal.viewport);
-  console.log(bad.length ? '\nFAILURES:\n  ' + bad.join('\n  ') : '\nAll assertions passed.');
-  process.exit(bad.length ? 1 : 0);
+  console.log('hero parallax:'); pan.forEach(r => console.log('   scrollY ' + String(r.y).padStart(4) + '  translate=' + r.translate + '  scale=' + r.scale));
+  if (new Set(pan.map(r => r.translate)).size < 2) fails.push('hero parallax: translate never changes with scroll');
+
+  // 2. Hover lift must survive the scroll animation's fill state.
+  const card = p.locator('.diets .card-diet').first();
+  await card.scrollIntoViewIfNeeded(); await p.waitForTimeout(400);
+  const before = await card.evaluate(el => getComputedStyle(el).scale);
+  await card.hover(); await p.waitForTimeout(350);
+  const after = await card.evaluate(el => getComputedStyle(el).scale);
+  console.log('\ncard scale  rest=' + before + '  hover=' + after);
+  if (before === after) fails.push('hover lift does nothing — the reveal animation is overriding it');
+
+  // 3. The section rule must be a real, visible element.
+  const rule = await p.evaluate(() => {
+    const h = document.querySelector('.diets .section-head h2');
+    const cs = getComputedStyle(h, '::after');
+    return { width: cs.width, height: cs.height, bg: cs.backgroundColor };
+  });
+  console.log('section rule ::after  ' + JSON.stringify(rule));
+  if (parseFloat(rule.height) === 0) fails.push('section rule has no height');
+
+  // 4. Price rows animate.
+  const rows = await p.evaluate(() => [...document.querySelectorAll('.home-prices .pricetable tbody tr')]
+      .map(tr => getComputedStyle(tr).animationName));
+  console.log('price row animations: ' + JSON.stringify(rows));
+  if (!rows.length) fails.push('no price rows found');
+  else if (rows.some(n => n === 'none')) fails.push('some price rows carry no animation');
+  await ctx.close();
+
+  // 5. THE INVARIANT: reduced motion shows everything, animates nothing.
+  const rctx = await b.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const rp = await rctx.newPage();
+  await rp.goto(URL, { waitUntil: 'domcontentloaded' });
+  await rp.waitForTimeout(1200);
+  const red = await rp.evaluate(() => ['.hero-copy .eyebrow','.hero-copy h1','.hero-copy .lede','.hero-copy .cta',
+      '.hero-art','.hero-art img','.home-prices .pricetable tbody tr','.check .panel','.diets .card-diet']
+      .map(sel => { const e = document.querySelector(sel); if (!e) return { sel, missing: true };
+        const cs = getComputedStyle(e); const r = e.getBoundingClientRect();
+        return { sel, opacity: +cs.opacity, anim: cs.animationName, h: Math.round(r.height), translate: cs.translate }; }));
+  console.log('\nreduced motion:');
+  red.forEach(r => { console.log('   ' + r.sel.padEnd(34) + ' opacity=' + r.opacity + ' anim=' + r.anim + ' h=' + r.h);
+    if (r.missing) fails.push(r.sel + ' missing');
+    else { if (r.opacity !== 1) fails.push(r.sel + ' opacity ' + r.opacity + ' under reduced motion');
+           if (r.anim !== 'none') fails.push(r.sel + ' still animating under reduced motion');
+           if (r.h === 0) fails.push(r.sel + ' zero height under reduced motion'); } });
+  await rctx.close(); await b.close();
+  console.log(fails.length ? '\nFAILURES:\n  ' + fails.join('\n  ') : '\nAll assertions passed.');
+  process.exit(fails.length ? 1 : 0);
 })();

@@ -155,7 +155,16 @@ recolouring it stops the mark reading as WhatsApp.
   token. `python3 scripts/contrast.py '#RRGGBB' '#RRGGBB'`.
 - **44px minimum touch target**; motion is one subtle tier — 200–400ms,
   ease-out, ≤12px travel, transform and opacity only — and
-  `prefers-reduced-motion` zeroes delays as well as durations.
+  `prefers-reduced-motion` zeroes delays as well as durations. The **home page
+  alone** runs an expressive tier: 400–560ms, 28px, parallax and hover lift
+  (`docs/10` §2.9).
+- **Scroll-driven motion is measured, not guessed.** `entry` percentages play
+  at the viewport's bottom edge where nobody is looking; sweep the range and
+  record the numbers. And three one-word traps, each of which silently does
+  nothing: `overflow: hidden` makes a scroll container and freezes a `view()`
+  timeline (use `clip`); a scroll animation with no `animation-duration` has no
+  progress to map; the `transform` shorthand lets an animation's fill state
+  erase a hover, where `translate`/`scale` compose.
 - **Motion is never the reason content is visible.** Paint the base state and
   add the animation on top; never `opacity: 0` in the base rule revealed by a
   keyframe. A stylesheet that arrives stale then hides the page instead of

@@ -291,39 +291,63 @@ alpha. The wordmark would then render as a *tint* of whatever sits behind it,
 quietly losing the 11.32:1 this document claims for it. Coverage is normalised
 against the darkest pixel present so a solid stroke is genuinely solid.
 
-### 2.9 Home entrance and scroll reveal (2026-08-27)
+### 2.9 Home motion — the expressive tier (2026-08-27)
 
-The public pages ship **no JavaScript** — the CSP would not run an inline
-script — so all of this is CSS.
+The home page ran the subtle tier first and Steven could not see it, which was
+the correct outcome of a 12px/400ms rule. **On the home page only**, travel is
+now 28px and durations 400–560ms. Every other page keeps the subtle tier in §4.
 
-| What | Motion | Duration |
+Still **no JavaScript**. The CSP would permit a same-origin script; nothing here
+needs one, and the home page is the LCP path.
+
+| What | Motion | Driven by |
 | --- | --- | --- |
-| `.hero-copy` children | rise 12px + fade, 60ms apart in reading order | 320ms |
-| `.hero-art img` | fade only, no travel | 400ms |
-| `.home-prices`, `.check`, `.diets` head and cards | rise 12px, **no fade**, on a `view()` scroll timeline | 400ms |
+| `.hero-copy` children | rise 28px + fade, 90ms apart | time, 460ms |
+| `.hero-art` (the frame) | fade | time, 560ms |
+| `.hero-art img` | parallax pan ±3.2% inside a 1.08 scale | scroll, `view()` |
+| price table `tbody tr` | rise 28px, no fade | scroll, `cover 25%..70%` |
+| `.check .panel`, `.diets .card-diet` | rise 28px, no fade | scroll, `cover 25%..70%` |
+| section-head rule | `scaleX` wipe from the left | scroll, `cover 20%..60%` |
+| `.diets .card-diet` hover/focus-within | `scale(1.02)` + deeper shadow | interaction |
 
-All of it sits inside `@media (prefers-reduced-motion: no-preference)`, and the
-scroll reveal additionally inside `@supports (animation-timeline: view())`.
-Measured on 2026-08-27 at 390px: under `prefers-reduced-motion: reduce` the
-rendered page differs from the pre-animation build by **113 pixels out of
-329,160, maximum channel delta 2** — all of it the ribbon shimmer caught at a
-different phase. Reduced motion gets the old page.
+**Not animated, deliberately: the price figures.** A count-up renders a money
+value that is briefly wrong and starts at zero, and this project has already
+shipped `Rp 0` against real prices once. The table reveals by row instead.
 
-**Motion is never the reason content is visible.** The base state is painted
-and the animation is additive, rather than the usual `opacity: 0` base revealed
-by a keyframe. Two reasons, and neither is taste:
+Three things here are one word away from silently not working, and each was
+found by measurement rather than by looking:
 
-1. A stylesheet that arrives stale, or a parse error earlier in the file, turns
-   hidden-by-default into a blank hero. This site has already shipped a week of
-   CSS nobody could see (`impeccable` incident log).
-2. A **scroll-driven** timeline only advances when it is active. Anything it
-   fades from zero is stranded invisible if that timeline never runs — a
-   mis-scoped range, a container that does not scroll, print. That is why the
-   below-fold reveal rises without fading: the worst case is a section sitting
-   12px low, not a section nobody can read.
+- **`overflow: clip`, not `hidden`, on `.hero-art`.** Both crop the oversized
+  image identically, but `hidden` makes the element a scroll container, and
+  `view()` resolves against the nearest scrollport. With `hidden` the image's
+  timeline was measured against a frame that never scrolls: pinned at
+  `currentTime` 49.9967%, parallax frozen at every scroll offset.
+- **A scroll-driven animation needs a non-zero `animation-duration`.**
+  `animation: hero-pan linear both` leaves the shorthand's duration at its
+  initial `0s`, and there is then no progress for a range to map onto.
+- **Individual `translate`/`scale`, not the `transform` shorthand.** A card
+  carries both a scroll reveal and a hover lift; written as `transform` the
+  animation's fill state wins permanently and the hover does nothing at all.
 
-The first draft of this block did fade the below-fold sections, and the
-verification caught all three sitting at `opacity: 0`.
+**Ranges are swept, never guessed.** `entry` percentages play entirely at the
+viewport's bottom edge. Measured at 390×844, card top in px as the motion runs:
+`cover 5%..35%` → 785→616 (invisible), `cover 25%..70%` → 587→336 (the middle
+of the screen). Re-sweep after any change.
+
+**Motion is never the reason content is visible.** Base state painted,
+animation additive, all of it inside `prefers-reduced-motion: no-preference`.
+Anything on a *scroll* timeline moves but never fades: a scroll timeline only
+advances while active, so a faded element would be stranded invisible if the
+range were mis-scoped or the container did not scroll. Time-based animations
+always finish, so those may fade. Measured 2026-08-27 at 390px: under
+`prefers-reduced-motion: reduce` the first viewport differs from the
+pre-animation build by **113 pixels of 329,160, max channel delta 2** — the
+ribbon shimmer at a different phase, nothing else.
+
+The section-head rule is a **static** design element declared outside the motion
+block, so with motion off it is simply present; only its wipe is animated.
+
+`scripts/verify-motion.js` asserts the invariant on every element.
 
 ## 4. Conventions carried in
 
@@ -333,7 +357,8 @@ From `99-steven-preference.md`, applied here:
 - Focus rings always visible; **minimum 44×44px touch targets**.
 - Motion is one subtle tier: 200–400ms, ease-out, ≤12px travel, transform and
   opacity only, and `prefers-reduced-motion` zeroes **delays as well as
-  durations**.
+  durations**. **Exception, home page only (§2.9):** 400–560ms and 28px, plus
+  a scroll-driven parallax and hover lift. Nowhere else.
 - Anything that writes to the server is a button that **disables itself for the
   life of the request** and **confirms before anything irreversible**.
 - Every public page ships the SEO baseline (§13 of the preference file).
