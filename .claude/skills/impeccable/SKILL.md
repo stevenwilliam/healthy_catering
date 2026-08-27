@@ -34,6 +34,10 @@ succeeded at doing nothing.
 
 ## 3. Measure — do not eyeball, and do not argue
 
+**The numbers for this project are in `design.md` beside this file** — fonts,
+palette, every measured contrast ratio, and the rules that are not taste. Read
+it before choosing a colour or a type size, rather than after a review.
+
 - **Contrast is calculated.** Every colour pairing that carries text gets a
   measured ratio, recorded next to the token. `scripts/contrast.py`.
 - **Money is integers.** Whole rupiah in BIGINT, integer arithmetic, explicit

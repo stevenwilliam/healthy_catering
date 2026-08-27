@@ -517,6 +517,12 @@ frontmatter included. It travels with this file on purpose: it is the standard
 of work, and the whole point is that it applies before there is a codebase to
 learn it from.
 
+Beside it, each project keeps its own **`design.md`** in the same folder:
+fonts, palette, and every colour pairing with its MEASURED contrast ratio, plus
+the handful of rules that are not taste. The skill is portable; a brand is not.
+Having the numbers one file away from the standard that demands them is what
+stops "checked the contrast" becoming a thing people say rather than do.
+
 Its rules are not generic advice. Every one was written after the matching bug
 reached a running site on healthy_catering, and the incident log at the end is
 the evidence. **Keep the log.** A rule with its incident attached gets followed;
@@ -559,6 +565,10 @@ succeeded at doing nothing.
   write the test that makes it loud, then fix the instance.
 
 ## 3. Measure — do not eyeball, and do not argue
+
+**The numbers for this project are in `design.md` beside this file** — fonts,
+palette, every measured contrast ratio, and the rules that are not taste. Read
+it before choosing a colour or a type size, rather than after a review.
 
 - **Contrast is calculated.** Every colour pairing that carries text gets a
   measured ratio, recorded next to the token. `scripts/contrast.py`.
@@ -632,4 +642,5 @@ Each rule above earned its place:
 | The burger drawer rendered beige text on the beige sheet | `.masthead a` tied on specificity and sat later than `.nav-drawer a` |
 | Everything below the hero jumped when the photo loaded | intrinsic size hard-coded 800×800 against an 800×533 file |
 | "Clearing this hides the badge" — it did not | `Store.String` returns its default when a value is empty, not only when the row is missing |
+
 ```
