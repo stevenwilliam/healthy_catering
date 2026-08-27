@@ -14,14 +14,14 @@ import (
 )
 
 type Config struct {
-	App      App
-	Database Database
-	Auth     Auth
-	Storage  Storage
-	Mail     Mail
-	WhatsApp WhatsApp
-	Payment  Payment
-	Redis    Redis
+	App       App
+	Database  Database
+	Auth      Auth
+	Storage   Storage
+	Mail      Mail
+	WhatsApp  WhatsApp
+	Payment   Payment
+	Redis     Redis
 	Maps      Maps
 	Locale    Locale
 	Translate Translate

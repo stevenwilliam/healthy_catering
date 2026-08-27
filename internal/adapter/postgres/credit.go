@@ -90,14 +90,14 @@ type BuyPackageParams struct {
 	CustomerID     uuid.UUID
 	CustomerTypeID uuid.UUID
 	Package        Package
-	PriceIDR       int64
-	NormalPriceIDR int64
+	PriceIDR       int64 `gorm:"column:price_idr"`
+	NormalPriceIDR int64 `gorm:"column:normal_price_idr"`
 	IsPromo        bool
 	PromoLabel     string
 	PriceRowID     uuid.UUID
 	PriceTable     string
-	TaxBaseIDR     int64
-	TaxIDR         int64
+	TaxBaseIDR     int64 `gorm:"column:tax_base_idr"`
+	TaxIDR         int64 `gorm:"column:tax_idr"`
 	TaxRateBps     int
 	UseUniqueCode  bool
 	Deadline       time.Time

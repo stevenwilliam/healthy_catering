@@ -11,10 +11,10 @@ import "context"
 
 // PublicMealPrice is one diet type at one quantity tier.
 type PublicMealPrice struct {
-	DietName     string `json:"diet_name"`
-	DietSlug     string `json:"diet_slug"`
-	TierLabel    string `json:"tier_label"`
-	TierMinQty   int    `json:"tier_min_qty"`
+	DietName   string `json:"diet_name"`
+	DietSlug   string `json:"diet_slug"`
+	TierLabel  string `json:"tier_label"`
+	TierMinQty int    `json:"tier_min_qty"`
 	// Explicit column tag, and NOT optional: gorm's NamingStrategy renders
 	// "UnitPriceIDR" as unit_price_id_r, which matches nothing, and a scan
 	// into a column that does not exist does not error — it leaves the field

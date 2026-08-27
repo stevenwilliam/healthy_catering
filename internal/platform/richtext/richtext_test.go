@@ -4,11 +4,11 @@ import "testing"
 
 func TestStripsScriptAndHandlers(t *testing.T) {
 	cases := map[string]string{
-		`<p>hi</p><script>alert(1)</script>`:      `<p>hi</p>`,
-		`<img src=x onerror="alert(1)">`:          ``,
-		`<p onclick="evil()">text</p>`:            `<p>text</p>`,
-		`<a href="javascript:alert(1)">x</a>`:     `x`,
-		`<p style="color:red">x</p>`:              `<p>x</p>`,
+		`<p>hi</p><script>alert(1)</script>`:        `<p>hi</p>`,
+		`<img src=x onerror="alert(1)">`:            ``,
+		`<p onclick="evil()">text</p>`:              `<p>text</p>`,
+		`<a href="javascript:alert(1)">x</a>`:       `x`,
+		`<p style="color:red">x</p>`:                `<p>x</p>`,
 		`<iframe src="https://evil.test"></iframe>`: ``,
 	}
 	for in, want := range cases {

@@ -31,6 +31,10 @@ succeeded at doing nothing.
   renders as the key.
 - Prefer a guard test over vigilance. If a class of silent failure is possible,
   write the test that makes it loud, then fix the instance.
+- **A guard is only as good as its oracle.** Derive it from a source of truth —
+  the migrations, the AST, the schema — never from text that prose can wander
+  into. A check that reads comments will eventually be taught that the bug is
+  fine, by the comment warning about the bug.
 
 ## 3. Measure — do not eyeball, and do not argue
 
@@ -110,3 +114,4 @@ Each rule above earned its place:
 | The burger drawer rendered beige text on the beige sheet | `.masthead a` tied on specificity and sat later than `.nav-drawer a` |
 | Everything below the hero jumped when the photo loaded | intrinsic size hard-coded 800×800 against an 800×533 file |
 | "Clearing this hides the badge" — it did not | `Store.String` returns its default when a value is empty, not only when the row is missing |
+| A guard test for the Rp 0 bug silently stopped guarding it | its oracle read raw file text, so the COMMENT explaining the bug — "renders `UnitPriceIDR` as unit_price_id_r" — was parsed as a valid column name |
