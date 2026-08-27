@@ -604,9 +604,13 @@ main { max-width: 68rem; margin: 0 auto; padding: var(--space-8) var(--space-4);
 .panel p:last-child { margin-bottom: 0; }
 
 /* ── Controls ────────────────────────────────────────────────────────────
- * On the green ground the CTA INVERTS. A deep-green fill measures 2.88
- * against #468973 and would fail 1.4.11 as a control you have to be able to
- * find; a beige fill is 3.93 ✓ and carries deep ink at 11.32 ✓. */
+ * On the ground the CTA INVERTS to a beige fill. The rule was written when
+ * the ground was the MID green, where a deep-green fill measured 2.88 and
+ * would have failed 1.4.11 as a control you have to be able to find, and the
+ * beige fill measured 3.93. Since the 2026-08-18 swap the ground is the DEEP
+ * green: the beige fill now measures 11.32 against it, and a deep-green fill
+ * would be 1.00 — the same colour. The rule stands, for a stronger reason.
+ * Deep ink on the beige fill is 11.32 ✓. */
 .cta {
   display: inline-flex;
   align-items: center;
@@ -997,4 +1001,83 @@ main > section + section { margin-top: var(--space-16); }
 @media (max-width: 30rem) {
   .cert-badges { gap: var(--space-6); }
   .cert-badge { width: 120px; height: 120px; }
+}
+
+
+/* ── Home entrance and scroll reveal ──────────────────────────────────────
+ * One subtle tier, to docs/10 §4: 200–400ms, ease-out, ≤12px travel,
+ * transform and opacity ONLY. No JS on the public pages, so all of this is
+ * CSS — there is no observer to fall back on.
+ *
+ * THE BASE STATE IS VISIBLE AND THE MOTION IS ADDITIVE. Everything below
+ * lives inside `prefers-reduced-motion: no-preference`, so a reader who asks
+ * for no motion gets the page painted normally rather than a page that
+ * happens to look right because an animation finished.
+ *
+ * That direction is deliberate and it is not stylistic. An entrance built the
+ * usual way — opacity:0 in the base rule, revealed by a keyframe — hides the
+ * hero whenever the keyframe does not run: a stylesheet that arrived stale, a
+ * parse error earlier in the file, an engine that skips the property. This
+ * site has already shipped a week of CSS nobody could see (incident log), and
+ * the failure mode of THAT combined with hidden-by-default is a blank page.
+ * Written this way the worst case is "no animation", never "no content".
+ *
+ * Travel is 12px, the cap, and it is translate3d so the compositor handles it
+ * without a layout pass. Nothing here animates a property that reflows.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes home-rise {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes home-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* The hero copy arrives in reading order. 60ms apart: enough to read as a
+     sequence, short enough that the CTA is present within 380ms of paint. */
+  .hero-copy > * { animation: home-rise 320ms var(--ease) both; }
+  .hero-copy > :nth-child(2) { animation-delay: 60ms; }
+  .hero-copy > :nth-child(3) { animation-delay: 120ms; }
+  .hero-copy > :nth-child(4) { animation-delay: 180ms; }
+
+  /* The photograph FADES only — no travel. It is the LCP element and the one
+     thing on the page with a reserved box; moving it is the one motion a
+     reader would read as the layout still settling, which is exactly the
+     impression the measured width/height exist to prevent. */
+  .hero-art img { animation: home-fade 400ms var(--ease) both; }
+
+  /* Below the fold, tie the reveal to the scroll position rather than to a
+     timer, so a section animates when it is actually looked at. Scroll-driven
+     timelines are progressive enhancement: where `view()` is unsupported the
+     @supports block never applies and the sections are simply present.
+
+     THIS ONE RISES WITHOUT FADING, and that is the whole point. A time-based
+     entrance always reaches its end state — the clock runs whatever happens.
+     A scroll-driven one only advances if its timeline is active, so anything
+     it fades from zero is stranded invisible when that timeline is not: a
+     browser that reports `view()` and mis-scopes the range, a container that
+     turns out not to scroll, a print stylesheet. Fading below-fold content
+     from 0 would have broken the rule this whole block is written to keep —
+     worst case "no animation", never "no content". Transform only, so the
+     worst case here is a section sitting 12px low.
+
+     Each diet card carries its own timeline, so the stagger is a consequence
+     of where the cards are rather than hand-written delays that drift when
+     one is added. */
+  @keyframes home-lift {
+    from { transform: translate3d(0, 12px, 0); }
+    to   { transform: none; }
+  }
+  @supports (animation-timeline: view()) {
+    .home-prices,
+    .check,
+    .diets .section-head,
+    .diets .card-diet {
+      animation: home-lift 400ms var(--ease) both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 55%;
+    }
+  }
 }

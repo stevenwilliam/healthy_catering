@@ -153,8 +153,15 @@ recolouring it stops the mark reading as WhatsApp.
   `aria-checked`.
 - **AA is the floor, and contrast is calculated.** State the ratio next to the
   token. `python3 scripts/contrast.py '#RRGGBB' '#RRGGBB'`.
-- **44px minimum touch target**; motion is one subtle tier and
+- **44px minimum touch target**; motion is one subtle tier — 200–400ms,
+  ease-out, ≤12px travel, transform and opacity only — and
   `prefers-reduced-motion` zeroes delays as well as durations.
+- **Motion is never the reason content is visible.** Paint the base state and
+  add the animation on top; never `opacity: 0` in the base rule revealed by a
+  keyframe. A stylesheet that arrives stale then hides the page instead of
+  merely failing to animate it. This binds twice as hard for a scroll-driven
+  timeline, which only advances while it is active: a `view()` reveal may move
+  content, never fade it in from zero. See `docs/10-design-system.md` §2.9.
 - Mobile-first, designed at 360px.
 
 ---

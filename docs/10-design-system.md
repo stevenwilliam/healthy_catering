@@ -291,6 +291,40 @@ alpha. The wordmark would then render as a *tint* of whatever sits behind it,
 quietly losing the 11.32:1 this document claims for it. Coverage is normalised
 against the darkest pixel present so a solid stroke is genuinely solid.
 
+### 2.9 Home entrance and scroll reveal (2026-08-27)
+
+The public pages ship **no JavaScript** — the CSP would not run an inline
+script — so all of this is CSS.
+
+| What | Motion | Duration |
+| --- | --- | --- |
+| `.hero-copy` children | rise 12px + fade, 60ms apart in reading order | 320ms |
+| `.hero-art img` | fade only, no travel | 400ms |
+| `.home-prices`, `.check`, `.diets` head and cards | rise 12px, **no fade**, on a `view()` scroll timeline | 400ms |
+
+All of it sits inside `@media (prefers-reduced-motion: no-preference)`, and the
+scroll reveal additionally inside `@supports (animation-timeline: view())`.
+Measured on 2026-08-27 at 390px: under `prefers-reduced-motion: reduce` the
+rendered page differs from the pre-animation build by **113 pixels out of
+329,160, maximum channel delta 2** — all of it the ribbon shimmer caught at a
+different phase. Reduced motion gets the old page.
+
+**Motion is never the reason content is visible.** The base state is painted
+and the animation is additive, rather than the usual `opacity: 0` base revealed
+by a keyframe. Two reasons, and neither is taste:
+
+1. A stylesheet that arrives stale, or a parse error earlier in the file, turns
+   hidden-by-default into a blank hero. This site has already shipped a week of
+   CSS nobody could see (`impeccable` incident log).
+2. A **scroll-driven** timeline only advances when it is active. Anything it
+   fades from zero is stranded invisible if that timeline never runs — a
+   mis-scoped range, a container that does not scroll, print. That is why the
+   below-fold reveal rises without fading: the worst case is a section sitting
+   12px low, not a section nobody can read.
+
+The first draft of this block did fade the below-fold sections, and the
+verification caught all three sitting at `opacity: 0`.
+
 ## 4. Conventions carried in
 
 From `99-steven-preference.md`, applied here:

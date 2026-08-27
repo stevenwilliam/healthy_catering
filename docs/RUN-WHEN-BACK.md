@@ -3,7 +3,8 @@
 Steps needing an interactive terminal, a browser, or credentials that do not
 exist yet. Use `vi` for any edits.
 
-_Updated: 2026-08-18 — §A added (the site is still unreachable from your PC)._
+_Updated: 2026-08-27 — §A3 superseded (Chrome works; the 1.49.1 package was the
+problem), §A4 added (restart to refresh `assetVersion`)._
 
 ## A. One command — this is why you still cannot open the site · DO THIS FIRST
 
@@ -83,31 +84,59 @@ TRANSLATE_API_KEY='...'
 
 Billable per character; see `docs/11` §6.
 
-## A3. Chrome on this box is broken
+## A3. Chrome works again — here is the invocation that works
 
-Headless Chrome worked for the first half of 2026-08-18 and then stopped. It
-now times out on every URL including `about:blank`, and with `--single-process`
-it core-dumps outright:
+**Superseded 2026-08-27.** This section said headless Chrome timed out on every
+URL and that "both Playwright builds under `~/.cache/ms-playwright/` fail
+identically". That is no longer true, and the second half was never quite the
+whole story: it is the **npm package**, not the browser, that decides which
+build gets driven, and there are two of those cached.
 
-```
-Trace/breakpoint trap (core dumped)   ... exit=133
-```
+- `~/.npm/_npx/f0a362733743bae2` is Playwright **1.49.1** — this one hangs at
+  `chromium.launch()` and never returns. It is almost certainly what was being
+  reached when this section was written.
+- `~/.npm/_npx/e41f203b7505f1fb` is Playwright **1.62.1** — this one launches,
+  navigates, and screenshots. Verified on 2026-08-27 against the running site.
 
-dbus errors are in the log but they were there when it worked, so they are
-probably not the cause. Both Playwright builds under
-`~/.cache/ms-playwright/` fail identically, which points at something in the
-environment rather than at one binary.
-
-The consequence is on the record in the commits: several UI changes since then
-were verified from served HTML and calculated contrast, **not by eye**, which
-is weaker than CLAUDE.md §6 requires. Worth fixing before the next visual pass:
+So point `NODE_PATH` at the working one:
 
 ```bash
-# A quick first look
-/home/dev/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome \
-  --headless=new --no-sandbox --dump-dom about:blank
-dmesg | tail -30        # the core dump should say what died
+export NODE_PATH=/home/dev/.npm/_npx/e41f203b7505f1fb/node_modules
+node -e "const{chromium}=require('playwright');(async()=>{const b=await chromium.launch();
+  const p=await b.newPage({viewport:{width:390,height:844}});
+  await p.goto('http://127.0.0.1:8090/',{waitUntil:'domcontentloaded'});
+  await p.waitForTimeout(1500); await p.screenshot({path:'/tmp/home.png'}); await b.close();})()"
 ```
+
+The CLI form also works and needs no NODE_PATH:
+
+```bash
+npx --no-install playwright screenshot --viewport-size=390,844 \
+    --wait-for-timeout=1500 http://127.0.0.1:8090/ /tmp/home.png
+```
+
+Two things follow. **Visual work can be verified by eye again**, which is what
+CLAUDE.md §6 requires and what several changes went without. And `waitUntil:
+'networkidle'` hangs on this site — use `domcontentloaded` plus a fixed wait;
+that behaviour is what made the failure look like a broken browser.
+
+## A4. Restart the service after a CSS or template change
+
+`assetVersion` is computed **once per process** (`sync.OnceValue`), so editing
+`web/public/css/public.css` changes the bytes nginx serves but NOT the `?v=`
+the templates emit. A first-time visitor sees the change immediately; a
+returning visitor keeps their cached copy until nginx's one-hour
+`must-revalidate` window lapses.
+
+This session cannot restart the unit — it needs interactive authentication:
+
+```bash
+sudo systemctl restart evermore
+curl -s http://127.0.0.1:8090/ | grep -oE 'public\.css\?v=[a-z0-9]+'
+```
+
+The fingerprint should differ from `q95cuvfac046`, which is what it was serving
+when the home-screen animation was added on 2026-08-27.
 
 ## B. Re-take the signed-in screenshots
 
