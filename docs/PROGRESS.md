@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 Everything marked ✅ below was **run**, not just written. Where something was
 written but not executed, it is 🟡 and says what is missing.
 
-_Last updated: 2026-08-13, end of the first build session._
+_Last updated: 2026-08-27 — impeccable audit + polish pass._
 
 ---
 
@@ -18,7 +18,7 @@ _Last updated: 2026-08-13, end of the first build session._
 | Service | `systemd` unit `evermore`, enabled, survives restart |
 | API bind | `127.0.0.1` only — **verified unreachable from the LAN** |
 | Secrets | `/etc/evermore/evermore.env`, `root:dev`, mode 640 |
-| Database | PostgreSQL 18.4 + PostGIS 3.6, 13 migrations applied |
+| Database | PostgreSQL 18.4 + PostGIS 3.6, **30** migrations on disk (0001–0030), each with its `.down.sql` |
 | ruuma | untouched — still owns `:80 default_server` |
 
 ## M0 — Definition ✅
@@ -34,8 +34,10 @@ PostgreSQL 18 + PostGIS + btree_gist + citext, Redis satellite, `.env`,
 self-hosted Erode and Inter with their licences.
 
 ## M2 — Schema ✅
-Migrations 0001–0013, up **and** down, applied and re-applied on a clean
-database. Constraints proved by direct SQL, not assumed: price overlap,
+Migrations 0001–0030, up **and** down. 0001–0013 were applied and re-applied
+on a clean database in the first session; 0014–0030 have been applied to the
+development database but the clean-database round trip has **not** been re-run
+since — see `RUN-WHEN-BACK.md`. Constraints proved by direct SQL, not assumed: price overlap,
 capacity oversell, append-only ledger and audit, sign checks, the 15-minute
 grid.
 
@@ -243,8 +245,20 @@ hero with a picture on the right, its source a `sys_parameters` row (migration
 
 ## M14 — Security suite ✅
 Injection, oversell, constraint-as-last-line, append-only, price overlap,
-order reconciliation (8 orders), no negative balances, one REDEEM per delivery.
-Runs against a real database; skips loudly without one.
+order reconciliation, no negative balances, one REDEEM per delivery, plus the
+MFA suite (challenge token is not a session, TOTP not spendable twice
+concurrently, recovery code consumed exactly once, secret not stored in
+plaintext).
+
+**Re-run 2026-08-27 against the live development database: 14 tests, all pass**
+(`TestEveryOrderReconciles` reconciled 12 orders). Runs against a real database
+and skips loudly without one — which means **`go test ./...` on its own is
+green without proving any of it**. To actually earn this ✅:
+
+```
+TEST_DATABASE_URL="$(grep -oE '^DATABASE_URL=.*' /home/dev/projects/healthy_catering/.env | cut -d= -f2-)" \
+  /usr/local/go/bin/go test -count=1 ./test/security/...
+```
 
 ## M15 — Deployment ✅ (development server)
 systemd + nginx + hardened unit + first-run admin. Handbook at `14`.
