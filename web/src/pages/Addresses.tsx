@@ -87,7 +87,7 @@ export default function Addresses() {
             <li key={a.ID} className="card">
               <h2 className="text-lg">{a.Label}</h2>
               <p className="text-sm">{a.RecipientName} · {a.RecipientPhone}</p>
-              <p className="text-sm text-ink-muted">{a.AddressLine}, {a.District} {a.City}</p>
+              <p className="text-sm text-beige-deep">{a.AddressLine}, {a.District} {a.City}</p>
               {a.DriverNote && <p className="text-sm mt-1">{t('addresses.note_label')}: {a.DriverNote}</p>}
             </li>
           ))}
@@ -99,7 +99,7 @@ export default function Addresses() {
       {/* Google Maps is not wired yet (blocked on the API keys), so the pin is
           entered as coordinates for now. The rule is unchanged: no pin, no
           address — the pin is what we route by. */}
-      <p className="mb-4 text-sm text-ink-muted max-w-prose">
+      <p className="mb-4 text-sm text-beige-deep max-w-prose">
         Titik peta wajib diisi. Kami mengantar berdasarkan titik ini, bukan teks alamat.
         Pemilih peta menyusul setelah kunci Google Maps tersedia.
       </p>

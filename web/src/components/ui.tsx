@@ -45,7 +45,7 @@ export function SearchBox({
   )
 }
 
-/** Button that disables itself for the life of the request (docs/10 §4).
+/** Button that disables itself for the life of the request (docs/10 §5).
  *
  * A double-tapped checkout is the classic way to create two orders; the
  * Idempotency-Key on the API is the real defence and this is the first one.
@@ -76,7 +76,7 @@ export function Disabled({ reason, children }: { reason: string; children: React
   return (
     <span className="inline-flex flex-col gap-1">
       {children}
-      <span className="text-xs text-ink-muted">{reason}</span>
+      <span className="text-xs text-beige-deep">{reason}</span>
     </span>
   )
 }
@@ -92,7 +92,7 @@ export function State({
   children: ReactNode
 }) {
   const t = useT()
-  if (loading) return <p className="text-ink-muted py-8">{t('ui.loading')}</p>
+  if (loading) return <p className="text-beige-deep py-8">{t('ui.loading')}</p>
   if (error) {
     return (
       <p role="alert" className="error py-8">
@@ -100,7 +100,7 @@ export function State({
       </p>
     )
   }
-  if (empty) return <p className="text-ink-muted py-8">{emptyText ?? t('ui.empty')}</p>
+  if (empty) return <p className="text-beige-deep py-8">{emptyText ?? t('ui.empty')}</p>
   return <>{children}</>
 }
 
@@ -121,7 +121,7 @@ export function Money({ formatted, amount }: { formatted?: string; amount?: numb
   return <span className="tabular-nums">Rp {(amount ?? 0).toLocaleString('id-ID')}</span>
 }
 
-/** Confirm before anything irreversible (docs/10 §4). */
+/** Confirm before anything irreversible (docs/10 §5). */
 export function ConfirmButton({
   label, question, onConfirm, className,
 }: {
@@ -209,7 +209,7 @@ export function CopyButton({
         {label ?? t('ui.copy')}
       </button>
       {/* Announced, so the confirmation is not colour-only (99 §8). */}
-      <span role="status" aria-live="polite" className="text-xs text-ink-muted">
+      <span role="status" aria-live="polite" className="text-xs text-beige-deep">
         {state === 'ok' && t('ui.copied')}
         {state === 'fail' && t('ui.copy_failed')}
       </span>

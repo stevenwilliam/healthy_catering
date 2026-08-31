@@ -71,7 +71,7 @@ export default function Packages() {
                     <span className="badge">{p.status}</span>
                     <span>{p.remaining_credits} / {p.purchased_credits} {t('packages.credits')}</span>
                     {p.expires_at && (
-                      <span className="text-sm text-ink-muted">{t('packages.valid_until')} {p.expires_at}</span>
+                      <span className="text-sm text-beige-deep">{t('packages.valid_until')} {p.expires_at}</span>
                     )}
                     <button className="btn-ghost ml-auto" onClick={() => showLedger(p.id)}>
                       {t('packages.ledger')}
@@ -85,7 +85,7 @@ export default function Packages() {
                     <table className="mt-4 w-full text-sm">
                       <caption className="sr-only">{t('packages.ledger')} — {p.package_name}</caption>
                       <thead>
-                        <tr className="text-left border-b border-nourish-deep/30">
+                        <tr className="text-left border-b border-edge">
                           <th scope="col" className="py-1">{t('packages.col_time')}</th>
                           <th scope="col">{t('packages.col_type')}</th>
                           <th scope="col" className="text-right">{t('packages.col_change')}</th>
@@ -95,12 +95,12 @@ export default function Packages() {
                       </thead>
                       <tbody>
                         {ledger[p.id]!.map((e, i) => (
-                          <tr key={i} className="border-b border-nourish-deep/10">
+                          <tr key={i} className="border-b border-rule">
                             <td className="py-1">{e.occurred_at.slice(0, 16)}</td>
                             <td>{e.entry_type}</td>
                             <td className="text-right tabular-nums">{e.qty > 0 ? `+${e.qty}` : e.qty}</td>
                             <td className="text-right tabular-nums">{e.running_balance}</td>
-                            <td className="text-ink-muted">{e.note}</td>
+                            <td className="text-beige-deep">{e.note}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -118,7 +118,7 @@ export default function Packages() {
           {available.map((p) => (
             <li key={p.id} className="card">
               <h3 className="text-lg">{p.name}</h3>
-              <p className="text-sm text-ink-muted mb-2">{p.description}</p>
+              <p className="text-sm text-beige-deep mb-2">{p.description}</p>
               <p className="text-sm mb-3">
                 {p.meal_credits} {t('packages.credits')}
               </p>
@@ -131,7 +131,7 @@ export default function Packages() {
 
         {/* D-31 stated where a customer will actually read it, not only in the
             terms page they never open. */}
-        <p className="mt-6 text-sm text-ink-muted max-w-prose">
+        <p className="mt-6 text-sm text-beige-deep max-w-prose">
           Satu kredit berlaku untuk satu paket makan, berapa pun jumlah lauknya.
           Masa aktif dimulai saat pembayaran kami konfirmasi. Kredit yang tidak
           terpakai hangus saat masa aktif berakhir dan tidak dapat diuangkan.

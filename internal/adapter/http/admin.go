@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -181,6 +182,31 @@ func registerAdmin(g *gin.RouterGroup, d Deps) {
 			return
 		}
 		OK(c, http.StatusOK, page)
+	})
+
+	// ── Kitchens & coverage (docs/10 §4.10, artboards S1 and S5) ────────────
+	//
+	// One call feeds both the dashboard's capacity grid and the coverage
+	// screen's slot panel, so the two cannot disagree about how full a slot
+	// is. ?date= is a BUSINESS calendar date; absent, it is today in the
+	// operating timezone, resolved explicitly and never from the server's
+	// local clock (CLAUDE.md §10).
+	admin.GET("/kitchens", RequirePermission(security.PermScheduleRead), func(c *gin.Context) {
+		on := c.Query("date")
+		if on == "" {
+			on = time.Now().In(tzOf(d)).Format("2006-01-02")
+		} else if _, err := time.Parse("2006-01-02", on); err != nil {
+			// Reject, never silently repair (CLAUDE.md §4).
+			Fail(c, apierror.Validation("That date is not valid.",
+				map[string]any{"date": "must be YYYY-MM-DD"}))
+			return
+		}
+		rows, err := d.Admin.KitchenOverview(c.Request.Context(), on)
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		OK(c, http.StatusOK, rows)
 	})
 
 	// ── Delivery slots ──────────────────────────────────────────────────────

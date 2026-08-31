@@ -61,11 +61,11 @@ export default function OrderDetail() {
               <p className="mb-2">{t('order.transfer_exactly')}</p>
               <p className="text-2xl font-display mb-3">{order.payment_amount}</p>
               {/* The suffix only works if customers do not round it. */}
-              <p className="text-sm text-ink-muted mb-4 max-w-prose">
+              <p className="text-sm text-beige-deep mb-4 max-w-prose">
                 {t('order.unique_code_note')}
               </p>
               <div className="mb-4">
-                <p className="text-sm text-ink-muted">{t('order.bank')} {order.bank_name}</p>
+                <p className="text-sm text-beige-deep">{t('order.bank')} {order.bank_name}</p>
                 {/* The account number is the field customers mistype, so it is
                     set large, spaced, and copyable rather than buried in a
                     sentence. */}
@@ -81,7 +81,7 @@ export default function OrderDetail() {
               <label className="label" htmlFor="proof">{t('order.upload_proof')}</label>
               <input id="proof" ref={fileRef} type="file" className="field mb-3"
                      accept="image/jpeg,image/png,image/webp,application/pdf" />
-              <p className="text-xs text-ink-muted mb-3">{t('order.proof_formats')}</p>
+              <p className="text-xs text-beige-deep mb-3">{t('order.proof_formats')}</p>
               <SubmitButton pending={uploading} type="button" onClick={upload}>
                 {t('order.send_proof')}
               </SubmitButton>
@@ -95,7 +95,7 @@ export default function OrderDetail() {
               {order.lines.map((l) => (
                 <li key={l.line_no} className="card">
                   <p className="font-medium">{l.meal?.name ?? t('orders.package')}</p>
-                  {l.service_date && <p className="text-sm text-ink-muted">{l.service_date}</p>}
+                  {l.service_date && <p className="text-sm text-beige-deep">{l.service_date}</p>}
                   <p className="text-sm">{l.qty} × {l.unit_price} = {l.line_total}</p>
                 </li>
               ))}
@@ -111,7 +111,7 @@ export default function OrderDetail() {
                   <li key={d.id} className="card flex flex-wrap gap-3 items-center">
                     <span>{d.service_date} · {d.slot}</span>
                     <span className="badge">{d.status}</span>
-                    {d.kitchen && <span className="text-sm text-ink-muted">{d.kitchen}</span>}
+                    {d.kitchen && <span className="text-sm text-beige-deep">{d.kitchen}</span>}
                   </li>
                 ))}
               </ul>

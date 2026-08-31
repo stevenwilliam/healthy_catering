@@ -152,7 +152,7 @@ export default function AdminContent() {
   return (
     <div>
       <h1 className="text-3xl mb-2">{t('content.title')}</h1>
-      <p className="text-sm text-ink-muted mb-4 max-w-prose">{t('content.intro')}</p>
+      <p className="text-sm text-beige-deep mb-4 max-w-prose">{t('content.intro')}</p>
 
       {/* Whether the machine is on is the first thing an editor needs to know:
           it decides whether they must type the English themselves. */}
@@ -163,7 +163,7 @@ export default function AdminContent() {
               ? `${t('content.auto_on')} · ${data.translator.provider}`
               : t('content.auto_off')}
           </span>
-          <span className="text-sm text-ink-muted max-w-prose">
+          <span className="text-sm text-beige-deep max-w-prose">
             {data.translator.available ? t('content.auto_on_hint') : t('content.auto_off_hint')}
           </span>
           {data.translator.available && (
@@ -192,7 +192,7 @@ export default function AdminContent() {
         <ul className="grid gap-4">
           {entries.map((e) => (
             <li key={e.key} className="card">
-              <code className="text-xs text-ink-muted">{e.key}</code>
+              <code className="text-xs text-beige-deep">{e.key}</code>
 
               {/* Source */}
               <div className="mt-2">
@@ -291,7 +291,7 @@ export default function AdminContent() {
                         )}
                       </div>
                       {tr.empty && (
-                        <p className="mt-1 text-xs text-ink-muted">{t('content.empty_hint')}</p>
+                        <p className="mt-1 text-xs text-beige-deep">{t('content.empty_hint')}</p>
                       )}
                     </div>
                   )

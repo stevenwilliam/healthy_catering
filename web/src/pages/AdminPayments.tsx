@@ -62,7 +62,7 @@ export default function AdminPayments() {
       <h1 className="text-3xl mb-2">{t('pay.title')}</h1>
       {/* Oldest first: the customer who has waited longest is the one about to
           telephone. */}
-      <p className="text-sm text-ink-muted mb-6">{t('pay.oldest_first')}</p>
+      <p className="text-sm text-beige-deep mb-6">{t('pay.oldest_first')}</p>
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="grow"><SearchBox value={q} onChange={setQ} placeholder={t('pay.search_placeholder')}
@@ -78,10 +78,10 @@ export default function AdminPayments() {
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="font-display text-lg">{p.order_code}</span>
                 <span>{p.customer_name}</span>
-                <span className="text-sm text-ink-muted">{p.customer_email}</span>
+                <span className="text-sm text-beige-deep">{p.customer_email}</span>
                 <span className="ml-auto text-lg tabular-nums">{p.expected_amount}</span>
               </div>
-              <p className="text-sm text-ink-muted mt-1">
+              <p className="text-sm text-beige-deep mt-1">
                 {p.bank_name} · {t('pay.waiting')} {p.waiting_minutes} {t('pay.minutes')} ·{' '}
                 {p.proof_count} {t('pay.proofs')}
                 {p.unique_code ? ` · ${t('pay.unique_code')} ${p.unique_code}` : ''}

@@ -38,38 +38,213 @@
   h3 { @apply text-xl; font-weight: 600; }
   strong, b { font-weight: 600; }
 
-  /* Focus is always visible (docs/10 §4). Never remove an outline without a
-     replacement that measures at least 3:1 against its surroundings. The
-     offset colour is the sheet, because that is what the app's controls
-     actually sit on. */
+  /* Focus is always visible (docs/10 §5). Never remove an outline without a
+     replacement that measures at least 3:1 against its surroundings.
+     2026-08-31: the app came off its single beige sheet onto the deep ground
+     (docs/10 §4.10), and this ring came with it. A deep-green ring is 2.88
+     against the ground — it was legal only while every control stood on
+     beige. Beige on the ground is 11.32. Controls that still sit on a light
+     surface (the rich-text editor, the language menu) re-invert it below. */
   :focus-visible {
-    @apply outline-none ring-2 ring-nourish-deep ring-offset-2 ring-offset-sheet;
+    @apply outline-none ring-2 ring-beige ring-offset-2;
+    --tw-ring-offset-color: var(--canvas);
+  }
+  /* Inside a beige sheet the ground-coloured ring is the correct one again. */
+  /* Every light surface in the app, named once. `.rich` is the content
+     editor and `.langpick-list` the language menu — both are beige sheets
+     floating on the ground, so a beige focus ring would vanish on them. */
+  :where(.sheet, .on-sheet, .rich, .langpick-list) :focus-visible,
+  :where(.rich-area):focus-visible {
+    @apply ring-nourish-deep;
+    --tw-ring-offset-color: var(--sheet);
   }
 }
 
 @layer components {
-  /* Every interactive control clears the 44px touch target. */
+  /* ══ The component layer — docs/10 §4 ═════════════════════════════════════
+   * Read off the "Evermore Mockups" canvas (2026-08-31). The app used to
+   * render every screen inside one beige sheet, so its controls were specced
+   * deep-on-light; the canvas puts them on the deep ground, which inverts the
+   * primary button and re-colours every border and focus ring.
+   *
+   * FOUR of the canvas's own pairings fail AA and ship altered — docs/10 §4.1
+   * is the record, and each substitution is repeated at its class below so it
+   * cannot be "tidied" back by someone reading only this file.
+   */
+
+  /* The kicker (§4.4) — above almost every heading, inside every tile. A
+     label, never a heading element. */
+  .kicker {
+    @apply text-xs font-bold uppercase text-beige-deep;
+    letter-spacing: var(--kicker-track);
+  }
+  .kicker-emph { @apply kicker text-ember-light; }   /* 7.27 on the ground ✓ */
+  .kicker-info { @apply kicker text-ocean-light; }   /* 8.15 ✓ */
+  .kicker-warn { @apply kicker text-berry-light; }   /* 3.33 — LARGE/UI ONLY */
+
+  /* ── Buttons (§4.2). Every one is a full pill and clears 44px. ─────────── */
   .btn {
     @apply inline-flex items-center justify-center gap-2 min-h-touch px-6
-           rounded-full font-semibold transition-transform duration-200
+           rounded-full font-bold transition-transform duration-200
            disabled:opacity-60 disabled:cursor-not-allowed;
   }
-  .btn-primary { @apply btn bg-nourish-deep text-beige hover:-translate-y-0.5; }
-  .btn-ghost   { @apply btn border border-nourish-deep/60 text-ink hover:bg-nourish-deep/5; }
-  .btn-danger  { @apply btn bg-berry-deep text-beige; }
+  /* The CTA is BEIGE on the ground, not deep green: the fill is 11.32 against
+     the ground and the ink is 11.32 on the fill. The old deep-green fill was
+     correct only while it stood on a beige sheet. */
+  .btn-primary { @apply btn bg-beige text-nourish-deep hover:-translate-y-0.5; }
+  /* 2px, not 1px: a 1px beige outline reads as a hairline over the drifting
+     produce background (§2.8). */
+  .btn-ghost   { @apply btn border-2 border-beige text-beige hover:bg-beige/10; }
+  .btn-danger  { @apply btn border-2 border-berry-light text-beige hover:bg-berry-light/10; }
+  /* Quiet lives INSIDE a framed panel, where the mid green is a legal rule. */
+  /* The canvas draws this at 40px. 44 is the floor (docs/10 §5) and it wins. */
+  .btn-quiet   { @apply btn border-2 border-rule px-4 text-beige-deep hover:bg-beige/5; }
+  .btn-icon    { @apply inline-flex h-touch w-touch items-center justify-center
+                        rounded-full bg-beige font-bold text-nourish-deep; }
+  .btn-block   { @apply w-full min-h-bar; }
 
-  .card { @apply bg-white border border-nourish-deep/60 rounded-xl p-5 shadow-sm; }
+  /* ── Surfaces ─────────────────────────────────────────────────────────────
+     A panel is a frame on the ground, not a filled card. Its border is --edge
+     (6.47) because the frame is the only thing separating it from the page. */
+  .panel      { @apply rounded-lg border border-edge; }
+  .panel-head { @apply flex items-baseline justify-between gap-4 border-b
+                       border-edge px-5 py-4 font-display text-xl font-semibold; }
+  .panel-body { @apply p-5; }
+  /* A card on the ground: rounder, and ruled rather than framed, because it
+     sits inside a panel or a grid that already carries the edge. */
+  .card { @apply rounded-panel border border-rule p-5; }
+  /* Where a light surface is genuinely wanted — a menu, the rich-text editor,
+     a print artifact. `.on-sheet` also re-inverts the focus ring, above. */
+  .sheet { @apply rounded-lg bg-sheet text-ink shadow-lift; }
 
-  .field { @apply block w-full min-h-touch rounded-lg border border-nourish-deep/60
-                  bg-white px-3 py-2 text-ink placeholder:text-ink-muted/70; }
-  .label { @apply block text-sm font-semibold mb-1; }
+  /* ── Form controls ────────────────────────────────────────────────────────
+     border-edge, not border-rule: this border IS the control's boundary, and
+     the mid green is 2.88 against the ground (§4.1 #3). */
+  .field {
+    @apply block w-full min-h-touch rounded border border-edge bg-transparent
+           px-4 py-2 text-beige placeholder:text-beige-deep;
+    /* The parts of a date picker or a select the page cannot style — the
+       calendar glyph, the spinner, the native dropdown — are painted by the
+       browser from color-scheme. Left at `light` they render dark-on-light
+       against a deep-green field, which is where the calendar icon on the
+       pricing and production screens was nearly invisible. */
+    color-scheme: dark;
+  }
+  .label { @apply kicker mb-2 block; }
 
   /* An error is announced, not just coloured — colour is never the only
-     signal (99 §8). */
-  .error { @apply text-berry-deep text-sm mt-1; }
+     signal (99 §8). On the ground the ink is the LIGHT berry: #91253D is 1.44
+     here and would be unreadable. 3.33 is large-text-only, so the class also
+     sets the size that makes it legal. */
+  .error { @apply mt-1 text-lg font-bold text-berry-light; }
 
-  .badge { @apply inline-flex items-center rounded-full border border-nourish-deep/60
-                  bg-beige px-3 py-1 text-xs font-semibold; }
+  /* ── Callouts (§4.5). One pattern, three voices. Beige body text measures
+     9.29 / 9.61 / 10.57 on the three tints. ─────────────────────────────── */
+  .note {
+    @apply rounded px-4 py-3 text-sm leading-snug text-beige;
+    border-left: var(--note-rule) solid transparent;
+  }
+  .note-info { @apply note; border-left-color: var(--blue-light);
+               background: var(--note-info-tint); }
+  .note-emph { @apply note; border-left-color: var(--orange-light);
+               background: var(--note-emph-tint); }
+  .note-warn { @apply note; border-left-color: var(--berry-light);
+               background: var(--note-warn-tint); }
+
+  /* ── Status pills (§4.8) ──────────────────────────────────────────────── */
+  /* whitespace-nowrap is load-bearing: inside a narrow grid cell a
+     "40 / 40" pill broke onto three lines and read as a stack of
+     numbers rather than one token. */
+  .pill { @apply inline-flex items-center whitespace-nowrap rounded-full px-3 py-1
+                 text-xs font-bold; }
+  .pill-ok       { @apply pill bg-beige text-nourish-deep; }        /* 11.32 ✓ */
+  .pill-emph     { @apply pill bg-ember-light text-nourish-deep; }  /*  7.27 ✓ */
+  .pill-info     { @apply pill bg-ocean-light text-nourish-deep; }  /*  8.15 ✓ */
+  .pill-archived { @apply pill border border-edge text-beige-deep; }/*  6.47 ✓ */
+  /* §4.1 #1 and #2. The canvas draws this as a #CC6883 fill, which is 3.40
+     with beige ink and 3.33 with deep — and the text is 13px, so neither is
+     large text. Berry DEEP reaches 7.89. That fill is in turn only 1.44
+     against the ground, so it wears a #CC6883 ring (3.33 ✓) to have an edge.
+     Do not "simplify" this back to one colour. */
+  .pill-full {
+    @apply pill border text-beige;
+    background: var(--pill-full-fill);
+    border-color: var(--pill-full-ring);
+  }
+
+  /* ── Chips — the segmented filter (§4.9) ──────────────────────────────── */
+  .chip {
+    @apply inline-flex items-center justify-center rounded-full min-h-touch
+           px-5 text-sm transition-colors;
+  }
+  .chip-on  { @apply chip bg-beige font-bold text-nourish-deep; }
+  /* border-edge: this is the chip's only boundary (§4.1 #3). */
+  .chip-off { @apply chip border border-edge font-medium text-beige hover:bg-beige/10; }
+
+  /* ── Framed data grid (§4.6) ──────────────────────────────────────────────
+     CSS grid inside an --edge frame. Row separators are the mid green, which
+     is its LEGAL use: a rule between two already-filled areas. */
+  .gtable      { @apply overflow-hidden rounded-lg border border-edge; }
+  .gtable-head { @apply kicker border-b border-edge px-4 py-3; }
+  .gtable-cell { @apply border-b border-rule px-4 py-3 text-sm; }
+  /* .is-last ONLY. `:last-child` looks right and is wrong: in a CSS grid
+     the cells of one row are siblings, so it matched the last CELL of
+     every row — the last COLUMN — and every row rule stopped short of
+     the frame's right edge. The last ROW is not a structural position
+     the selector can see; the component has to say which it is. */
+  .gtable-cell.is-last { @apply border-b-0; }
+  /* §4.1 #4. The canvas fills the selected row #468973, which leaves its 15px
+     text at 3.93. This tint leaves it at 8.43 and the rule carries the state
+     without relying on colour alone. */
+  .gtable-row-selected {
+    background: var(--row-selected);
+    box-shadow: inset 3px 0 0 0 var(--beige);
+  }
+
+  /* ── Stat tiles (§4.7) ────────────────────────────────────────────────────
+     An alerting tile moves its border AND its label together — the border on
+     its own would be colour as the only signal. */
+  .stat        { @apply rounded-card border border-rule p-4; }
+  .stat-label  { @apply text-xs font-semibold text-beige-deep; }
+  .stat-value  { @apply font-display text-[2.5rem] font-bold leading-tight; letter-spacing: -0.022em; }
+  .stat-sub    { @apply text-xs text-beige-deep; }
+  .stat-emph   { @apply stat border-ember-light; }
+  .stat-emph  .stat-label { @apply text-ember-light; }
+  .stat-danger { @apply stat border-berry-light; }
+  .stat-danger .stat-label { @apply text-berry-light; }
+
+  /* ── The two shells (§4.10) ───────────────────────────────────────────────
+     Every string on a bar is text-bar (19px/700) or larger — beige there is
+     3.93, which is AA for large text and nothing else (§2.7). */
+  .appbar    { @apply flex items-center gap-3 bg-bar px-4 py-2 text-bar font-bold text-beige; }
+  .bottombar { @apply sticky bottom-0 z-30 flex flex-wrap items-center justify-between
+                      gap-3 bg-bar px-4 py-3; }
+  .bottombar-total { @apply font-display text-2xl font-bold leading-none text-beige; }
+
+  .sidenav      { @apply flex w-[228px] shrink-0 flex-col bg-bar py-5; }
+  /* 15px on the bar is below the bar rule and is legal here only because the
+     ACTIVE item is a beige fill with deep ink (11.32) and the rest are large
+     hit targets carrying beige at 3.93 — AA-large territory (docs/10 §4.10).
+     Raise to text-base if that margin is ever spent elsewhere. */
+  .sidenav-item { @apply mx-3 flex min-h-touch items-center justify-between gap-2
+                         rounded px-4 text-sm font-medium text-beige hover:bg-beige/10; }
+  .sidenav-item-active { @apply sidenav-item bg-beige font-bold text-nourish-deep
+                                hover:bg-beige; }
+
+  .badge { @apply pill-emph; }
+
+  /* ── Print artifacts (docs/10 §4.11) ──────────────────────────────────────
+     A beige sheet with deep ink, always — never the green ground. A flood-
+     filled A4 is roughly 90% ink coverage on a kitchen printer, and these two
+     pages exist to be printed every morning. */
+  .sheet-print {
+    @apply on-sheet bg-sheet text-ink;
+    border-radius: var(--radius-lg);
+  }
+  /* 96dpi CSS pixels: 100mm = 378px, 150mm = 567px, 50mm = 189px. The screen
+     preview uses these so what you see is the label you get. */
+  .label-100x150 { width: 378px; min-height: 567px; }
+  .label-100x50  { width: 378px; min-height: 189px; }
 
   /* Floating WhatsApp contact — the same control as the public pages, so the
    * same reasoning applies and the numbers are in public.css: WhatsApp's own
@@ -149,4 +324,42 @@
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
   }
+}
+
+/* ── Print ─────────────────────────────────────────────────────────────────
+ * The production sheet (P1) and the packing labels (P2) are the only pages
+ * meant for paper. Everything the screen adds — rounding, the app's ground,
+ * shadows — is removed here, and each label is kept whole across a page break.
+ *
+ * `print-color-adjust: exact` on the inverted table header and the deep-filled
+ * tiles: browsers drop background fills when printing by default, which would
+ * turn a beige-on-deep header row into invisible beige-on-white. That header
+ * carries the column names, so losing it loses the table.
+ */
+@media print {
+  @page { size: A4; margin: 12mm; }
+
+  body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+  }
+
+  .sheet-print {
+    border-radius: 0;
+    box-shadow: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* One label per physical label stock, so they must not be split. */
+  .label-100x150, .label-100x50 { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Keep the deep fills — they are information, not decoration. */
+  .sheet-print [class*="bg-nourish-deep"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Nothing interactive prints. */
+  .btn, .btn-primary, .btn-ghost, .btn-danger, .btn-quiet, .wa-float { display: none !important; }
 }

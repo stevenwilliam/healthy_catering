@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 Everything marked ✅ below was **run**, not just written. Where something was
 written but not executed, it is 🟡 and says what is missing.
 
-_Last updated: 2026-08-27 — impeccable audit + polish pass._
+_Last updated: 2026-08-31 — the design canvas built out (M17)._
 
 ---
 
@@ -262,6 +262,59 @@ TEST_DATABASE_URL="$(grep -oE '^DATABASE_URL=.*' /home/dev/projects/healthy_cate
 
 ## M15 — Deployment ✅ (development server)
 systemd + nginx + hardened unit + first-run admin. Handbook at `14`.
+
+## M17 — The design canvas ✅ / 🟡
+Steven supplied the Claude Design project *"Healthy catering UI mockups"*
+(`Evermore Mockups.dc.html`) on 2026-08-31 — fourteen artboards. Read into
+`docs/10-design-system.md` **§4**, which is now the normative component layer,
+and built out.
+
+**Contrast first.** Four of the canvas's own pairings fail AA and ship altered;
+§4.1 is the record and every number came from `scripts/contrast.py`. The
+capacity pill was the worst: `#CC6883` filled carries 3.40 with beige ink and
+3.33 with deep, under 13px text that is not large text either way. It ships
+`#91253D` at **7.89** with a `#CC6883` ring, because that fill is only 1.44
+against the ground and would otherwise have no edge.
+
+✅ **The component layer** — `web/src/index.css` rebuilt to §4: beige pill CTAs
+on the ground (the app came *off* its single beige sheet), 2px outline
+secondaries, left-rule callouts, framed grid tables, stat tiles, status pills,
+chips, the mobile bottom bar and the back-office rail. Radius scale and the new
+component roles are tokens in `web/public/css/tokens.css`.
+
+✅ **Six new screens**, all against endpoints that already existed:
+S1 dashboard · S2 menu calendar · S3 the four price tables + the live resolver
+· S5 kitchens & coverage · P1 A4 production sheet · P2 packing labels
+(100×150 and 100×50 mm), with a print stylesheet.
+
+✅ **One new endpoint** — `GET /admin/kitchens?date=`, kitchen coverage plus
+per-slot capacity for that service date. Repo → app → handler, raw SQL for the
+PostGIS and capacity join. **No Go test yet** — see below.
+
+✅ **M1 home page** — service-area badge, two CTAs, two *counted* figures (diet
+types and active kitchens, so neither can go stale in copy), and the mid-green
+menu band with the package card.
+
+✅ **Verified by looking at it.** `scripts/shoot-screens.js` captures all eleven
+screens; `docs/screenshots/` is current. Nine defects were found in the
+screenshots and fixed, including three that reading the CSS would never have
+caught: a framed grid clipping two slot columns behind `overflow-hidden`, a
+`:last-child` selector that stripped the row rule from every row's last
+*column* rather than the last row, and percentage-height circles rendering as
+ellipses in a 4:3 box. Two header/cell mismatches were caught the same way.
+
+🟡 **The signed-in screens have only been rendered against FIXTURES.** The
+harness stubs the API, so the components, stylesheet and response shapes are
+proven and the server's actual responses are not. Signing in needs a staff
+account, which needs a database write this environment does not grant.
+`RUN-WHEN-BACK.md` §B1.
+
+🟡 **The M1 menu band has never rendered with data** — the seeded calendar ends
+2026-08-20, so it correctly renders nothing today. §B2.
+
+🟡 **S5's map is a schematic**, not a tile layer: real coordinates and radii
+projected to scale, no streets. Needs the browser Maps key handed to the SPA.
+§B3 and `docs/10` §4.12.
 
 ## M16 — Documents ✅ / 🟡
 ✅ `12-security` (control map with the test that proves each) ·

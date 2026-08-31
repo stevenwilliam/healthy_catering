@@ -91,7 +91,7 @@ export default function Security() {
     return (
       <div className="mx-auto max-w-xl">
         <h1 className="text-3xl mb-4">{t('security.title')}</h1>
-        <p className="text-sm text-ink-muted">
+        <p className="text-sm text-beige-deep">
           {t('security.unavailable')}
         </p>
       </div>
@@ -101,7 +101,7 @@ export default function Security() {
   return (
     <div className="mx-auto max-w-xl">
       <h1 className="text-3xl mb-2">{t('security.title')}</h1>
-      <p className="text-sm text-ink-muted mb-6">
+      <p className="text-sm text-beige-deep mb-6">
         {t('security.intro')}
         {status.required && ` ${t('security.required')}`}
       </p>
@@ -110,14 +110,14 @@ export default function Security() {
 
       {/* The recovery codes are shown once and only once. */}
       {recovery && (
-        <div className="mb-8 rounded border border-nourish-deep/60 p-4">
+        <div className="mb-8 rounded border border-edge p-4">
           <h2 className="text-xl mb-2">{t('security.save_recovery')}</h2>
-          <p className="text-sm text-ink-muted mb-4">
+          <p className="text-sm text-beige-deep mb-4">
             {t('security.recovery_note')}
           </p>
           <ul className="grid grid-cols-2 gap-2 font-mono text-sm">
             {recovery.map((c) => (
-              <li key={c} className="rounded bg-white border border-nourish-deep/60 px-3 py-2">{c}</li>
+              <li key={c} className="rounded bg-beige/5 border border-edge px-3 py-2">{c}</li>
             ))}
           </ul>
           <div className="mt-4">
@@ -134,7 +134,7 @@ export default function Security() {
               `${status.recovery_codes_left} ${t('security.codes_left')}`}
           </p>
           {status.required ? (
-            <p className="text-sm text-ink-muted">
+            <p className="text-sm text-beige-deep">
               {t('security.locked_on')}
             </p>
           ) : (
@@ -158,13 +158,13 @@ export default function Security() {
       ) : secret ? (
         <div>
           <h2 className="text-xl mb-2">{t('security.step1')}</h2>
-          <p className="text-sm text-ink-muted mb-3">
+          <p className="text-sm text-beige-deep mb-3">
             {t('security.step1_hint')}
           </p>
-          <p className="font-mono text-sm break-all rounded bg-white border border-nourish-deep/60 px-3 py-2 mb-2">
+          <p className="font-mono text-sm break-all rounded bg-beige/5 border border-edge px-3 py-2 mb-2">
             {secret}
           </p>
-          <p className="text-xs text-ink-muted mb-6 break-all">{otpauth}</p>
+          <p className="text-xs text-beige-deep mb-6 break-all">{otpauth}</p>
 
           <h2 className="text-xl mb-2">{t('security.step2')}</h2>
           <form onSubmit={confirm} noValidate>
@@ -180,7 +180,7 @@ export default function Security() {
               onChange={(e) => setCode(e.target.value)}
               required
             />
-            <p className="mt-2 mb-4 text-xs text-ink-muted">
+            <p className="mt-2 mb-4 text-xs text-beige-deep">
               {t('security.nothing_changes')}
             </p>
             <SubmitButton pending={pending}>{t('security.enable')}</SubmitButton>

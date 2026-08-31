@@ -28,11 +28,23 @@ type Admin struct {
 	settings *postgres.SettingsRepo
 	audit    *postgres.AuditRepo
 	params   *sysparam.Store
+	kitchens *postgres.KitchenRepo
 }
 
 func NewAdmin(m *postgres.MasterDataRepo, s *postgres.SettingsRepo,
-	a *postgres.AuditRepo, p *sysparam.Store) *Admin {
-	return &Admin{master: m, settings: s, audit: a, params: p}
+	a *postgres.AuditRepo, p *sysparam.Store, k *postgres.KitchenRepo) *Admin {
+	return &Admin{master: m, settings: s, audit: a, params: p, kitchens: k}
+}
+
+// KitchenOverview lists the kitchens with their coverage and their load on a
+// service date — the coverage screen (S5) and the dashboard's capacity grid
+// (S1) read the same call, so the two can never disagree about how full a
+// slot is.
+//
+// The date is a BUSINESS calendar date and is resolved in the operating
+// timezone by the caller, never from the server clock (CLAUDE.md §10).
+func (s *Admin) KitchenOverview(ctx context.Context, on string) ([]postgres.KitchenOverview, error) {
+	return s.kitchens.Overview(ctx, on)
 }
 
 // Actor is who is performing an admin action, and where from.

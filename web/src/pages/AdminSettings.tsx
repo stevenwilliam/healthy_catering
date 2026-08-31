@@ -50,7 +50,7 @@ export default function AdminSettings() {
   return (
     <div>
       <h1 className="text-3xl mb-2">{t('set.title')}</h1>
-      <p className="text-sm text-ink-muted mb-6 max-w-prose">
+      <p className="text-sm text-beige-deep mb-6 max-w-prose">
         {t('set.audit_note')}
       </p>
 
@@ -66,11 +66,11 @@ export default function AdminSettings() {
                 <li key={s.key} className="card">
                   <div className="flex flex-wrap items-baseline gap-2">
                     <span className="font-medium">{s.label}</span>
-                    <code className="text-xs text-ink-muted">{s.key}</code>
+                    <code className="text-xs text-beige-deep">{s.key}</code>
                     {s.is_secret && <span className="badge">{t('set.secret')}</span>}
                   </div>
                   {s.description && (
-                    <p className="text-sm text-ink-muted mt-1 max-w-prose">{s.description}</p>
+                    <p className="text-sm text-beige-deep mt-1 max-w-prose">{s.description}</p>
                   )}
 
                   {editing === s.key ? (
@@ -95,7 +95,7 @@ export default function AdminSettings() {
                         Ubah
                       </button>
                       {s.updated_by && (
-                        <span className="text-xs text-ink-muted">
+                        <span className="text-xs text-beige-deep">
                           terakhir diubah oleh {s.updated_by}
                         </span>
                       )}

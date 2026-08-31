@@ -54,7 +54,7 @@ export default function Orders() {
               <span className="badge">
                 {STATUS_KEY[o.status] ? t(STATUS_KEY[o.status]!) : o.status}
               </span>
-              <span className="text-sm text-ink-muted">
+              <span className="text-sm text-beige-deep">
                 {o.order_type === 'PACKAGE'
                   ? t('orders.package')
                   : `${o.delivery_count} ${t('orders.deliveries')}`}

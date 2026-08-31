@@ -69,7 +69,7 @@ export default function Login() {
         {/* The API's mfa_hint is English, for API clients. This UI writes its
             own copy from the catalogue rather than rendering a server string
             in whatever language the API happens to use. */}
-        <p className="text-sm text-ink-muted mb-6">{t('mfa.intro')}</p>
+        <p className="text-sm text-beige-deep mb-6">{t('mfa.intro')}</p>
         <form onSubmit={submitCode} noValidate>
           <div className="mb-4">
             <label className="label" htmlFor="code">{t('mfa.code')}</label>
@@ -87,7 +87,7 @@ export default function Login() {
               onChange={(e) => setCode(e.target.value)}
               required
             />
-            <p className="mt-2 text-xs text-ink-muted">{t('mfa.recovery_hint')}</p>
+            <p className="mt-2 text-xs text-beige-deep">{t('mfa.recovery_hint')}</p>
           </div>
           <FieldError message={error ?? undefined} />
           <SubmitButton pending={pending}>{t('mfa.verify')}</SubmitButton>

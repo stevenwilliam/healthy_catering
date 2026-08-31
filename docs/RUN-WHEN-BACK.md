@@ -3,8 +3,8 @@
 Steps needing an interactive terminal, a browser, or credentials that do not
 exist yet. Use `vi` for any edits.
 
-_Updated: 2026-08-27 — §A3 superseded (Chrome works; the 1.49.1 package was the
-problem), §A4 added (restart to refresh `assetVersion`)._
+_Updated: 2026-08-31 — §B rewritten (the signed-in screens ARE captured now,
+against fixtures), §B1 and §B2 added by the design-canvas build._
 
 ## A. One command — this is why you still cannot open the site · DO THIS FIRST
 
@@ -158,26 +158,63 @@ carries an 18px fallback height for exactly this window — but the mark is
 absent. Without that fallback the classless `<img>` fell back to its intrinsic
 560×60 and pushed a 390px page out to 717px; measured, on the running service.
 
-## B. Re-take the signed-in screenshots
+## B. The signed-in screenshots — captured, but READ THIS FIRST
 
-The four authenticated-screen captures were deleted on 2026-08-18: they dated
-from before the brand pass and the translations, so they showed a UI that no
-longer exists. Everything reachable without a session — the public pages in all
-three languages, the 404, the login screen — has been re-captured.
-
-Re-taking the rest needs a real session in the browser, which headless
-`--screenshot` cannot set up on its own:
+`scripts/shoot-screens.js` now captures every screen, including the ones behind
+a login, and `docs/screenshots/` is current as of 2026-08-31:
 
 ```bash
 cd /home/dev/projects/healthy_catering
-# Sign in as a seeded customer, then drive /app/menu, /app/orders,
-# /app/packages and /app/admin/payments with a browser that can run script —
-# the session lives in localStorage under the key the SPA sets, so a
-# screenshot-only run lands on the login page instead.
+export NODE_PATH=/home/dev/.npm/_npx/e41f203b7505f1fb/node_modules
+node scripts/shoot-screens.js            # defaults to 127.0.0.1:8081
 ```
 
-Not urgent, and not a blocker for anything. It matters the next time someone
-reads `docs/screenshots/` expecting it to show the current UI.
+**What the signed-in shots do and do not prove.** They put a session in
+`localStorage` and serve the API from fixtures in the script, because
+`RequireAuth` bounces a session-less browser to `/login` and `api create-staff`
+needs a database write this environment does not grant. So they prove the real
+React components, the real compiled stylesheet and the real response *shapes* —
+layout, colour, overflow, and every empty/loading/error branch. They do **not**
+prove the server returns those shapes. A screen that looks right in
+`docs/screenshots/` can still 500 against the live API.
+
+The three public captures (`public-home-*`, `spa-login`) are the real server
+with real data and carry no such caveat.
+
+### B1. Verify the six new back-office screens against the REAL API
+
+The screens built on 2026-08-31 — dashboard, menu calendar, pricing, coverage,
+production sheet, packing labels — have never been rendered against live data.
+That needs a staff account, which needs a database write:
+
+```bash
+cd /home/dev/projects/healthy_catering
+set -a && . ./.env && set +a
+./bin/api create-staff            # interactive; admin role
+# then sign in at http://127.0.0.1:8081/app/login and walk:
+#   /app/admin  /app/admin/calendar  /app/admin/pricing
+#   /app/admin/coverage  /app/admin/production  /app/admin/labels
+```
+
+Watch specifically for the one thing fixtures cannot catch: a field name that
+differs between the Go struct's JSON tag and the TypeScript type. `GET
+/admin/kitchens` is brand new (added with these screens) and has no Go test yet.
+
+### B2. The M1 menu band has never rendered with data
+
+The home page's menu band shows this week's PUBLISHED meals. The seeded
+calendar ends 2026-08-20, so on any date after that the band correctly renders
+nothing and the page is a hero plus the price table. To see the band, publish a
+current week from the back office (`/app/admin/calendar` → **Publish this
+week**) and reload `/`.
+
+### B3. The coverage map is a schematic, not Google Maps
+
+`/app/admin/coverage` plots the real kitchen coordinates and service radii to
+scale, but draws no streets. The tile layer needs the browser Maps key handed
+to the SPA — the public pages already receive one as `PageData.MapsKey`, the
+SPA does not. See §6 for the keys themselves; wiring is a small change to the
+SPA bootstrap once a key exists. Recorded in `docs/10-design-system.md` §4.12.
 
 ## 0. What is already done — do NOT redo these
 

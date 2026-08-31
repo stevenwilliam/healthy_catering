@@ -119,27 +119,31 @@ export default function Menu() {
              emptyText={t('menu.empty')}>
         {/* Room for the sticky summary, or it sits ON TOP of the last card —
             which on a phone hides a meal the customer is trying to order. */}
-        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${totalMeals > 0 ? 'pb-64 sm:pb-40' : ''}`}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {meals.map((m) => {
             const soldOut = m.qty_capacity !== undefined && m.qty_reserved >= (m.qty_capacity ?? 0)
             return (
-              <article key={m.id} className="card">
-                <p className="text-sm text-ink-muted">{m.service_date} · {m.slot} · {m.diet_type}</p>
-                <h2 className="text-lg mt-1">{m.name ?? m.items[0]?.food_name}</h2>
-                <ul className="mt-2 mb-3 list-disc pl-5 text-sm">
+              // The meal card from artboard 01: a kicker for the slot, the
+              // dish in Erode, the nutrition line as quiet meta, and the
+              // price and action on one baseline at the foot.
+              <article key={m.id} className="card flex flex-col gap-3">
+                <span className="kicker-emph">{m.slot} · {m.diet_type}</span>
+                <h2 className="text-xl leading-tight">{m.name ?? m.items[0]?.food_name}</h2>
+                <p className="text-sm text-beige-deep">
+                  {m.items.length} {t('cal.components')} · {m.nutrition.calories_kcal}{' '}
+                  {t('menu.kcal')} · {Math.round(m.nutrition.protein_mg / 1000)}{' '}
+                  {t('menu.protein')}
+                  {!m.nutrition.complete && <> · {t('menu.estimated')}</>}
+                </p>
+                <ul className="list-disc pl-5 text-sm text-beige-deep">
                   {m.items.map((it) => <li key={it.food_name}>{it.food_name}</li>)}
                 </ul>
-                <p className="flex flex-wrap gap-2 mb-3">
-                  <span className="badge">{m.nutrition.calories_kcal} {t('menu.kcal')}</span>
-                  <span className="badge">
-                    {Math.round(m.nutrition.protein_mg / 1000)} {t('menu.protein')}
-                  </span>
-                  {!m.nutrition.complete && <span className="badge bg-ember-light">{t('menu.estimated')}</span>}
-                </p>
+                <p className="text-xs text-beige-deep">{m.service_date}</p>
                 {soldOut ? (
-                  <p className="text-sm text-ink-muted">{t('menu.sold_out')}</p>
+                  // Sold out is a word AND a pill, never a colour alone.
+                  <p className="mt-auto"><span className="pill-full">{t('menu.sold_out')}</span></p>
                 ) : (
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="mt-auto flex items-center gap-2 text-sm">
                     {t('menu.qty')}
                     <input
                       type="number" min={0} max={999} className="field w-24"
@@ -157,44 +161,50 @@ export default function Menu() {
       </State>
 
       {totalMeals > 0 && (
-        <aside
-          className="card fixed inset-x-4 bottom-4 z-10 shadow-lg sm:sticky sm:inset-x-auto sm:mt-8"
-          aria-label={t('menu.summary_aria')}
-        >
-          <h2 className="text-lg mb-2">{totalMeals} {t('menu.portions')}</h2>
-          {quote && (
-            <p className="mb-3 text-sm">
-              {quote.is_promo && (
-                <>
-                  <s className="text-ink-muted mr-2">{quote.normal_price}</s>
-                  <span className="badge mr-2">{quote.promo_label}</span>
-                </>
-              )}
-              <MoneyView formatted={quote.unit_price} /> {t('menu.per_portion')} ·{' '}
-              {t('menu.tier')} {quote.tier}
-              {quote.savings && <> · {t('menu.savings')} {quote.savings}</>}
-            </p>
-          )}
-
-          <label className="label" htmlFor="addr">{t('menu.deliver_to')}</label>
-          <select id="addr" className="field mb-3" value={addressID}
-                  onChange={(e) => setAddressID(e.target.value)}>
-            {addresses.map((a) => (
-              <option key={a.ID} value={a.ID}>{a.Label} — {a.AddressLine}</option>
-            ))}
-          </select>
-
-          {addresses.length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              {t('menu.need_address')}
-            </p>
-          ) : (
-            <SubmitButton pending={placing} onClick={placeOrder} type="button"
-                          disabled={unverified}>
-              {t('menu.order_now')}
-            </SubmitButton>
-          )}
-          {error && <p className="error" role="alert">{error}</p>}
+        // The sticky bottom bar from artboards 01/03 (docs/10 §4.10): the
+        // running total on the left, the action on the right, both on the
+        // mid-green bar. The total is Erode at 24px because every string on a
+        // bar has to clear WCAG's large-text threshold — beige there is only
+        // 3.93 (docs/10 §2.7), which is exactly why it is not 15px Inter.
+        <aside className="bottombar -mx-4 mt-8" aria-label={t('menu.summary_aria')}>
+          <div className="min-w-0">
+            <div className="kicker text-beige">
+              {totalMeals} {t('menu.portions')}
+              {quote && <> · {t('menu.tier')} {quote.tier}</>}
+            </div>
+            <div className="bottombar-total">
+              {quote
+                ? <MoneyView formatted={quote.line_total} />
+                : <>—</>}
+            </div>
+            {quote && (
+              <div className="text-xs text-beige">
+                {quote.is_promo && (
+                  <s className="mr-2 opacity-80">{quote.normal_price}</s>
+                )}
+                <MoneyView formatted={quote.unit_price} /> {t('menu.per_portion')}
+                {quote.savings && <> · {t('menu.savings')} {quote.savings}</>}
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <label className="sr-only" htmlFor="addr">{t('menu.deliver_to')}</label>
+            <select id="addr" className="field max-w-[14rem]" value={addressID}
+                    onChange={(e) => setAddressID(e.target.value)}>
+              {addresses.map((a) => (
+                <option key={a.ID} value={a.ID}>{a.Label} — {a.AddressLine}</option>
+              ))}
+            </select>
+            {addresses.length === 0 ? (
+              <p className="text-bar font-bold text-beige">{t('menu.need_address')}</p>
+            ) : (
+              <SubmitButton pending={placing} onClick={placeOrder} type="button"
+                            disabled={unverified}>
+                {t('menu.order_now')}
+              </SubmitButton>
+            )}
+          </div>
+          {error && <p className="error basis-full" role="alert">{error}</p>}
         </aside>
       )}
     </div>

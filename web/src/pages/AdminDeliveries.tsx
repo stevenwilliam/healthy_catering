@@ -79,13 +79,13 @@ export default function AdminDeliveries() {
                 <span className="font-display">{d.delivery_code}</span>
                 <span className="badge">{d.status}</span>
                 <span>{d.slot}</span>
-                <span className="text-sm text-ink-muted">{d.kitchen}</span>
+                <span className="text-sm text-beige-deep">{d.kitchen}</span>
                 {d.assignment_mode === 'MANUAL' && <span className="badge">{t('deliv.manual')}</span>}
                 <span className="ml-auto text-sm">{d.meals} {t('menu.portions')}</span>
               </div>
               <p className="text-sm mt-1">{d.customer_name} · {d.phone}</p>
-              <p className="text-sm text-ink-muted">{d.address_line}, {d.district}</p>
-              <p className="text-xs text-ink-muted mt-1">{d.assignment_reason}</p>
+              <p className="text-sm text-beige-deep">{d.address_line}, {d.district}</p>
+              <p className="text-xs text-beige-deep mt-1">{d.assignment_reason}</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {(NEXT[d.status] ?? []).map((n) => (
@@ -95,7 +95,7 @@ export default function AdminDeliveries() {
                   </button>
                 ))}
                 {!NEXT[d.status] && (
-                  <span className="text-sm text-ink-muted">{t('deliv.no_next')}</span>
+                  <span className="text-sm text-beige-deep">{t('deliv.no_next')}</span>
                 )}
               </div>
             </li>

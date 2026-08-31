@@ -1033,7 +1033,7 @@ main > section + section { margin-top: var(--space-16); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Was 56px; enlarged on request. Well past the 44px minimum (docs/10 §4). */
+  /* Was 56px; enlarged on request. Well past the 44px minimum (docs/10 §5). */
   width: 68px;
   height: 68px;
   border-radius: 50%;
@@ -1198,7 +1198,7 @@ main > section + section { margin-top: var(--space-16); }
 /* ── Home motion: the expressive tier (Steven, 2026-08-27) ────────────────
  * The subtle tier shipped first and Steven could not see it — correctly, it
  * was 12px over 400ms. This is the deliberate step up he asked for, and it
- * amends docs/10 §4: on the HOME page only, travel goes to 28px and durations
+ * amends docs/10 §5: on the HOME page only, travel goes to 28px and durations
  * to 400–560ms. Every other page keeps the subtle tier.
  *
  * Still no JavaScript. The CSP would allow a same-origin script, but nothing
@@ -1337,3 +1337,186 @@ main > section + section { margin-top: var(--space-16); }
   box-shadow: var(--shadow-lift);
 }
 .hero-art img { border-radius: 0; box-shadow: none; }
+
+/* ══ M1 — the reworked home page (docs/10 §4) ═══════════════════════════════
+ *
+ * From the "Evermore Mockups" canvas, artboard M1. Only the pieces the
+ * artboard adds live here; the hero, the meal card and the price table are the
+ * existing rules above, reused rather than duplicated.
+ *
+ * Every colour below is a token and every pairing is measured. The two that
+ * matter:
+ *
+ *     ember  #FFBC8F on the deep ground ........ 7.27  ✓ AAA
+ *     blue   #B6DAFA on the deep ground ........ 8.15  ✓ AAA
+ *
+ * Both are used as INK on the ground and as a border, never as a fill carrying
+ * small text — which is the mistake docs/10 §2.4 exists to prevent.
+ */
+
+/* The service-area badge above the headline. A pill in ember on a tint of
+   itself; the border is what gives it an edge, because an 8% tint against the
+   ground is not a boundary. */
+.area-badge {
+  display: inline-block;
+  margin: 0 0 var(--space-3);
+  padding: 8px 18px;
+  border: 1px solid var(--orange-light);
+  border-radius: var(--radius-full);
+  background: rgba(255, 188, 143, 0.14);
+  color: var(--orange-light);          /* 7.27 on the ground ✓ */
+  font-size: var(--text-sm);
+  font-weight: var(--w-eyebrow);
+}
+
+/* Two calls to action side by side (docs/10 §4.2): the solid beige pill, and
+   the outlined one beside it. */
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+}
+.cta-ghost {
+  background: transparent;
+  color: var(--on-canvas);
+  /* 2px, not 1px: a 1px beige outline reads as a hairline over the drifting
+     produce background (§2.8). */
+  box-shadow: inset 0 0 0 2px var(--beige);
+}
+.cta-ghost:hover { background: rgba(255, 250, 224, 0.10); }
+
+/* The counted figures under the calls to action. A <dl>, because each one is
+   genuinely a term and its description, and the number is the term. */
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: var(--space-6) 0 0;
+}
+.hero-stats > div { margin: 0; }
+.hero-stats dt {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--w-display);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--on-canvas);
+}
+.hero-stats dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--on-canvas-muted);       /* 6.47 ✓ */
+}
+
+/* ── The menu band ────────────────────────────────────────────────────────
+ * The artboard fills this band with the mid green. That fill is a SURFACE, not
+ * a bar, so the 19px bar rule does not apply to the heading sitting on it —
+ * but beige on #468973 is only 3.93, which is large-text-only, so the band
+ * carries HEADINGS and nothing else at body size. Every card inside it returns
+ * to the deep ground, where beige is 11.32.
+ *
+ * Full-bleed out of the page's centred column: the artboard runs the fill edge
+ * to edge, and a band inset by the gutter reads as a panel instead.
+ */
+.menu-band {
+  margin-inline: calc(50% - 50vw);
+  padding: var(--space-12) max(var(--space-6), calc(50vw - 50% + var(--space-4)));
+  background: var(--bar);
+}
+.band-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+/* --text-lg at weight 700 is 20px bold, which clears WCAG's 18.66px large-text
+   threshold — the reason this subtitle is not --text-sm like every other
+   section subtitle on the site. On the band, small text in beige is an AA
+   failure, not a style choice. */
+.band-head p {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-lg);
+  font-weight: var(--w-display-sub);
+  color: var(--on-bar);
+}
+.deliver-now {
+  margin: 0;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  /* The card returns to the deep ground so its small print is legible: on the
+     band it would be 3.93, here it is 11.32. */
+  background: var(--canvas);
+  color: var(--on-canvas);
+}
+.deliver-now .kicker {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--w-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-dark-muted);
+}
+.deliver-now strong {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  font-weight: var(--w-strong);
+  color: var(--on-dark-accent);        /* ember on deep = 7.27 ✓ */
+}
+
+.band-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  margin-top: var(--space-6);
+}
+/* A card in the band keeps the site's white surface, so its ink is unchanged
+   at 11.89 — the band colour never touches the text inside a card. */
+.band-meal { border-radius: var(--radius-panel); }
+
+/* The package card closes the row: the one card that is an offer, not a dish.
+   It stands on the deep ground with a beige rule, which is the artboard's
+   treatment and keeps it visibly different from the three beside it. */
+.pkg-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--canvas);
+  color: var(--on-canvas);
+  border: 2px solid var(--beige);
+  border-radius: var(--radius-panel);
+  box-shadow: none;
+}
+.pkg-card h3 { margin: 0; color: var(--on-canvas); }
+.pkg-card p { margin: 0; color: var(--on-canvas-muted); }
+.pkg-card .kicker {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--w-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pkg-card .kicker-info { color: var(--on-dark-link); }  /* 8.15 ✓ */
+.pkg-card .cta { margin-top: auto; align-self: flex-start; }
+
+/* Below the fold on a phone the band's side padding collapses to the page
+   gutter, or the cards lose a third of their width to it. */
+@media (max-width: 40rem) {
+  .menu-band { padding-inline: var(--space-4); }
+  .hero-stats { gap: var(--space-6); }
+}
+
+/* The home hero carries the M1 service-area badge now, and .eyebrow is also
+ * drawn as a pill — so the headline sat under two stacked pills competing for
+ * the same job. The badge is the pill; the eyebrow drops back to a plain
+ * kicker above it. Home only: every other page still has one eyebrow and wants
+ * it to read as a chip. */
+.hero-copy .area-badge + .eyebrow {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--on-canvas-muted);       /* 6.47 ✓ */
+}

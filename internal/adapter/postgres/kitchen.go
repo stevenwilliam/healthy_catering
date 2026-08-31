@@ -152,3 +152,140 @@ type Slot struct {
 	CutoffTime     *string   `json:"-"`
 	CutoffLeadDays *int      `json:"-"`
 }
+
+// KitchenSlotLoad is one slot's quota and how much of it is taken, on a date.
+type KitchenSlotLoad struct {
+	SlotID    uuid.UUID `json:"slot_id"`
+	Alias     string    `json:"alias"`
+	SlotTime  string    `json:"slot_time"`
+	Quota     int       `json:"quota"`
+	Used      int       `json:"used"`
+	Available bool      `json:"available"`
+}
+
+// KitchenOverview is one kitchen as the back office sees it: how it is
+// configured, and how full it is today.
+type KitchenOverview struct {
+	ID            uuid.UUID         `json:"id"`
+	Code          string            `json:"code"`
+	Name          string            `json:"name"`
+	District      string            `json:"district"`
+	City          string            `json:"city"`
+	Latitude      float64           `json:"latitude"`
+	Longitude     float64           `json:"longitude"`
+	RadiusKM      float64           `json:"service_radius_km"`
+	HasPolygon    bool              `json:"has_polygon"`
+	PolygonPoints int               `json:"polygon_points"`
+	Priority      int               `json:"priority"`
+	IsActive      bool              `json:"is_active"`
+	Slots         []KitchenSlotLoad `json:"slots"`
+}
+
+// Overview lists every kitchen with its coverage configuration and its load on
+// one service date — what the coverage screen and the daily dashboard both
+// read (docs/10 §4.10, artboards S1 and S5).
+//
+// Raw SQL, not the ORM: this walks PostGIS (ST_NPoints on the service polygon)
+// and joins capacity, and both are clearer written out than assembled through
+// gorm's builder. The date is a placeholder, never interpolated.
+//
+// A LEFT JOIN on kitchen_capacity, deliberately: a slot with no capacity row
+// for the date has not been opened yet, which is a different thing from a slot
+// with a quota of zero. The first is `available: false`, the second is full.
+func (r *KitchenRepo) Overview(ctx context.Context, on string) ([]KitchenOverview, error) {
+	var rows []kitchenRow
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT k.id, k.code, k.name, k.district, k.city,
+		       k.latitude::float8  AS latitude,
+		       k.longitude::float8 AS longitude,
+		       k.service_radius_km::float8 AS radius_km,
+		       (k.service_area IS NOT NULL) AS has_polygon,
+		       COALESCE(ST_NPoints(k.service_area::geometry), 0) AS polygon_points,
+		       k.priority, k.is_active,
+		       s.id AS slot_id, s.alias, to_char(s.slot_time, 'HH24:MI') AS slot_time,
+		       kc.max_portions      AS quota,
+		       kc.reserved_portions AS used
+		  FROM kitchen k
+		  LEFT JOIN kitchen_slot ks ON ks.kitchen_id = k.id
+		  LEFT JOIN delivery_time_slot s ON s.id = ks.slot_id AND s.is_active
+		  LEFT JOIN kitchen_capacity kc
+		         ON kc.kitchen_id = k.id AND kc.slot_id = s.id
+		        AND kc.service_date = ?::date
+		 ORDER BY k.priority, k.code, s.sort_order, s.slot_time
+	`, on).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return foldKitchenRows(rows), nil
+}
+
+// kitchenRow is one row of the Overview join: a kitchen repeated once per
+// active slot, with the capacity columns NULL when that slot is not open on
+// the date.
+type kitchenRow struct {
+	ID            uuid.UUID
+	Code          string
+	Name          string
+	District      string
+	City          string
+	Latitude      float64
+	Longitude     float64
+	RadiusKM      float64
+	HasPolygon    bool
+	PolygonPoints int
+	Priority      int
+	IsActive      bool
+	SlotID        *uuid.UUID
+	Alias         *string
+	SlotTime      *string
+	Quota         *int
+	Used          *int
+}
+
+// foldKitchenRows collapses the join back into one entry per kitchen.
+//
+// Split out of Overview so it can be tested without a database, because the
+// distinction it carries is invisible and expensive: a slot with NO capacity
+// row for the date has not been OPENED, which is a different thing from a slot
+// whose quota is zero. The first must read "closed" on the dashboard and the
+// coverage screen; the second is a slot that exists and is full. Collapsing
+// them shows a kitchen as shut when it is merely unconfigured, or as open with
+// nowhere to put an order.
+func foldKitchenRows(rows []kitchenRow) []KitchenOverview {
+	out := make([]KitchenOverview, 0, len(rows))
+	byID := map[uuid.UUID]int{}
+	for _, r := range rows {
+		i, seen := byID[r.ID]
+		if !seen {
+			out = append(out, KitchenOverview{
+				ID: r.ID, Code: r.Code, Name: r.Name,
+				District: r.District, City: r.City,
+				Latitude: r.Latitude, Longitude: r.Longitude,
+				RadiusKM: r.RadiusKM, HasPolygon: r.HasPolygon,
+				PolygonPoints: r.PolygonPoints,
+				Priority:      r.Priority, IsActive: r.IsActive,
+				Slots: []KitchenSlotLoad{},
+			})
+			i = len(out) - 1
+			byID[r.ID] = i
+		}
+		if r.SlotID == nil {
+			continue // a kitchen serving no active slot
+		}
+		load := KitchenSlotLoad{SlotID: *r.SlotID}
+		if r.Alias != nil {
+			load.Alias = *r.Alias
+		}
+		if r.SlotTime != nil {
+			load.SlotTime = *r.SlotTime
+		}
+		// Both, not either: a half-NULL pair is a row the join should never
+		// produce, and treating it as open would invent a quota.
+		if r.Quota != nil && r.Used != nil {
+			load.Quota, load.Used, load.Available = *r.Quota, *r.Used, true
+		}
+		out[i].Slots = append(out[i].Slots, load)
+	}
+	return out
+}

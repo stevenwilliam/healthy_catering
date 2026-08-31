@@ -97,6 +97,11 @@ type PageData struct {
 	// which is the one thing a visitor most wants the header to tell them.
 	Active string
 
+	// Kitchens is how many are active — the M1 hero states it as a fact
+	// ("3 dapur"), so it is counted rather than written into the copy where it
+	// would go stale the day a fourth opens.
+	Kitchens int
+
 	// Prices is populated on the price-list route only.
 	Prices *app.PublicPriceList
 	// ShowMealPrices gates the per-portion table. Off by default since
@@ -379,6 +384,38 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 					`"address":{"@type":"PostalAddress","addressLocality":"Jakarta","addressCountry":"ID"},` +
 					`"url":"` + base() + `"}`),
 			}
+			// M1's menu band: this week's PUBLISHED meals, across every diet.
+			// A calendar failure drops the band, never the page — the home page
+			// still has to render when the kitchen has not published yet, which
+			// is its state every Thursday.
+			tz := tzOf(d)
+			now := time.Now().In(tz)
+			if meals, err := d.Catalogue.Calendar(c.Request.Context(), app.CalendarQuery{
+				From:       now.Format("2006-01-02"),
+				To:         now.AddDate(0, 0, 7).Format("2006-01-02"),
+				PublicOnly: true,
+			}); err == nil {
+				data.Meals = mealCards(meals)
+				// Three, plus the package card, is the artboard's four-up row.
+				if len(data.Meals) > 3 {
+					data.Meals = data.Meals[:3]
+				}
+			} else if d.Log != nil {
+				d.Log.Warn("home menu band unavailable", "error", err)
+			}
+
+			// The kitchen count in the hero. Counted, not written into copy.
+			if ks, err := d.Admin.KitchenOverview(c.Request.Context(),
+				now.Format("2006-01-02")); err == nil {
+				for _, k := range ks {
+					if k.IsActive {
+						data.Kitchens++
+					}
+				}
+			} else if d.Log != nil {
+				d.Log.Warn("home kitchen count unavailable", "error", err)
+			}
+
 			// The home page now carries the package table too, so it needs the
 			// same data the price-list route loads. A pricing failure drops the
 			// section rather than the page.
@@ -419,27 +456,7 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 				DietTypeID: &dt.ID, PublicOnly: true,
 			})
 
-			cards := make([]mealCard, 0, len(meals))
-			for _, m := range meals {
-				items := make([]string, 0, len(m.Items))
-				for _, it := range m.Items {
-					items = append(items, it.FoodName)
-				}
-				name := ""
-				if m.Name != nil {
-					name = *m.Name
-				}
-				photo := ""
-				if m.HeroPhotoKey != nil {
-					photo = *m.HeroPhotoKey
-				}
-				cards = append(cards, mealCard{
-					Name: name, DietType: m.DietTypeName, Slot: m.SlotAlias,
-					Date: m.ServiceDate, Kcal: m.Nutrition.CaloriesKcal,
-					ProteinG: gramsOf(m.Nutrition.ProteinMg), Items: items,
-					Complete: m.Nutrition.Complete, PhotoKey: photo,
-				})
-			}
+			cards := mealCards(meals)
 
 			// The diet-type name and description are database rows in one
 			// language, so they read the same whichever locale is selected —
@@ -744,6 +761,35 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		b.WriteString("</urlset>\n")
 		c.Data(http.StatusOK, "application/xml; charset=utf-8", []byte(b.String()))
 	})
+}
+
+// mealCards turns calendar rows into the card the templates render.
+//
+// Shared by the diet-type pages and, since the M1 rework, the home page's menu
+// band — one builder, so a meal cannot read differently on the two pages.
+func mealCards(meals []postgres.Meal) []mealCard {
+	cards := make([]mealCard, 0, len(meals))
+	for _, m := range meals {
+		items := make([]string, 0, len(m.Items))
+		for _, it := range m.Items {
+			items = append(items, it.FoodName)
+		}
+		name := ""
+		if m.Name != nil {
+			name = *m.Name
+		}
+		photo := ""
+		if m.HeroPhotoKey != nil {
+			photo = *m.HeroPhotoKey
+		}
+		cards = append(cards, mealCard{
+			Name: name, DietType: m.DietTypeName, Slot: m.SlotAlias,
+			Date: m.ServiceDate, Kcal: m.Nutrition.CaloriesKcal,
+			ProteinG: gramsOf(m.Nutrition.ProteinMg), Items: items,
+			Complete: m.Nutrition.Complete, PhotoKey: photo,
+		})
+	}
+	return cards
 }
 
 func publicDiets(c *gin.Context, d Deps) ([]dietLink, error) {

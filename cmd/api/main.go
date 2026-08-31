@@ -334,7 +334,7 @@ func serve(ctx context.Context, cfg *config.Config, gdb *gorm.DB, log *slog.Logg
 		Log:            log,
 		Serviceability: serviceability,
 		Auth:           auth,
-		Admin:          app.NewAdmin(master, settings, audit, params),
+		Admin:          app.NewAdmin(master, settings, audit, params, kitchens),
 		Catalogue:      app.NewCatalogue(catalogue, sched, master, audit, params, tz),
 		Pricing:        pricingSvc,
 		Ordering:       ordering,

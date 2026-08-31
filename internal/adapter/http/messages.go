@@ -89,6 +89,57 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "See this week's menu",
 		i18n.ZH: "查看本周菜单",
 	},
+	// ── M1, the reworked home page (docs/10 §4, artboard M1) ────────────────
+	"home.area_badge": {
+		i18n.ID: "Antar ke Jakarta Selatan, Pusat & Utara",
+		i18n.EN: "Delivering across South, Central & North Jakarta",
+		i18n.ZH: "配送范围：雅加达南区、中区与北区",
+	},
+	"home.cta_area": {
+		i18n.ID: "Cek wilayah antar",
+		i18n.EN: "Check your area",
+		i18n.ZH: "查询配送范围",
+	},
+	"home.stat_diets": {
+		i18n.ID: "tipe diet",
+		i18n.EN: "diet types",
+		i18n.ZH: "种饮食方案",
+	},
+	"home.stat_kitchens": {
+		i18n.ID: "dapur",
+		i18n.EN: "kitchens",
+		i18n.ZH: "间厨房",
+	},
+	"home.deliver_today": {
+		i18n.ID: "Antar hari ini",
+		i18n.EN: "Delivering today",
+		i18n.ZH: "今日配送",
+	},
+	"home.deliver_cutoff": {
+		i18n.ID: "pesan sebelum 15.00 sehari sebelumnya",
+		i18n.EN: "order before 15.00 the day before",
+		i18n.ZH: "请于前一日 15:00 前下单",
+	},
+	"home.menu_h2": {
+		i18n.ID: "Menu minggu ini",
+		i18n.EN: "This week's menu",
+		i18n.ZH: "本周菜单",
+	},
+	"home.menu_sub": {
+		i18n.ID: "Terbit tiap Jumat untuk minggu berikutnya",
+		i18n.EN: "Published every Friday for the week ahead",
+		i18n.ZH: "每周五发布下一周菜单",
+	},
+	"home.pkg_kicker": {
+		i18n.ID: "Lebih hemat",
+		i18n.EN: "Better value",
+		i18n.ZH: "更划算",
+	},
+	"home.pkg_cta": {
+		i18n.ID: "Lihat paket",
+		i18n.EN: "See packages",
+		i18n.ZH: "查看套餐",
+	},
 	"home.diets_h2": {
 		i18n.ID: "Pilih sesuai kebutuhan Anda",
 		i18n.EN: "Choose what fits your goal",

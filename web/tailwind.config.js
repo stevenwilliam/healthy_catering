@@ -32,6 +32,12 @@ export default {
         ember: { deep: '#E0782D', light: '#FFBC8F' }, // deep fails at 2.90
         berry: { deep: '#91253D', light: '#CC6883' },
         ink: { DEFAULT: '#1C3D34', muted: '#4A5D56' },
+        // docs/10 §4.1 #3. `edge` is what an interactive control's own border
+        // must be (6.47 on the ground); `rule` is 2.88 there and is legal
+        // ONLY as a divider between two already-filled areas. Named apart
+        // because the failure is invisible on a good monitor.
+        edge: '#CCBDAA',
+        rule: '#468973',
       },
       fontFamily: {
         display: ['Erode', 'Georgia', 'serif'],
@@ -56,7 +62,15 @@ export default {
       boxShadow: {
         lift: '0 10px 30px rgba(11, 30, 25, 0.22)',   // a surface on the ground
       },
-      minHeight: { touch: '44px' },  // docs/10 §4
+      // The canvas's radius scale (docs/10 §4.3) — rounder throughout, and
+      // `DEFAULT` moved 10 -> 12 with it.
+      borderRadius: {
+        DEFAULT: '12px',
+        card: '14px',    // calendar cells, stat tiles, inner panels
+        panel: '20px',   // meal cards, feature cards
+        frame: '34px',   // the mobile app frame
+      },
+      minHeight: { touch: '44px', bar: '48px' },  // docs/10 §5
       minWidth: { touch: '44px' },
     },
   },

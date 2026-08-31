@@ -80,7 +80,7 @@ export default function Register() {
           <label className="label" htmlFor="password">{t('field.password')}</label>
           <input id="password" className="field" type="password" autoComplete="new-password"
                  value={form.password} onChange={set('password')} required />
-          <p className="text-xs text-ink-muted mt-1">{t('register.password_hint')}</p>
+          <p className="text-xs text-beige-deep mt-1">{t('register.password_hint')}</p>
           <FieldError message={fields.password} />
         </div>
         <FieldError message={error ?? undefined} />

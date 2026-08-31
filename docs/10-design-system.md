@@ -1,8 +1,10 @@
 # Design System — Evermore
 
-**Version:** 0.2 (brand received and re-verified against the source PNGs; product undefined)
+**Version:** 0.3 (2026-08-31 — §4, the component layer, read off the mockup canvas)
 **Source:** `docs/design_guideline/` — "evermore Mini Brand Guidelines", pages
-17 (colour) and 19 (typeface), supplied by Steven.
+17 (colour) and 19 (typeface), supplied by Steven — and, for §4, the Claude
+Design project *"Healthy catering UI mockups"* (`Evermore Mockups.dc.html`),
+supplied by Steven 2026-08-31.
 
 This document is the **engineering reading** of those guidelines: the same
 decisions expressed as tokens, with the contrast maths done. The PNGs are the
@@ -353,7 +355,215 @@ block, so with motion off it is simply present; only its wipe is animated.
 
 `scripts/verify-motion.js` asserts the invariant on every element.
 
-## 4. Conventions carried in
+## 4. Component layer — the mockup canvas (2026-08-31)
+
+**Source:** the Claude Design project *"Healthy catering UI mockups"*,
+file `Evermore Mockups.dc.html`
+(`claude.ai/design/p/e433f21e-1ed8-4854-9e59-4f11cb0046e4`). Fourteen artboards:
+
+| | Artboards |
+|---|---|
+| Marketing | **M1** home · desktop 1440 · **M2** buy package · **M3** pick slot from credit |
+| Print | **P1** kitchen production sheet · A4 · **P2** packing label 100×150 mm + 100×50 mm |
+| Back office | **S1** daily dashboard · **S2** menu schedule calendar · **S3** four price forms · **S4** payment verification queue · **S5** kitchen coverage map |
+| Mobile B2C | **01** menu calendar · **02** meal detail · **03** cart · **04** delivery · **05** transfer · **06** package credit |
+
+The canvas takes its palette and type from §2 and §3 — it introduces **no new
+colour and no new typeface**. What it adds is the component layer below, which
+until now existed only as ad-hoc Tailwind in the SPA. That is what this section
+makes normative.
+
+### 4.1 Four places the canvas fails AA, and what ships instead
+
+The canvas is a design document, not an accessibility ruling. Four of its
+pairings were measured with `scripts/contrast.py` and do not clear AA. **§2.4
+wins.** Each substitution below keeps the canvas's intent and its visual weight;
+none of them is a matter of taste, and none may be quietly reverted.
+
+| # | The canvas draws | Measured | Ships instead | Measured |
+|---|---|---:|---|---:|
+| 1 | `#CC6883` fill, beige ink, 13–14px bold — the "40 / 40 penuh" capacity pill (S1, S2, S5) | **3.40** ✗ | `#91253D` fill, beige ink | **7.89** ✓ |
+| 2 | — (consequence of 1) `#91253D` on the ground has no visible edge | **1.44** ✗ | the same pill gains a `1px #CC6883` ring | **3.33** ✓ boundary |
+| 3 | `1px solid #468973` as the boundary of an *interactive* control — slot options, chips, inputs (M3, 01, 04, 05) | **2.88** ✗ | `1px solid #CCBDAA` wherever the border is the control's only edge | **6.47** ✓ |
+| 4 | `#468973` as the selected table-row fill under 15px text (S4 queue) | **3.93** ✗ | `rgba(255,250,224,0.10)` tint + a 3px beige left rule | **8.43** ✓ |
+
+Note on #3: `#468973` remains correct as a **decorative rule between filled
+areas** — a row separator inside a framed table, the seam under a header. It
+fails only when it is the sole boundary of something you can click, which is
+what 1.4.11 governs. Both uses appear in the canvas and they are not
+interchangeable.
+
+Everything else in the canvas passes as drawn, including the pairings that look
+risky: deep ink on `#FFBC8F` is **7.27**, on `#B6DAFA` **8.15**, and every
+callout tint at 8% over the ground leaves beige text between **9.29** and
+**10.57**.
+
+### 4.2 Buttons — pills, and the CTA is beige
+
+On the deep ground the primary action is a **beige fill with deep ink**
+(11.32 both as fill-against-ground and as ink-on-fill), not the deep-green fill
+the SPA used while it lived on a beige sheet. Every button is a full pill,
+`border-radius: 999px`, weight 700, and clears 44px.
+
+| Variant | Fill | Ink | Border | Height |
+|---|---|---|---|---|
+| `.btn-primary` | `#FFFAE0` | `#1C3D34` | none | 44 · 48 full-width · 52 hero |
+| `.btn-ghost` | transparent | `#FFFAE0` | `2px #FFFAE0` | 44 |
+| `.btn-danger` | transparent | `#FFFAE0` | `2px #CC6883` | 44 · 48 |
+| `.btn-quiet` | transparent | `#CCBDAA` | `2px #468973` | 40 — inside a framed panel only |
+| `.btn-icon` | `#FFFAE0` | `#1C3D34` | none | 44×44, round |
+
+A 2px rule, not 1px: at 1px a beige outline on the ground reads as a hairline
+and disappears against the produce background (§2.8).
+
+### 4.3 Radii
+
+The canvas is consistently rounder than the old token set. `--radius` moves
+from 10px to 12px and three sizes join it.
+
+| Token | px | Used for |
+|---|---:|---|
+| `--radius-sm` | 6 | focus ring inset, tiny chips |
+| `--radius` | **12** | inputs, notes, small cards, icon buttons |
+| `--radius-card` | **14** | calendar cells, stat tiles, inner panels |
+| `--radius-lg` | 16 | framed panels and tables |
+| `--radius-panel` | **20** | meal cards, feature cards |
+| `--radius-xl` | 24 | hero art |
+| `--radius-frame` | **34** | the mobile app frame |
+| `--radius-full` | 999 | every button, every pill |
+
+### 4.4 The kicker
+
+The canvas's most-repeated element, above almost every heading and inside every
+tile: **12–13px, weight 700, `letter-spacing: 0.08em–0.1em`, uppercase**, in
+`#CCBDAA` (6.47 ✓) — or `#FFBC8F` (7.27) / `#B6DAFA` (8.15) when it carries a
+state. It is `.kicker`; it is never a heading element, because it is a label,
+not an outline level.
+
+### 4.5 Callouts — the left rule
+
+One pattern, three voices. `border-left: 3px solid <accent>`, background the
+same accent at **8%** over the ground, `--radius`, `12px 14px` padding. Body
+text stays beige and measures 9.29–10.57 on every one of them.
+
+| Class | Rule | Carries |
+|---|---|---|
+| `.note-info` | `#B6DAFA` | how a thing works — cut-off times, credit rules |
+| `.note-emph` | `#FFBC8F` | a deadline or a caution — "pay within 2h 47m" |
+| `.note-warn` | `#CC6883` | something is wrong or blocked |
+
+Colour is never the only signal (§2.4 rule 4): each carries a word or an icon.
+
+### 4.6 Framed tables
+
+Data grids are CSS grid inside a frame, not `<table>` borders:
+`1px solid #CCBDAA`, `--radius-lg`, `overflow: hidden`. The header row is
+`.kicker` in `#CCBDAA` over a `#CCBDAA` bottom rule; body rows are separated by
+`1px solid #468973` — decorative-between-filled-areas, which is the legal use
+of that colour (§4.1 #3). The selected row is the §4.1 #4 treatment.
+
+**On the print sheets the frame inverts:** header cells are `#1C3D34` filled
+with beige ink, and row rules drop to `rgba(28,61,52,0.2)` on the beige sheet.
+
+### 4.7 Stat tiles
+
+`1px solid #468973`, `--radius-card`, 16px padding. Label `.kicker` at 13px in
+`#CCBDAA`; the number in Erode **40px/700** at `-0.022em`; a 13px sub-line in
+`#CCBDAA`. An alerting tile swaps border **and** label to `#FFBC8F` or
+`#CC6883` together — the border alone would be colour-as-only-signal.
+
+### 4.8 Status pills
+
+`padding: 4px 12px`, `--radius-full`, 13px/700.
+
+| State | Ships as | Measured |
+|---|---|---:|
+| affirmative — "Cocok", "Ya", "Published" | `#FFFAE0` fill, deep ink | 11.32 ✓ |
+| emphasis — "Paling laris", a queue count | `#FFBC8F` fill, deep ink | 7.27 ✓ |
+| informational | `#B6DAFA` fill, deep ink | 8.15 ✓ |
+| **at capacity / rejected** | `#91253D` fill, beige ink, `1px #CC6883` ring | 7.89 ✓ |
+| archived / inactive | transparent, `1px #CCBDAA`, `#CCBDAA` ink | 6.47 ✓ |
+
+### 4.9 Chips — the segmented filter
+
+Diet filters, price-table tabs, queue tabs. Selected: `#FFFAE0` fill, deep ink,
+weight 700. Unselected: transparent, `1px #CCBDAA` (§4.1 #3 — it is the chip's
+only edge), weight 500. Both are pills clearing 44px.
+
+### 4.10 The two shells
+
+**Mobile — 390×844 (01–06, M2, M3).** A `#468973` status strip, then a
+`#468973` header bar carrying a 44px round beige back button and a 19px/700
+title, then the scrolling body on the ground, then a **sticky bottom bar** in
+`#468973`: the running total on the left as a `.kicker` over Erode 24–26px/700,
+and the primary action on the right. Every string on either bar is `--text-bar`
+(19px/700) or larger — §2.7's rule, and the reason the bottom bar's total is
+Erode rather than Inter.
+
+**Back office — 1440×900 (S1–S5).** A 228px `#468973` sidebar: wordmark, a
+"Back office" kicker, nav items at 15px, the active one a `#FFFAE0` fill with
+deep ink at `--radius` and a 12px side inset, a `#FFBC8F` count badge where one
+applies, and the signed-in staff member pinned to the bottom. S2–S5 also show a
+top-bar variant — wordmark at 116px plus a 19px/700 screen title — used where a
+screen needs its full width.
+
+Sidebar nav items are 15px on `#468973`, which is **below** the bar rule. They
+are legal only because the active item is a beige *fill* (deep ink, 11.32) and
+the rest are large-enough hit targets carrying `#FFFAE0` at 3.93 — AA-large
+territory. Raise them to 17px if that margin is ever spent elsewhere.
+
+### 4.11 Print artifacts
+
+**P1 — kitchen production sheet, A4 (794×1123 at 96dpi).** Beige sheet, deep
+ink, the inverted table frame of §4.6, a 4-up stat row where the first tile is
+deep-filled, and a signature block pinned to the bottom.
+
+**P2 — packing label, 100×150 mm (378×567) and a 100×50 mm compact variant.**
+Beige sheet, deep ink, the deep wordmark, a diet pill, the recipient block in
+Erode 32px, a two-up delivery/kitchen pair, contents with allergens in bold, and
+the order code beside an 84px QR block.
+
+Both print on the beige sheet, never on the ground: a deep-green flood fill is
+about 90% ink coverage on a kitchen printer, and the pages exist to be printed
+every morning.
+
+### 4.12 Where the build departs from the canvas, and why
+
+Beyond the four AA substitutions in §4.1, five deliberate departures. Each is a
+decision, not a shortfall — but none of them is invisible, so they are written
+down rather than left for someone to "fix" back.
+
+1. **The back-office sidebar does not repeat the wordmark or the user's name.**
+   Each artboard is a whole window, so S1 draws both inside the rail. The app
+   already has a masthead carrying the wordmark, the language picker and sign
+   out; a second wordmark 22px below the first reads as a bug. The rail keeps
+   navigation and the staff identity block.
+2. **The sidebar is hidden below `lg` rather than reflowed.** A 228px rail on a
+   390px phone leaves 162px of content. The staff screens are drawn at
+   1440×900 and are desktop screens; the masthead still reaches every route on
+   a phone.
+3. **`.btn-quiet` is 44px, not the canvas's 40px.** The touch-target floor in
+   §5 is not negotiable against a style.
+4. **S5's map is a schematic, not Google Maps.** Kitchen positions and service
+   radii are the live values, projected with one kilometre scale on both axes
+   and drawn to scale — so the relative geography is truthful. What it does not
+   show is streets. The tile layer needs the browser Maps key plumbed to the
+   SPA; the public pages get one (`PageData.MapsKey`), the SPA does not. In
+   `RUN-WHEN-BACK.md`, not faked with a picture of a map.
+5. **Two of the canvas's columns had no data behind them and were renamed
+   rather than invented.** S3's "Basis + pajak (11%)" column: `PriceRow` has no
+   base/tax split, because that division is integer arithmetic performed when
+   an *order* is priced, not a property of a price row — which is what the note
+   above the table already says. It now reads "Promo". P1's second component
+   column showed `item_role`, so it is headed "Role". A header that disagrees
+   with the cell under it is a defect, and both shipped that way for one build
+   before the screenshots caught them.
+
+The M1 menu band renders nothing when no meal is published for the coming
+seven days. That is its correct state, not a bug — the home page has to render
+on a Thursday when next week's menu is still in draft.
+
+## 5. Conventions carried in
 
 From `99-steven-preference.md`, applied here:
 
@@ -367,7 +577,7 @@ From `99-steven-preference.md`, applied here:
   life of the request** and **confirms before anything irreversible**.
 - Every public page ships the SEO baseline (§13 of the preference file).
 
-## 5. Open — needs Steven or a designer
+## 6. Open — needs Steven or a designer
 
 - [x] **Reversed-out logo** for dark and Nourish-Green fills. Derived from the
       supplied artwork by `scripts/mklogo.py` rather than waiting on one —

@@ -65,6 +65,8 @@ export const messages = {
   // Rendered as "12 results" — a suffix rather than a formatted sentence,
   // which keeps it correct in all three without a plural rule engine.
   'ui.results': { id: 'hasil', en: 'results', zh: '条结果' },
+  'ui.all': { id: 'Semua', en: 'All', zh: '全部' },
+  'ui.error': { id: 'Ada yang salah', en: 'Something is wrong', zh: '存在问题' },
   'ui.processing': { id: 'Memproses…', en: 'Processing…', zh: '处理中…' },
   'ui.loading': { id: 'Memuat…', en: 'Loading…', zh: '加载中…' },
   'ui.empty': { id: 'Belum ada data.', en: 'Nothing here yet.', zh: '暂无数据。' },
@@ -491,6 +493,205 @@ export const messages = {
   'csv.failed': {
     id: 'Ekspor gagal. Coba lagi.', en: 'Export failed. Try again.', zh: '导出失败，请重试。',
   },
+
+  // ══ Back office — the canvas's S1–S5 and the two print artifacts ═════════
+  // docs/10 §4.10 / §4.11. The sidebar, the five screens and the two sheets
+  // that come off the kitchen printer every morning.
+  'bo.title': { id: 'Back office', en: 'Back office', zh: '后台' },
+  'bo.dashboard': { id: 'Dasbor', en: 'Dashboard', zh: '仪表板' },
+  'bo.calendar': { id: 'Jadwal menu', en: 'Menu schedule', zh: '菜单排期' },
+  'bo.pricing': { id: 'Harga', en: 'Pricing', zh: '价格' },
+  'bo.coverage': { id: 'Dapur & wilayah', en: 'Kitchens & areas', zh: '厨房与配送区' },
+  'bo.production': { id: 'Lembar produksi', en: 'Production sheet', zh: '生产单' },
+  'bo.labels': { id: 'Label kemasan', en: 'Packing labels', zh: '包装标签' },
+  'bo.signed_in_as': { id: 'Masuk sebagai', en: 'Signed in as', zh: '当前登录' },
+
+  // ── S1 · daily dashboard ─────────────────────────────────────────────────
+  'dash.title': { id: 'Dasbor harian', en: 'Daily dashboard', zh: '每日仪表板' },
+  'dash.subtitle': {
+    id: 'Angka untuk tanggal layanan hari ini, zona Asia/Jakarta',
+    en: "Figures for today's service date, Asia/Jakarta",
+    zh: '今日服务日期数据，亚洲/雅加达时区',
+  },
+  'dash.cutoff': { id: 'Cut-off besok', en: 'Tomorrow cut-off', zh: '明日截单' },
+  'dash.meals_today': { id: 'Meal hari ini', en: 'Meals today', zh: '今日餐数' },
+  'dash.deliveries': { id: 'Pengantaran', en: 'Deliveries', zh: '配送' },
+  'dash.needs_verify': { id: 'Perlu verifikasi', en: 'Awaiting verification', zh: '待核验' },
+  'dash.revenue': { id: 'Omzet terverifikasi', en: 'Verified revenue', zh: '已核验营收' },
+  'dash.out_of_range': { id: 'Di luar jangkauan', en: 'Out of range', zh: '超出配送范围' },
+  'dash.out_of_range_sub': { id: 'percobaan checkout', en: 'checkout attempts', zh: '次结账尝试' },
+  'dash.capacity': { id: 'Kapasitas per dapur & slot', en: 'Capacity by kitchen & slot', zh: '各厨房与时段产能' },
+  'dash.capacity_legend': { id: 'terpakai / kuota', en: 'used / quota', zh: '已用 / 配额' },
+  'dash.kitchen': { id: 'Dapur', en: 'Kitchen', zh: '厨房' },
+  'dash.closed': { id: 'tutup', en: 'closed', zh: '休息' },
+  'dash.actions': { id: 'Perlu tindakan', en: 'Needs action', zh: '待处理' },
+  'dash.action_proofs': {
+    id: 'bukti transfer menunggu', en: 'transfer proofs waiting', zh: '笔转账凭证待核验',
+  },
+  'dash.action_oldest': { id: 'tertua', en: 'oldest', zh: '最久' },
+  'dash.verify': { id: 'Verifikasi', en: 'Verify', zh: '核验' },
+  'dash.load_failed': {
+    id: 'Dasbor tidak bisa dimuat.', en: 'The dashboard could not load.', zh: '仪表板加载失败。',
+  },
+
+  // ── S2 · menu schedule calendar ──────────────────────────────────────────
+  'cal.title': { id: 'Jadwal menu', en: 'Menu schedule', zh: '菜单排期' },
+  'cal.prev_week': { id: '‹ Minggu lalu', en: '‹ Last week', zh: '‹ 上周' },
+  'cal.next_week': { id: 'Minggu depan ›', en: 'Next week ›', zh: '下周 ›' },
+  'cal.publish_week': { id: 'Terbitkan minggu ini', en: 'Publish this week', zh: '发布本周' },
+  'cal.published': { id: 'Published', en: 'Published', zh: '已发布' },
+  'cal.draft': { id: 'Draft', en: 'Draft', zh: '草稿' },
+  'cal.at_capacity': { id: 'Kapasitas penuh', en: 'At capacity', zh: '产能已满' },
+  'cal.global_note': {
+    id: 'Kalender global lintas dapur', en: 'Global calendar across kitchens', zh: '跨厨房全局日历',
+  },
+  'cal.schedule': { id: '+ Jadwalkan', en: '+ Schedule', zh: '+ 排期' },
+  'cal.publish': { id: 'Terbitkan', en: 'Publish', zh: '发布' },
+  'cal.components': { id: 'komponen', en: 'components', zh: '个组成' },
+  'cal.filled': { id: 'terisi', en: 'filled', zh: '已订' },
+  'cal.full': { id: 'penuh', en: 'full', zh: '已满' },
+  'cal.diet': { id: 'Diet', en: 'Diet', zh: '饮食类型' },
+  'cal.load_failed': {
+    id: 'Kalender tidak bisa dimuat.', en: 'The calendar could not load.', zh: '日历加载失败。',
+  },
+  'cal.publish_failed': {
+    id: 'Penerbitan gagal.', en: 'Publishing failed.', zh: '发布失败。',
+  },
+
+  // ── S3 · the four price forms ────────────────────────────────────────────
+  'price.title': { id: 'Harga', en: 'Pricing', zh: '价格' },
+  'price.tax_note': {
+    id: 'Semua harga sudah termasuk PPN. Pemisahan basis dan pajak dihitung saat pesanan, bukan di baris harga.',
+    en: 'All prices include VAT. The base/tax split is computed on the order, not on the price row.',
+    zh: '所有价格均含增值税。税基与税额在订单结算时拆分，而非记录在价格行上。',
+  },
+  'price.meal_normal': { id: 'Meal · normal', en: 'Meal · normal', zh: '单餐 · 标准' },
+  'price.meal_promo': { id: 'Meal · promo', en: 'Meal · promo', zh: '单餐 · 促销' },
+  'price.pkg_normal': { id: 'Paket · normal', en: 'Package · normal', zh: '套餐 · 标准' },
+  'price.pkg_promo': { id: 'Paket · promo', en: 'Package · promo', zh: '套餐 · 促销' },
+  'price.scope': { id: 'Scope', en: 'Scope', zh: '适用范围' },
+  'price.valid': { id: 'Berlaku', en: 'Valid', zh: '生效' },
+  'price.tier': { id: 'Tier', en: 'Tier', zh: '档位' },
+  'price.range': { id: 'Rentang meal', en: 'Meal range', zh: '餐数区间' },
+  'price.incl_tax': { id: 'Harga termasuk PPN', en: 'Price incl. VAT', zh: '含税价格' },
+  'price.base_tax': { id: 'Basis + pajak', en: 'Base + tax', zh: '税基 + 税额' },
+  'price.active': { id: 'Aktif', en: 'Active', zh: '启用' },
+  'price.yes': { id: 'Ya', en: 'Yes', zh: '是' },
+  'price.archived': { id: 'Arsip', en: 'Archived', zh: '已归档' },
+  'price.promo': { id: 'Promo', en: 'Promo', zh: '促销' },
+  'price.tier_ok': { id: 'Tangga tier utuh', en: 'Tier ladder is sound', zh: '档位阶梯完整' },
+  'price.tier_gap': { id: 'Tangga tier bolong', en: 'Tier ladder has a hole', zh: '档位阶梯有缺口' },
+  'price.resolver': { id: 'Uji resolusi harga', en: 'Price resolution test', zh: '价格解析测试' },
+  'price.run_resolver': { id: 'Jalankan resolver', en: 'Run resolver', zh: '运行解析器' },
+  'price.result': { id: 'Hasil', en: 'Result', zh: '结果' },
+  'price.per_meal': { id: 'per meal', en: 'per meal', zh: '每餐' },
+  'price.trace': { id: 'Jejak resolusi', en: 'Resolution trace', zh: '解析轨迹' },
+  'price.trace_note': {
+    id: 'Jejak ini ikut tersimpan di pesanan, jadi pertanyaan "kenapa pelanggan ini bayar segitu" terjawab dari catatan tanpa menjalankan ulang resolver.',
+    en: 'The trace is stored on the order, so "why did this customer pay that" is answered from the record without re-running the resolver.',
+    zh: '解析轨迹随订单一并保存，因此“这位客户为何付这个价”可直接查记录，无需重新运行解析器。',
+  },
+  'price.qty': { id: 'Jumlah meal', en: 'Meal count', zh: '餐数' },
+  'price.order_date': { id: 'Tanggal pesan', en: 'Order date', zh: '下单日期' },
+  'price.load_failed': {
+    id: 'Daftar harga tidak bisa dimuat.', en: 'The price list could not load.', zh: '价格表加载失败。',
+  },
+
+  // ── S5 · kitchen coverage ────────────────────────────────────────────────
+  'cov.title': { id: 'Dapur & wilayah layanan', en: 'Kitchens & service areas', zh: '厨房与服务区域' },
+  'cov.rule': {
+    id: 'Poligon menang atas radius. Titik di luar semuanya diblokir dan dicatat.',
+    en: 'Polygon beats radius. A point outside every area is blocked and logged.',
+    zh: '多边形优先于半径。所有区域之外的坐标一律拒绝并记录。',
+  },
+  'cov.radius': { id: 'Radius layanan', en: 'Service radius', zh: '服务半径' },
+  'cov.polygon': { id: 'Poligon', en: 'Polygon', zh: '多边形' },
+  'cov.points': { id: 'titik', en: 'points', zh: '个顶点' },
+  'cov.slots_today': { id: 'Slot & kapasitas hari ini', en: "Today's slots & capacity", zh: '今日时段与产能' },
+  'cov.slot': { id: 'Slot', en: 'Slot', zh: '时段' },
+  'cov.quota': { id: 'Kuota', en: 'Quota', zh: '配额' },
+  'cov.used': { id: 'Terpakai', en: 'Used', zh: '已用' },
+  'cov.manual_note': {
+    id: 'Penugasan manual tidak pernah ditimpa oleh re-route, dan re-route setelah cut-off ditolak.',
+    en: 'A manual assignment is never overwritten by a re-route, and a re-route after cut-off is refused.',
+    zh: '人工指派不会被自动改派覆盖，截单后的改派一律拒绝。',
+  },
+  'cov.priority': { id: 'prioritas', en: 'priority', zh: '优先级' },
+  'cov.schematic': {
+    id: 'skema dari koordinat asli — bukan peta jalan',
+    en: 'schematic from the real coordinates — not a street map',
+    zh: '基于真实坐标的示意图 — 非街道地图',
+  },
+  'cov.district': { id: 'Kecamatan', en: 'District', zh: '区' },
+  'cov.city': { id: 'Kota', en: 'City', zh: '城市' },
+  'cov.attempts': { id: 'Percobaan', en: 'Attempts', zh: '尝试次数' },
+  'cov.notify': { id: 'Minta dikabari', en: 'Notify requests', zh: '开通提醒' },
+  'cov.nearest': { id: 'Dapur terdekat', en: 'Nearest kitchen', zh: '最近厨房' },
+  'cov.active': { id: 'aktif', en: 'active', zh: '启用' },
+  'cov.inactive': { id: 'nonaktif', en: 'inactive', zh: '停用' },
+  'cov.load_failed': {
+    id: 'Wilayah tidak bisa dimuat.', en: 'Coverage could not load.', zh: '配送区加载失败。',
+  },
+
+  // ── P1 · kitchen production sheet ────────────────────────────────────────
+  'prod.title': { id: 'Lembar produksi', en: 'Production sheet', zh: '生产单' },
+  'prod.printed': { id: 'Dicetak', en: 'Printed', zh: '打印于' },
+  'prod.snapshot': {
+    id: 'Snapshot setelah cut-off', en: 'Snapshot taken after cut-off', zh: '截单后快照',
+  },
+  'prod.total_portions': { id: 'Total porsi', en: 'Total portions', zh: '总份数' },
+  'prod.slots': { id: 'Slot', en: 'Slots', zh: '时段' },
+  'prod.allergen_notes': { id: 'Catatan alergen', en: 'Allergen notes', zh: '过敏原备注' },
+  'prod.per_meal_slot': { id: 'Porsi per meal & slot', en: 'Portions by meal & slot', zh: '各餐品与时段份数' },
+  'prod.meal': { id: 'Meal', en: 'Meal', zh: '餐品' },
+  'prod.components': { id: 'Kebutuhan komponen', en: 'Component requirements', zh: '组成用量' },
+  'prod.components_short': { id: 'Komponen', en: 'Components', zh: '组成种类' },
+  'prod.role': { id: 'Peran', en: 'Role', zh: '角色' },
+  'prod.allergen_note': {
+    id: 'Rincian alergen dan permintaan khusus ada per pengantaran, tercetak di label kemasan.',
+    en: 'Allergen detail and special requests are per delivery and print on the packing labels.',
+    zh: '过敏原与特殊要求按每次配送记录，并打印在包装标签上。',
+  },
+  'prod.component': { id: 'Komponen', en: 'Component', zh: '组成' },
+  'prod.per_portion': { id: 'Per porsi', en: 'Per portion', zh: '每份' },
+  'prod.portions': { id: 'Porsi', en: 'Portions', zh: '份数' },
+  'prod.total': { id: 'Total', en: 'Total', zh: '合计' },
+  'prod.special': {
+    id: 'Catatan alergen & permintaan khusus',
+    en: 'Allergen notes & special requests',
+    zh: '过敏原与特殊要求',
+  },
+  'prod.checked': { id: 'Diperiksa', en: 'Checked by', zh: '检查人' },
+  'prod.head_chef': { id: 'Kepala dapur', en: 'Head chef', zh: '厨师长' },
+  'prod.print': { id: 'Cetak', en: 'Print', zh: '打印' },
+  'prod.load_failed': {
+    id: 'Lembar produksi tidak bisa dimuat.', en: 'The production sheet could not load.', zh: '生产单加载失败。',
+  },
+
+  // ── P2 · packing label ───────────────────────────────────────────────────
+  'label.title': { id: 'Label kemasan', en: 'Packing labels', zh: '包装标签' },
+  'label.for': { id: 'Untuk', en: 'For', zh: '收件人' },
+  'label.deliver': { id: 'Antar', en: 'Deliver', zh: '配送' },
+  'label.kitchen': { id: 'Dapur', en: 'Kitchen', zh: '厨房' },
+  'label.contents': { id: 'Isi', en: 'Contents', zh: '内容' },
+  'label.allergens': { id: 'Alergen', en: 'Allergens', zh: '过敏原' },
+  'label.order': { id: 'Pesanan', en: 'Order', zh: '订单' },
+  'label.keep_cold': {
+    id: 'Simpan dingin · habiskan dalam 24 jam',
+    en: 'Keep refrigerated · consume within 24 hours',
+    zh: '冷藏保存 · 24 小时内食用',
+  },
+  'label.track': { id: 'QR LACAK', en: 'QR TRACK', zh: 'QR 追踪' },
+  'label.compact': { id: 'Label ringkas', en: 'Compact label', zh: '简版标签' },
+  'label.load_failed': {
+    id: 'Label tidak bisa dimuat.', en: 'Labels could not load.', zh: '标签加载失败。',
+  },
+
+  // ── Shared across the new screens ────────────────────────────────────────
+  'ui.print': { id: 'Cetak', en: 'Print', zh: '打印' },
+  'ui.back': { id: 'Kembali', en: 'Back', zh: '返回' },
+  'ui.none': { id: 'tidak ada', en: 'none', zh: '无' },
+  'ui.today': { id: 'Hari ini', en: 'Today', zh: '今天' },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages

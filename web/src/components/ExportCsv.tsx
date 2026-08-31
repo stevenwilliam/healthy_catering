@@ -64,7 +64,7 @@ export default function ExportCsv({
         {busy ? t('ui.processing') : t('csv.export')}
       </button>
       {/* Announced, not colour-only (99 §8). */}
-      <span role="status" aria-live="polite" className="text-xs text-ink-muted">
+      <span role="status" aria-live="polite" className="text-xs text-beige-deep">
         {failed && t('csv.failed')}
       </span>
     </span>

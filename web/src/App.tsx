@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { loadSession, logout } from './lib/api'
 import { I18nProvider, LOCALE_INFO, useI18n, useT } from './lib/i18n'
 import LanguageSelector from './components/LanguageSelector'
@@ -14,6 +14,12 @@ import AdminPayments from './pages/AdminPayments'
 import AdminDeliveries from './pages/AdminDeliveries'
 import AdminSettings from './pages/AdminSettings'
 import AdminContent from './pages/AdminContent'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminCalendar from './pages/AdminCalendar'
+import AdminPricing from './pages/AdminPricing'
+import AdminCoverage from './pages/AdminCoverage'
+import Production from './pages/Production'
+import PackingLabels from './pages/PackingLabels'
 import Security from './pages/Security'
 
 /** RequireAuth gates a route in the UI.
@@ -144,6 +150,7 @@ function Nav() {
             <Link to="/packages">{t('nav.packages')}</Link>
             <Link to="/addresses">{t('nav.addresses')}</Link>
             <Link to="/keamanan">{t('nav.security')}</Link>
+            {staff && <Link to="/admin">{t('bo.title')}</Link>}
             {staff && <Link to="/admin/payments">{t('nav.payments')}</Link>}
             {staff && <Link to="/admin/deliveries">{t('nav.deliveries')}</Link>}
             {staff && <Link to="/admin/settings">{t('nav.settings')}</Link>}
@@ -177,6 +184,54 @@ function Nav() {
   )
 }
 
+/** BackOffice is the staff shell — the canvas's S1 sidebar (docs/10 §4.10).
+ *
+ * One adaptation from the canvas, deliberate: the artboards repeat the
+ * wordmark and the signed-in name inside the sidebar because each board is a
+ * whole window. Here the app already has a masthead carrying the wordmark,
+ * language and sign-out, so the sidebar carries navigation and the staff
+ * identity only. Repeating the wordmark 22px under itself looks like a bug.
+ *
+ * Hidden below `lg` rather than reflowed: a 228px rail on a 390px phone leaves
+ * 162px of content. Staff screens are desktop screens (the canvas draws them
+ * at 1440×900) and the top bar still reaches every route on a phone.
+ */
+function BackOffice() {
+  const t = useT()
+  const session = loadSession()
+  const item = ({ isActive }: { isActive: boolean }) =>
+    isActive ? 'sidenav-item-active' : 'sidenav-item'
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1440px] flex-1 gap-0">
+      <nav className="sidenav hidden lg:flex" aria-label={t('bo.title')}>
+        <span className="kicker mx-6 mb-5">{t('bo.title')}</span>
+        <div className="flex flex-col gap-0.5">
+          <NavLink end to="/admin" className={item}>{t('bo.dashboard')}</NavLink>
+          <NavLink to="/admin/calendar" className={item}>{t('bo.calendar')}</NavLink>
+          <NavLink to="/admin/pricing" className={item}>{t('bo.pricing')}</NavLink>
+          <NavLink to="/admin/payments" className={item}>{t('nav.payments')}</NavLink>
+          <NavLink to="/admin/deliveries" className={item}>{t('nav.deliveries')}</NavLink>
+          <NavLink to="/admin/coverage" className={item}>{t('bo.coverage')}</NavLink>
+          <NavLink to="/admin/production" className={item}>{t('bo.production')}</NavLink>
+          <NavLink to="/admin/labels" className={item}>{t('bo.labels')}</NavLink>
+          <NavLink to="/admin/settings" className={item}>{t('nav.settings')}</NavLink>
+          <NavLink to="/admin/content" className={item}>{t('nav.content')}</NavLink>
+        </div>
+        {session && (
+          <div className="mt-auto flex flex-col gap-0.5 px-6 pt-6">
+            <span className="kicker">{t('bo.signed_in_as')}</span>
+            <span className="text-sm font-semibold text-beige">{session.full_name}</span>
+          </div>
+        )}
+      </nav>
+      <div className="min-w-0 flex-1 px-4 py-6 lg:px-8">
+        <Outlet />
+      </div>
+    </div>
+  )
+}
+
 function NotFound() {
   const t = useT()
   return <p>{t('route.notfound')}</p>
@@ -185,8 +240,27 @@ function NotFound() {
 export default function App() {
   return (
     <I18nProvider>
-      <Shell />
+      <Routes>
+        {/* The two print artifacts (docs/10 §4.11) render BARE — no masthead,
+            no fixed footer, no floating WhatsApp button. They exist to come
+            out of the kitchen printer at 05.10 every morning, and a fixed
+            footer prints on top of the last table row on every page. */}
+        <Route path="/admin/production"
+               element={<RequireAuth><Production /></RequireAuth>} />
+        <Route path="/admin/labels"
+               element={<RequireAuth><PackingLabels /></RequireAuth>} />
+        <Route path="*" element={<Shell />} />
+      </Routes>
     </I18nProvider>
+  )
+}
+
+/** Customer is the ordering shell: one readable column on the ground. */
+function Customer() {
+  return (
+    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <Outlet />
+    </div>
   )
 }
 
@@ -194,29 +268,36 @@ function Shell() {
   return (
     <div className="min-h-screen flex flex-col pb-[var(--footer-h)]">
       <Nav />
-      {/* The page ground is deep #1C3D34 since the colour swap. The app is
-          forms and tables, and its controls were all designed against a light
-          surface, so the content keeps its one beige sheet — deep ink on it is
-          11.32:1 — and the ground frames it. */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-        <div className="rounded-2xl bg-sheet px-4 py-6 text-ink shadow-lift sm:px-8 sm:py-8">
+      {/* 2026-08-31: the app came OFF its single beige sheet. It used to render
+          every screen inside one, because its controls were specced deep-on-
+          light; the canvas (docs/10 §4) re-specs them for the ground, where
+          beige is 11.32. Panels and framed tables carry the structure the
+          sheet used to carry. */}
+      <main className="flex w-full flex-1 flex-col">
         <Routes>
-          <Route path="/" element={<Navigate to="/menu" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/menu" element={<RequireAuth><Menu /></RequireAuth>} />
-          <Route path="/addresses" element={<RequireAuth><Addresses /></RequireAuth>} />
-          <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
-          <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
-          <Route path="/packages" element={<RequireAuth><Packages /></RequireAuth>} />
-          <Route path="/keamanan" element={<RequireAuth><Security /></RequireAuth>} />
-          <Route path="/admin/payments" element={<RequireAuth><AdminPayments /></RequireAuth>} />
-          <Route path="/admin/deliveries" element={<RequireAuth><AdminDeliveries /></RequireAuth>} />
-          <Route path="/admin/settings" element={<RequireAuth><AdminSettings /></RequireAuth>} />
-          <Route path="/admin/content" element={<RequireAuth><AdminContent /></RequireAuth>} />
-          <Route path="*" element={<NotFound />} />
+          <Route element={<Customer />}>
+            <Route path="/" element={<Navigate to="/menu" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/menu" element={<RequireAuth><Menu /></RequireAuth>} />
+            <Route path="/addresses" element={<RequireAuth><Addresses /></RequireAuth>} />
+            <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+            <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
+            <Route path="/packages" element={<RequireAuth><Packages /></RequireAuth>} />
+            <Route path="/keamanan" element={<RequireAuth><Security /></RequireAuth>} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+          <Route element={<BackOffice />}>
+            <Route path="/admin" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
+            <Route path="/admin/calendar" element={<RequireAuth><AdminCalendar /></RequireAuth>} />
+            <Route path="/admin/pricing" element={<RequireAuth><AdminPricing /></RequireAuth>} />
+            <Route path="/admin/coverage" element={<RequireAuth><AdminCoverage /></RequireAuth>} />
+            <Route path="/admin/payments" element={<RequireAuth><AdminPayments /></RequireAuth>} />
+            <Route path="/admin/deliveries" element={<RequireAuth><AdminDeliveries /></RequireAuth>} />
+            <Route path="/admin/settings" element={<RequireAuth><AdminSettings /></RequireAuth>} />
+            <Route path="/admin/content" element={<RequireAuth><AdminContent /></RequireAuth>} />
+          </Route>
         </Routes>
-        </div>
       </main>
       <WhatsAppFloat />
       {/* Fixed to the bottom, in the masthead's own fill, thin (Steven,

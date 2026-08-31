@@ -249,10 +249,31 @@ const publicTemplates = `
 <main>
   <section class="hero hero-split">
     <div class="hero-copy">
+      <!-- M1's service-area badge. Ember on the ground is 7.27, and it says
+           WHERE we deliver, which is the first question a visitor has. -->
+      <p class="area-badge">{{c .Copy .L "home.area_badge"}}</p>
       <p class="eyebrow">{{c .Copy .L "home.eyebrow"}}</p>
       <h1>{{c .Copy .L "home.h1"}}</h1>
       <p class="lede">{{c .Copy .L "home.lede"}}</p>
-      <a class="cta" href="{{path .L "/menu/healthy"}}">{{c .Copy .L "home.cta"}}</a>
+      <p class="hero-cta">
+        <a class="cta" href="{{path .L "/menu/healthy"}}">{{c .Copy .L "home.cta"}}</a>
+        <a class="cta cta-ghost" href="{{path .L "/contact"}}">{{t .L "home.cta_area"}}</a>
+      </p>
+      <!-- The two figures the artboard states. Both are COUNTED — the diet
+           types from the table, the kitchens from the active rows — so neither
+           can go stale in copy the way a written "3 dapur" would. -->
+      <dl class="hero-stats">
+        <div>
+          <dt>{{len .DietTypes}}</dt>
+          <dd>{{t .L "home.stat_diets"}}</dd>
+        </div>
+        {{if .Kitchens}}
+        <div>
+          <dt>{{.Kitchens}}</dt>
+          <dd>{{t .L "home.stat_kitchens"}}</dd>
+        </div>
+        {{end}}
+      </dl>
     </div>
     {{if .HeroImage}}
     <!-- The picture is a sys_parameters row, so it can be swapped without a
@@ -269,6 +290,50 @@ const publicTemplates = `
     </div>
     {{end}}
   </section>
+
+  {{if .Meals}}
+  <!-- M1's menu band: this week's published meals on the mid-green bar fill,
+       with the package card closing the row. The band is a SURFACE, not a bar,
+       so the 19px bar rule does not apply to it — but beige on #468973 is only
+       3.93, so every card inside it stands on the deep ground again rather
+       than sitting straight on the green (docs/10 §2.7). -->
+  <section class="menu-band">
+    <div class="section-head band-head">
+      <div>
+        <h2>{{t .L "home.menu_h2"}}</h2>
+        <p>{{t .L "home.menu_sub"}}</p>
+      </div>
+      <p class="deliver-now">
+        <span class="kicker">{{t .L "home.deliver_today"}}</span>
+        <strong>{{t .L "home.deliver_cutoff"}}</strong>
+      </p>
+    </div>
+    <div class="band-grid">
+      {{range .Meals}}
+      <article class="card meal band-meal">
+        <p class="when">{{.Slot}} · {{.DietType}}</p>
+        <h3>{{if .Name}}{{.Name}}{{else}}{{index .Items 0}}{{end}}</h3>
+        <ul class="items">
+          {{range .Items}}<li>{{.}}</li>{{end}}
+        </ul>
+        <p class="badges">
+          <span class="badge">{{.Kcal}} kkal</span>
+          <span class="badge">{{.ProteinG}} protein</span>
+          {{if not .Complete}}<span class="badge est">≈</span>{{end}}
+        </p>
+      </article>
+      {{end}}
+      <!-- The package card. Same row, different job: it is the one card in the
+           band that is an offer rather than a dish. -->
+      <article class="card pkg-card">
+        <p class="kicker kicker-info">{{t .L "home.pkg_kicker"}}</p>
+        <h3>{{t .L "price.packages_h2"}}</h3>
+        <p>{{t .L "home.menu_sub"}}</p>
+        <a class="cta cta-ghost" href="{{path .L "/price-list"}}">{{t .L "home.pkg_cta"}}</a>
+      </article>
+    </div>
+  </section>
+  {{end}}
 
   {{if and .Prices .Prices.Packages}}
   <!-- Price table on the home page (Steven, 2026-08-19), the same partial the
