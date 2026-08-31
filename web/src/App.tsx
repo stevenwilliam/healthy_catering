@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
-import { loadSession, logout } from './lib/api'
+import { loadSession, logout, request } from './lib/api'
 import { I18nProvider, LOCALE_INFO, useI18n, useT } from './lib/i18n'
+import { CartProvider } from './lib/cart'
 import LanguageSelector from './components/LanguageSelector'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Menu from './pages/Menu'
+import MealDetail from './pages/MealDetail'
+import Cart from './pages/Cart'
+import Checkout from './pages/Checkout'
+import Credits from './pages/Credits'
+import BookSlot from './pages/BookSlot'
 import Addresses from './pages/Addresses'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
@@ -148,6 +154,7 @@ function Nav() {
             <Link to="/menu">{t('nav.menu')}</Link>
             <Link to="/orders">{t('nav.orders')}</Link>
             <Link to="/packages">{t('nav.packages')}</Link>
+            <Link to="/credits">{t('c06.title')}</Link>
             <Link to="/addresses">{t('nav.addresses')}</Link>
             <Link to="/keamanan">{t('nav.security')}</Link>
             {staff && <Link to="/admin">{t('bo.title')}</Link>}
@@ -199,20 +206,40 @@ function Nav() {
 function BackOffice() {
   const t = useT()
   const session = loadSession()
+  const [pending, setPending] = useState(0)
   const item = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'sidenav-item-active' : 'sidenav-item'
+
+  // S1 draws a count badge on "Pembayaran". It is live, because a badge
+  // showing a stale number is worse than no badge — staff act on it.
+  useEffect(() => {
+    let live = true
+    request<{ items: unknown[] }>('/admin/payments?status=SUBMITTED')
+      .then((p) => { if (live) setPending(p.items.length) })
+      .catch(() => { /* a badge must never break the shell */ })
+    return () => { live = false }
+  }, [])
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-1 gap-0">
       <nav className="sidenav hidden lg:flex" aria-label={t('bo.title')}>
-        <span className="kicker mx-6 mb-5">{t('bo.title')}</span>
+        {/* #CCBDAA on the rail is 2.25 — illegal at every size — so this is
+            beige at 19px (docs/10 §4.1). */}
+        <span className="sidenav-label mb-5">{t('bo.title')}</span>
         <div className="flex flex-col gap-0.5">
           <NavLink end to="/admin" className={item}>{t('bo.dashboard')}</NavLink>
           <NavLink to="/admin/calendar" className={item}>{t('bo.calendar')}</NavLink>
+          <NavLink to="/admin/foods" className={item}>{t('bo.foods')}</NavLink>
           <NavLink to="/admin/pricing" className={item}>{t('bo.pricing')}</NavLink>
-          <NavLink to="/admin/payments" className={item}>{t('nav.payments')}</NavLink>
+          <NavLink to="/admin/orders" className={item}>{t('bo.orders')}</NavLink>
+          <NavLink to="/admin/payments" className={item}>
+            {t('nav.payments')}
+            {pending > 0 && <span className="pill-emph">{pending}</span>}
+          </NavLink>
           <NavLink to="/admin/deliveries" className={item}>{t('nav.deliveries')}</NavLink>
           <NavLink to="/admin/coverage" className={item}>{t('bo.coverage')}</NavLink>
+          <NavLink to="/admin/customers" className={item}>{t('bo.customers')}</NavLink>
+          <NavLink to="/admin/packages" className={item}>{t('bo.packages')}</NavLink>
           <NavLink to="/admin/production" className={item}>{t('bo.production')}</NavLink>
           <NavLink to="/admin/labels" className={item}>{t('bo.labels')}</NavLink>
           <NavLink to="/admin/settings" className={item}>{t('nav.settings')}</NavLink>
@@ -220,8 +247,8 @@ function BackOffice() {
         </div>
         {session && (
           <div className="mt-auto flex flex-col gap-0.5 px-6 pt-6">
-            <span className="kicker">{t('bo.signed_in_as')}</span>
-            <span className="text-sm font-semibold text-beige">{session.full_name}</span>
+            <span className="sidenav-label mx-0">{t('bo.signed_in_as')}</span>
+            <span className="on-fill text-beige">{session.full_name}</span>
           </div>
         )}
       </nav>
@@ -240,6 +267,7 @@ function NotFound() {
 export default function App() {
   return (
     <I18nProvider>
+      <CartProvider>
       <Routes>
         {/* The two print artifacts (docs/10 §4.11) render BARE — no masthead,
             no fixed footer, no floating WhatsApp button. They exist to come
@@ -249,16 +277,57 @@ export default function App() {
                element={<RequireAuth><Production /></RequireAuth>} />
         <Route path="/admin/labels"
                element={<RequireAuth><PackingLabels /></RequireAuth>} />
+
+        {/* The phone artboards (01-06, M2, M3). Mounted ABOVE Shell rather
+            than inside it: while they were inside, Shell's masthead sat as a
+            dead band over the design and its fixed footer printed across the
+            sticky total bar. Each artboard is a whole screen. */}
+        <Route element={<PhoneApp />}>
+          <Route path="/menu" element={<RequireAuth><Menu /></RequireAuth>} />
+          <Route path="/menu/:id" element={<RequireAuth><MealDetail /></RequireAuth>} />
+          <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
+          <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
+          <Route path="/packages" element={<RequireAuth><Packages /></RequireAuth>} />
+          <Route path="/credits" element={<RequireAuth><Credits /></RequireAuth>} />
+          <Route path="/book" element={<RequireAuth><BookSlot /></RequireAuth>} />
+          <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
+        </Route>
+
         <Route path="*" element={<Shell />} />
       </Routes>
+      </CartProvider>
     </I18nProvider>
   )
 }
 
-/** Customer is the ordering shell: one readable column on the ground. */
+/** Customer is the ordering shell: one readable column on the ground.
+ *
+ * Used by the pages that are NOT drawn as phone artboards — sign-in,
+ * addresses, order history, account security. Those keep the masthead. */
 function Customer() {
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <Outlet />
+    </div>
+  )
+}
+
+/** PhoneApp is the shell for artboards 01-06, M2 and M3.
+ *
+ * They render with NO masthead and NO fixed footer, because each artboard is a
+ * whole screen: its own app bar at the top and its own action bar at the
+ * bottom. Stacking the desktop masthead above one leaves a dead green band
+ * over the design, and the fixed footer prints straight across the sticky
+ * total — which is exactly what the first screenshots showed.
+ *
+ * The language selector moves into the app bar, so nothing is lost with the
+ * masthead. The floating WhatsApp button is deliberately absent here: the
+ * canvas does not draw it on any customer screen, and it covers the bottom
+ * bar's action at 390px. It remains on every other surface.
+ */
+function PhoneApp() {
+  return (
+    <div className="flex w-full flex-1 flex-col px-3 py-4">
       <Outlet />
     </div>
   )
@@ -279,11 +348,8 @@ function Shell() {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/menu" element={<RequireAuth><Menu /></RequireAuth>} />
             <Route path="/addresses" element={<RequireAuth><Addresses /></RequireAuth>} />
             <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
-            <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
-            <Route path="/packages" element={<RequireAuth><Packages /></RequireAuth>} />
             <Route path="/keamanan" element={<RequireAuth><Security /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Route>

@@ -373,30 +373,57 @@ colour and no new typeface**. What it adds is the component layer below, which
 until now existed only as ad-hoc Tailwind in the SPA. That is what this section
 makes normative.
 
-### 4.1 Four places the canvas fails AA, and what ships instead
+### 4.1 The canvas is the specification. Type size is what makes it legal.
 
-The canvas is a design document, not an accessibility ruling. Four of its
-pairings were measured with `scripts/contrast.py` and do not clear AA. **§2.4
-wins.** Each substitution below keeps the canvas's intent and its visual weight;
-none of them is a matter of taste, and none may be quietly reverted.
+**Decision, Steven, 2026-08-31: the canvas wins on colour; AA is met by SIZE.**
+Not one hex in the fourteen artboards is altered. Where a pairing measures
+under AA at the size drawn, the *type* moves to WCAG's large-text threshold —
+**19px at weight 700**, the first whole pixel above 18.66px — which lowers the
+requirement from 4.5:1 to 3:1 and makes the canvas's own colour compliant as
+drawn. This supersedes the substitution table that shipped earlier the same
+day; `#CC6883` fills and `#468973` row fills are back exactly as the canvas
+draws them.
 
-| # | The canvas draws | Measured | Ships instead | Measured |
-|---|---|---:|---|---:|
-| 1 | `#CC6883` fill, beige ink, 13–14px bold — the "40 / 40 penuh" capacity pill (S1, S2, S5) | **3.40** ✗ | `#91253D` fill, beige ink | **7.89** ✓ |
-| 2 | — (consequence of 1) `#91253D` on the ground has no visible edge | **1.44** ✗ | the same pill gains a `1px #CC6883` ring | **3.33** ✓ boundary |
-| 3 | `1px solid #468973` as the boundary of an *interactive* control — slot options, chips, inputs (M3, 01, 04, 05) | **2.88** ✗ | `1px solid #CCBDAA` wherever the border is the control's only edge | **6.47** ✓ |
-| 4 | `#468973` as the selected table-row fill under 15px text (S4 queue) | **3.93** ✗ | `rgba(255,250,224,0.10)` tint + a 3px beige left rule | **8.43** ✓ |
+Recomputed with `scripts/contrast.py`. Everything not listed here passes at the
+size the canvas draws it.
 
-Note on #3: `#468973` remains correct as a **decorative rule between filled
-areas** — a row separator inside a framed table, the seam under a header. It
-fails only when it is the sole boundary of something you can click, which is
-what 1.4.11 governs. Both uses appear in the canvas and they are not
-interchangeable.
+| Element | Canvas | Measured | Need | Ships as |
+|---|---|---:|---:|---|
+| Capacity pill "40 / 40" (S1, S2, S5) | `#CC6883` fill, beige ink, 14px/700 | **3.40** | 4.5 | same fill, **19px/700** → need 3.0 ✓ |
+| Selected queue row (S4) | `#468973` fill, beige ink, 15px | **3.93** | 4.5 | same fill, **19px/700** ✓ |
+| Sticky bottom-bar total (01, 03, 04, M2, M3) | beige on bar, 17px/700 | **3.93** | 4.5 | **19px/700** ✓ |
+| Sticky bottom-bar kicker | beige on bar, 12px/700 | **3.93** | 4.5 | **19px/700** ✓ |
+| Sidebar nav, inactive (S1) | beige on bar, 15px/500 | **3.93** | 4.5 | **19px/700** ✓ |
 
-Everything else in the canvas passes as drawn, including the pairings that look
-risky: deep ink on `#FFBC8F` is **7.27**, on `#B6DAFA` **8.15**, and every
-callout tint at 8% over the ground leaves beige text between **9.29** and
-**10.57**.
+**Three inks cannot be saved by size.** `#CCBDAA` on `#468973` is **2.25**,
+under the 3:1 floor that large text itself has to clear — there is no size at
+which it is legal. These are the only three places a colour changes, and each
+becomes `#FFFAE0` at 19px/700:
+
+| Element | Canvas | Measured |
+|---|---|---:|
+| Sidebar "BACK OFFICE" kicker (S1) | `#CCBDAA` on the bar | **2.25** ✗ |
+| Sidebar staff sub-label (S1) | `#CCBDAA` on the bar | **2.25** ✗ |
+| Top-bar tax note (S3) | `#CCBDAA` on the bar | **2.25** ✗ |
+
+**One border stays as drawn.** `1px solid #468973` on the ground is **2.88**,
+under 1.4.11's 3:1. It is kept — because in every place the canvas uses it the
+border is *not* what identifies the control: a chip carries its label and a
+selected sibling, a slot option carries its own radio dot and text. 1.4.11
+governs boundaries that are needed to identify a component, and these are not.
+Where a border genuinely is the only affordance — a bare input — it is
+`#CCBDAA` at **6.47**.
+
+**What this costs, stated plainly.** The back-office rail is visibly heavier
+than the artboard: ten nav items at 19px/700 rather than 15px/500. That is the
+price of keeping `#468973` as the rail fill. The alternative — moving the rail
+to the deep ground, where beige is 11.32 and 15px is legal — would keep the
+canvas's type but change a fill, so it was not taken. Worth revisiting.
+
+**The device status strip in 01–06 is not built.** "09.41 · evermore.co.id" at
+13px on the bar measures 3.93 and fails, but it is the artboard's drawing of
+the *phone's own* status bar, not product UI. It has no implementation to make
+compliant.
 
 ### 4.2 Buttons — pills, and the CTA is beige
 
@@ -459,8 +486,9 @@ Colour is never the only signal (§2.4 rule 4): each carries a word or an icon.
 Data grids are CSS grid inside a frame, not `<table>` borders:
 `1px solid #CCBDAA`, `--radius-lg`, `overflow: hidden`. The header row is
 `.kicker` in `#CCBDAA` over a `#CCBDAA` bottom rule; body rows are separated by
-`1px solid #468973` — decorative-between-filled-areas, which is the legal use
-of that colour (§4.1 #3). The selected row is the §4.1 #4 treatment.
+`1px solid #468973`. The selected row is a `#468973` **fill** exactly as the
+canvas draws it, with its text at 19px/700 so beige on it clears AA as large
+text (§4.1).
 
 **On the print sheets the frame inverts:** header cells are `#1C3D34` filled
 with beige ink, and row rules drop to `rgba(28,61,52,0.2)` on the beige sheet.
@@ -476,13 +504,17 @@ with beige ink, and row rules drop to `rgba(28,61,52,0.2)` on the beige sheet.
 
 `padding: 4px 12px`, `--radius-full`, 13px/700.
 
-| State | Ships as | Measured |
-|---|---|---:|
-| affirmative — "Cocok", "Ya", "Published" | `#FFFAE0` fill, deep ink | 11.32 ✓ |
-| emphasis — "Paling laris", a queue count | `#FFBC8F` fill, deep ink | 7.27 ✓ |
-| informational | `#B6DAFA` fill, deep ink | 8.15 ✓ |
-| **at capacity / rejected** | `#91253D` fill, beige ink, `1px #CC6883` ring | 7.89 ✓ |
-| archived / inactive | transparent, `1px #CCBDAA`, `#CCBDAA` ink | 6.47 ✓ |
+| State | Ships as | Measured | Size |
+|---|---|---:|---|
+| affirmative — "Cocok", "Ya", "Published" | `#FFFAE0` fill, deep ink | 11.32 ✓ | 13px |
+| emphasis — "Paling laris", a queue count | `#FFBC8F` fill, deep ink | 7.27 ✓ | 13px |
+| informational | `#B6DAFA` fill, deep ink | 8.15 ✓ | 13px |
+| **at capacity / rejected** | `#CC6883` fill, beige ink | 3.40 | **19px/700** (§4.1) |
+| archived / inactive | transparent, `1px #CCBDAA`, `#CCBDAA` ink | 6.47 ✓ | 13px |
+
+The capacity pill is the canvas's colour untouched. It is the one pill that
+carries large type, and that is not a style choice — at 13px it would be an AA
+failure, and the fill is what the artboards draw.
 
 ### 4.9 Chips — the segmented filter
 
@@ -507,10 +539,12 @@ applies, and the signed-in staff member pinned to the bottom. S2–S5 also show 
 top-bar variant — wordmark at 116px plus a 19px/700 screen title — used where a
 screen needs its full width.
 
-Sidebar nav items are 15px on `#468973`, which is **below** the bar rule. They
-are legal only because the active item is a beige *fill* (deep ink, 11.32) and
-the rest are large-enough hit targets carrying `#FFFAE0` at 3.93 — AA-large
-territory. Raise them to 17px if that margin is ever spent elsewhere.
+Sidebar nav items are **19px/700**, not the artboard's 15px/500: beige on
+`#468973` is 3.93, which is AA for large text and nothing else, and the rail
+fill is the canvas's (§4.1). The rail is therefore visibly heavier than the
+artboard — the one place where "legal sizes" is obvious to the eye. The
+"BACK OFFICE" kicker and the staff sub-label are `#FFFAE0` rather than the
+canvas's `#CCBDAA`, which measures 2.25 there and is illegal at every size.
 
 ### 4.11 Print artifacts
 

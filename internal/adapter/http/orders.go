@@ -8,6 +8,7 @@ import (
 
 	"github.com/stevenwilliam/healthy_catering/internal/app"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/apierror"
+	"github.com/stevenwilliam/healthy_catering/internal/platform/sanitize"
 	"github.com/stevenwilliam/healthy_catering/internal/platform/security"
 )
 
@@ -31,6 +32,11 @@ func registerOrders(g *gin.RouterGroup, d Deps) {
 					Qty             int       `json:"qty"`
 					AddressID       uuid.UUID `json:"address_id"`
 				} `json:"lines"`
+				// The courier note typed at checkout (artboard 04). Sanitized
+				// and length-capped like every other free-text field — it is
+				// printed on a packing label and read off a phone by a
+				// courier, so it is an output context too (CLAUDE.md §4).
+				DriverNote string `json:"driver_note"`
 			}
 			if err := c.ShouldBindJSON(&body); err != nil {
 				Fail(c, bindError(err, "Send lines with scheduled_meal_id, qty and address_id."))
@@ -52,9 +58,21 @@ func registerOrders(g *gin.RouterGroup, d Deps) {
 				return
 			}
 
+			// Sanitized on the way IN, and REJECTED rather than repaired
+			// (CLAUDE.md §4): this string is printed on a packing label, read
+			// off a phone by a courier and rendered in the back office, so it
+			// is untrusted customer text in three output contexts.
+			note, err := sanitize.Text("driver_note", body.DriverNote, 280)
+			if err != nil {
+				Fail(c, apierror.Validation("That note is not valid.",
+					map[string]any{"driver_note": err.Error()}))
+				return
+			}
+
 			out, err := d.Ordering.PlaceOrder(c.Request.Context(), ident, app.PlaceOrderInput{
 				Lines: lines, IdempotencyKey: key,
 				IP: c.ClientIP(), UA: c.Request.UserAgent(),
+				DriverNote: note,
 			})
 			if err != nil {
 				Fail(c, err)

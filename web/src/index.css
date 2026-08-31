@@ -161,15 +161,15 @@
   .pill-emph     { @apply pill bg-ember-light text-nourish-deep; }  /*  7.27 ✓ */
   .pill-info     { @apply pill bg-ocean-light text-nourish-deep; }  /*  8.15 ✓ */
   .pill-archived { @apply pill border border-edge text-beige-deep; }/*  6.47 ✓ */
-  /* §4.1 #1 and #2. The canvas draws this as a #CC6883 fill, which is 3.40
-     with beige ink and 3.33 with deep — and the text is 13px, so neither is
-     large text. Berry DEEP reaches 7.89. That fill is in turn only 1.44
-     against the ground, so it wears a #CC6883 ring (3.33 ✓) to have an edge.
-     Do not "simplify" this back to one colour. */
+  /* The canvas's #CC6883 fill, untouched. Beige ink on it is 3.40, so this
+     one pill in the set carries LARGE text — 19px/700 — which drops the
+     requirement to 3.0 and makes the artboard's own colour legal (§4.1).
+     The size is the compliance mechanism; do not "tidy" it back to 13px. */
   .pill-full {
-    @apply pill border text-beige;
+    @apply pill text-beige;
     background: var(--pill-full-fill);
-    border-color: var(--pill-full-ring);
+    font-size: var(--on-fill-size);
+    font-weight: var(--on-fill-weight);
   }
 
   /* ── Chips — the segmented filter (§4.9) ──────────────────────────────── */
@@ -193,12 +193,17 @@
      the frame's right edge. The last ROW is not a structural position
      the selector can see; the component has to say which it is. */
   .gtable-cell.is-last { @apply border-b-0; }
-  /* §4.1 #4. The canvas fills the selected row #468973, which leaves its 15px
-     text at 3.93. This tint leaves it at 8.43 and the rule carries the state
-     without relying on colour alone. */
+  /* The canvas's #468973 row fill, untouched. Beige on it is 3.93, so the
+     selected row's text is 19px/700 — large text, requirement 3.0 (§4.1).
+     Row height is fixed either way, so selecting a row does not reflow the
+     table under the pointer. */
   .gtable-row-selected {
     background: var(--row-selected);
-    box-shadow: inset 3px 0 0 0 var(--beige);
+  }
+  .gtable-row-selected .gtable-cell,
+  .gtable-cell.gtable-row-selected {
+    font-size: var(--on-fill-size);
+    font-weight: var(--on-fill-weight);
   }
 
   /* ── Stat tiles (§4.7) ────────────────────────────────────────────────────
@@ -216,20 +221,29 @@
   /* ── The two shells (§4.10) ───────────────────────────────────────────────
      Every string on a bar is text-bar (19px/700) or larger — beige there is
      3.93, which is AA for large text and nothing else (§2.7). */
-  .appbar    { @apply flex items-center gap-3 bg-bar px-4 py-2 text-bar font-bold text-beige; }
+  /* on-fill: the single rule for text sitting on #468973 — a bar, a rail, a
+     selected row, a filled pill. Beige there is 3.93, legal only as large
+     text, so this is not a size preference (docs/10 §2.7, §4.1). */
+  .on-fill   { font-size: var(--on-fill-size); font-weight: var(--on-fill-weight); }
+  .appbar    { @apply on-fill flex items-center gap-3 bg-bar px-4 py-2 text-beige; }
   .bottombar { @apply sticky bottom-0 z-30 flex flex-wrap items-center justify-between
                       gap-3 bg-bar px-4 py-3; }
   .bottombar-total { @apply font-display text-2xl font-bold leading-none text-beige; }
+  /* The canvas draws this kicker at 12px and the total line at 17px. Both sit
+     on the bar at 3.93, so both are --on-fill-size here (§4.1). */
+  .bottombar-kicker { @apply on-fill uppercase text-beige; letter-spacing: 0.06em; }
 
   .sidenav      { @apply flex w-[228px] shrink-0 flex-col bg-bar py-5; }
-  /* 15px on the bar is below the bar rule and is legal here only because the
-     ACTIVE item is a beige fill with deep ink (11.32) and the rest are large
-     hit targets carrying beige at 3.93 — AA-large territory (docs/10 §4.10).
-     Raise to text-base if that margin is ever spent elsewhere. */
-  .sidenav-item { @apply mx-3 flex min-h-touch items-center justify-between gap-2
-                         rounded px-4 text-sm font-medium text-beige hover:bg-beige/10; }
-  .sidenav-item-active { @apply sidenav-item bg-beige font-bold text-nourish-deep
-                                hover:bg-beige; }
+  /* The canvas draws these at 15px/500. Beige on #468973 is 3.93 — AA for
+     large text and nothing else — and the rail fill is the canvas's, so the
+     items are 19px/700 (§4.1). The rail is visibly heavier than the artboard;
+     that is the cost of keeping the fill, and it is recorded in §4.10. */
+  .sidenav-item { @apply on-fill mx-3 flex min-h-touch items-center justify-between
+                         gap-2 rounded px-4 text-beige hover:bg-beige/10; }
+  .sidenav-item-active { @apply sidenav-item bg-beige text-nourish-deep hover:bg-beige; }
+  /* #CCBDAA on the bar is 2.25 — illegal at EVERY size, so the rail's kicker
+     and staff block are beige. The only three inks the canvas loses (§4.1). */
+  .sidenav-label { @apply on-fill mx-6 text-beige; letter-spacing: 0.06em; }
 
   .badge { @apply pill-emph; }
 

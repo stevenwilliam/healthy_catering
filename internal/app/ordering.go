@@ -112,6 +112,12 @@ type PlaceOrderInput struct {
 	IdempotencyKey string
 	IP             string
 	UA             string
+	// DriverNote is the note typed at CHECKOUT (artboard 04), which is a
+	// different thing from the note saved on the address: "leave with the
+	// receptionist" is a property of the address, "I'm in meeting room 3
+	// today" is a property of this delivery. Empty falls back to the
+	// address's, so a customer who types nothing keeps their standing note.
+	DriverNote string
 }
 
 // PlacedOrder is what checkout returns.
@@ -279,7 +285,7 @@ func (o *Ordering) PlaceOrder(ctx context.Context, ident Identity, in PlaceOrder
 				ServiceDate: p.ServiceDate, SlotID: p.Meal.SlotID, SlotAlias: p.Meal.SlotAlias,
 				Address: p.Address, KitchenID: *check.KitchenID, KitchenName: check.KitchenName,
 				DistanceM: int(check.DistanceKM * 1000), Reason: check.Reason,
-				FeeIDR: check.DeliveryFee,
+				FeeIDR: check.DeliveryFee, DriverNote: in.DriverNote,
 			}
 		}
 		deliveries[key].Lines = append(deliveries[key].Lines, i)

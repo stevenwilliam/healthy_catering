@@ -695,6 +695,39 @@ func registerPublicPages(r *gin.Engine, d Deps) {
 		})
 	})
 
+	// ── Public prices ───────────────────────────────────────────────────────
+	//
+	// Artboards 03 and M2 show the customer the TIER LADDER — "1–3 porsi
+	// Rp 78.000 / 4–9 berlaku / 10+" — and the package options. Both already
+	// exist as PublicList, which the marketing price page renders; the SPA had
+	// no way to reach them, and /admin/price-tiers is staff-only for good
+	// reason: it carries negotiated corporate rates.
+	//
+	// PublicList filters to the DEFAULT scope in the QUERY, not in a template,
+	// so this endpoint cannot leak a customer-type price by forgetting to.
+	// Nothing here is per-customer, so it caches like the company block.
+	r.GET("/api/v1/public/prices", func(c *gin.Context) {
+		list, err := d.Pricing.PublicList(c.Request.Context())
+		if err != nil {
+			// A price failure must not take the menu down — the client shows
+			// the ladder when it has one and the meal price alone when it
+			// does not.
+			if d.Log != nil {
+				d.Log.Warn("public price list unavailable", "error", err)
+			}
+			c.JSON(http.StatusOK, gin.H{"data": gin.H{
+				"tiers": []any{}, "prices": []any{}, "packages": []any{},
+			}})
+			return
+		}
+		c.Header("Cache-Control", "public, max-age=300")
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{
+			"tiers":    list.Tiers,
+			"prices":   list.Prices,
+			"packages": list.Packages,
+		}})
+	})
+
 	// ── SEO plumbing ────────────────────────────────────────────────────────
 	r.GET("/robots.txt", func(c *gin.Context) {
 		// The transactional surface is disallowed: crawlers do reach a cart or

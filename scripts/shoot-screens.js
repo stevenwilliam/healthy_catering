@@ -112,8 +112,21 @@ function calendar() {
     diet_type_id: DIETS.items[0].ID, diet_type: 'Balanced',
     slot_id: slot.slot_id, slot: slot.slot_time, name, status,
     qty_capacity: cap, qty_reserved: res,
-    items: comps.map((f) => ({ food_name: f })),
-    nutrition: { calories_kcal: kcal, protein_mg: 38200, complete: status === 'PUBLISHED' },
+    hero_photo_key: '/images/menu/ayam-panggang-brokoli.jpg',
+    items: comps.map((f, n) => ({
+      food_name: f,
+      item_role: n === 0 ? 'MAIN' : n === comps.length - 1 ? 'DRINK' : 'SIDE',
+      portion_size: n === 0 ? '150 g' : n === comps.length - 1 ? '250 ml' : '120 g',
+    })),
+    nutrition: {
+      calories_kcal: kcal, protein_mg: 38200, fat_mg: 18100,
+      carbohydrate_mg: 44600, fibre_mg: 9400, sodium_mg: 640,
+      complete: status === 'PUBLISHED',
+    },
+    allergens: [
+      { code: 'soy', name_id: 'Kedelai', name_en: 'Soy' },
+      { code: 'sesame', name_id: 'Wijen', name_en: 'Sesame' },
+    ],
   })
   return [
     dish(0, 'Ayam panggang lemon & quinoa', SLOTS[1], 'PUBLISHED', 40, 40, 520, ['Ayam panggang lemon', 'Quinoa herba', 'Brokoli kukus', 'Infused water timun']),
@@ -202,11 +215,80 @@ async function stubAPI(page) {
     if (p === '/admin/reports/production') return send(PRODUCTION)
     if (p === '/admin/reports/packing-labels') return send(LABELS)
     if (p === '/quote') return send(QUOTE)
+    if (p === '/public/prices') return send(PUBLIC_PRICES)
+    if (p === '/packages') return send(PACKAGES)
+    if (p === '/my/packages') return send(MY_PACKAGES)
+    if (/^\/my\/packages\/[^/]+\/ledger$/.test(p)) return send(LEDGER)
+    if (p === '/delivery-slots/availability') return send(SLOT_OFFERS)
     if (p === '/menu') return send(MENU)
-    if (p === '/addresses') return send(ADDRESSES)
+    if (p === '/addresses') return send(ADDRESSES_FULL)
     return send([])
   })
 }
+
+const PUBLIC_PRICES = {
+  tiers: [
+    { label: 'Tier 1', min_qty: 1, max_qty: 3 },
+    { label: 'Tier 2', min_qty: 4, max_qty: 9 },
+    { label: 'Tier 3', min_qty: 10 },
+  ],
+  prices: [
+    { diet_slug: 'balanced', diet_name: 'Balanced', tier_label: 'Tier 1', tier_min_qty: 1, unit_price_idr: 78000 },
+    { diet_slug: 'balanced', diet_name: 'Balanced', tier_label: 'Tier 2', tier_min_qty: 4, unit_price_idr: 75000 },
+    { diet_slug: 'balanced', diet_name: 'Balanced', tier_label: 'Tier 3', tier_min_qty: 10, unit_price_idr: 71000 },
+  ],
+  packages: [
+    { name: 'Paket 10', meal_credits: 10, validity_days: 60, price_idr: 750000 },
+    { name: 'Paket 20', meal_credits: 20, validity_days: 90, price_idr: 1420000 },
+    { name: 'Paket 40', meal_credits: 40, validity_days: 120, price_idr: 2720000 },
+  ],
+}
+
+const PACKAGES = {
+  items: [
+    { id: u(80), name: 'Paket 10', description: '', meal_credits: 10, validity_days: 60 },
+    { id: u(81), name: 'Paket 20', description: '', meal_credits: 20, validity_days: 90 },
+    { id: u(82), name: 'Paket 40', description: '', meal_credits: 40, validity_days: 120 },
+  ],
+  total: 3, page: 1, page_size: 25,
+}
+
+const MY_PACKAGES = {
+  items: [{
+    id: u(90), package_name: 'Paket Balanced 20', status: 'ACTIVE',
+    purchased_credits: 20, remaining_credits: 13,
+    expires_at: '2026-11-30T00:00:00Z', price_paid: 'Rp 1.420.000',
+  }],
+  total: 1, page: 1, page_size: 25,
+}
+
+const LEDGER = [
+  { entry_type: 'CONSUME', qty: -2, running_balance: 13, note: 'Ayam lemon & quinoa', occurred_at: '2026-09-01T04:30:00Z' },
+  { entry_type: 'REFUND', qty: 1, running_balance: 15, note: 'Dapur tidak bisa memenuhi', occurred_at: '2026-08-29T09:00:00Z' },
+  { entry_type: 'CONSUME', qty: -4, running_balance: 14, note: 'Salmon teriyaki', occurred_at: '2026-08-28T11:00:00Z' },
+  { entry_type: 'PURCHASE', qty: 20, running_balance: 20, note: 'Rp 1.420.000 · Rp 71.000 per porsi', occurred_at: '2026-08-24T02:00:00Z' },
+]
+
+// One slot deliberately full, so artboard 04's struck-through state renders.
+const SLOT_OFFERS = [
+  { slot_id: u(2), alias: '11.30', serviceable: true, kitchen_name: 'Tebet', delivery_fee: 'Rp 15.000' },
+  { slot_id: u(3), alias: '12.00', serviceable: true, kitchen_name: 'Tebet', delivery_fee: 'Rp 15.000' },
+  { slot_id: u(4), alias: '12.30', serviceable: false, reason: 'FULL_OR_OUT_OF_RANGE' },
+]
+
+const ADDRESSES_FULL = [{
+  ID: u(70), Label: 'Rumah', RecipientName: 'Sinta', RecipientPhone: '0812 8899 4410',
+  AddressLine: 'Jl. Wijaya IX No. 12, Petogogan', District: 'Kebayoran Baru',
+  City: 'Jakarta Selatan', Latitude: -6.2444, Longitude: 106.7997,
+  DriverNote: 'Titip resepsionis',
+}]
+
+const CART = MENU.slice(0, 2).map((m, i) => ({
+  mealID: m.id, qty: i === 0 ? 4 : 2,
+  name: m.name, slot: m.slot, serviceDate: m.service_date,
+  dietType: m.diet_type, dietTypeID: m.diet_type_id,
+  photoKey: m.hero_photo_key,
+}))
 
 const SHOTS = [
   // Public — real server, real data, no stubbing.
@@ -220,8 +302,16 @@ const SHOTS = [
   { name: 'spa-coverage', url: '/app/admin/coverage', w: 1440, h: 1400 },
   { name: 'spa-production', url: '/app/admin/production', w: 1000, h: 1500 },
   { name: 'spa-labels', url: '/app/admin/labels', w: 1000, h: 900 },
-  { name: 'spa-menu', url: '/app/menu', w: 1280, h: 1200 },
-  { name: 'spa-menu-mobile', url: '/app/menu', w: 390, h: 1200 },
+  // The customer artboards (01-06, M2, M3) are drawn at 390x844, so they are
+  // shot there — that is the width the canvas specifies and the width the
+  // layout is exact at.
+  { name: 'c01-menu', url: '/app/menu', w: 390, h: 1200 },
+  { name: 'c02-meal', url: '/app/menu/FIXTURE_MEAL', w: 390, h: 1400 },
+  { name: 'c03-cart', url: '/app/cart', w: 390, h: 1200 },
+  { name: 'c04-checkout', url: '/app/checkout', w: 390, h: 1300 },
+  { name: 'm2-packages', url: '/app/packages', w: 390, h: 1000 },
+  { name: 'c06-credits', url: '/app/credits', w: 390, h: 1100 },
+  { name: 'm3-book', url: '/app/book', w: 390, h: 1100 },
 ]
 
 ;(async () => {
@@ -244,12 +334,17 @@ const SHOTS = [
 
     if (!s.live) {
       await stubAPI(page)
-      await ctx.addInitScript((sess) => {
+      await ctx.addInitScript(({ sess, cart }) => {
         localStorage.setItem('evermore.session', sess)
-      }, JSON.stringify(SESSION))
+        // Artboards 03 and 04 are drawn with a full cart. Without one they
+        // render their (correct) empty state and prove nothing about the
+        // layout the canvas specifies.
+        localStorage.setItem('evermore.cart', cart)
+      }, { sess: JSON.stringify(SESSION), cart: JSON.stringify(CART) })
     }
 
-    await page.goto(BASE + s.url, { waitUntil: 'networkidle' })
+    const url = s.url.replace('FIXTURE_MEAL', MENU[0] ? MENU[0].id : '')
+    await page.goto(BASE + url, { waitUntil: 'networkidle' })
     // Fonts must be in before the shot or every heading is measured in the
     // fallback serif and the layout in the picture is not the shipped one.
     await page.evaluate(() => document.fonts.ready)

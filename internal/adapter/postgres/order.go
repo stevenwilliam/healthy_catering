@@ -92,6 +92,9 @@ type PreparedDelivery struct {
 	SlotID      uuid.UUID
 	SlotAlias   string
 	Address     Address
+	// DriverNote overrides Address.DriverNote when the customer typed one at
+	// checkout. Empty means "keep the standing note on the address".
+	DriverNote  string
 	KitchenID   uuid.UUID
 	KitchenName string
 	DistanceM   int
@@ -352,7 +355,8 @@ func (r *OrderRepo) PlaceOrder(ctx context.Context, p PlaceOrderParams) (PlaceOr
 				deliveryID, dcode, p.CustomerID, orderID,
 				d.ServiceDate.Format("2006-01-02"), d.SlotID,
 				d.Address.ID, string(addrSnapshot), d.Address.Latitude, d.Address.Longitude,
-				d.KitchenID, d.DistanceM, d.Reason, int64(d.FeeIDR), d.Address.DriverNote).Error; err != nil {
+				d.KitchenID, d.DistanceM, d.Reason, int64(d.FeeIDR),
+				noteFor(d)).Error; err != nil {
 				return err
 			}
 
@@ -463,4 +467,18 @@ func nullableUUID(id uuid.UUID) any {
 		return nil
 	}
 	return id
+}
+
+
+// noteFor picks the courier note for one delivery.
+//
+// A note typed at checkout (artboard 04) is about THIS drop — "I'm in meeting
+// room 3 today" — and wins. The address's note is standing guidance and is
+// what a customer who typed nothing still expects to be honoured, so an empty
+// checkout box must not silently erase it.
+func noteFor(d *PreparedDelivery) string {
+	if d.DriverNote != "" {
+		return d.DriverNote
+	}
+	return d.Address.DriverNote
 }

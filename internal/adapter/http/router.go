@@ -216,6 +216,38 @@ func registerPublic(g *gin.RouterGroup, d Deps) {
 		OK(c, http.StatusOK, res)
 	})
 
+	// Which slots this address can actually take, on one date — artboards 04
+	// and M3. Authenticated, because it takes an address id and coordinates
+	// are PII under UU PDP (CLAUDE.md §10); the anonymous widget keeps using
+	// POST /delivery-area/check with a pin the visitor dropped themselves.
+	g.GET("/delivery-slots/availability", RequireAuth(d.Auth, d.Signer), func(c *gin.Context) {
+		lat, errLat := strconv.ParseFloat(c.Query("lat"), 64)
+		lng, errLng := strconv.ParseFloat(c.Query("lng"), 64)
+		if errLat != nil || errLng != nil {
+			Fail(c, apierror.Validation("Send lat and lng.", nil))
+			return
+		}
+		loc := tzOf(d)
+		on := time.Now().In(loc).AddDate(0, 0, 1)
+		if v := c.Query("date"); v != "" {
+			// A business calendar date, parsed IN the operating zone — never
+			// through the server's local time (CLAUDE.md §10).
+			parsed, err := time.ParseInLocation("2006-01-02", v, loc)
+			if err != nil {
+				Fail(c, apierror.Validation("date must be YYYY-MM-DD.", nil))
+				return
+			}
+			on = parsed
+		}
+		offers, err := d.Serviceability.SlotAvailability(
+			c.Request.Context(), lat, lng, on, parseQtyParam(c, "qty", 1))
+		if err != nil {
+			Fail(c, err)
+			return
+		}
+		OK(c, http.StatusOK, offers)
+	})
+
 	// Customers see the alias only; the exact time is internal (PROMPT §8.1).
 	g.GET("/delivery-slots", func(c *gin.Context) {
 		slots, err := d.Serviceability.Slots(c.Request.Context())

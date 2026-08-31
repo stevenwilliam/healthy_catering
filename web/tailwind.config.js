@@ -70,6 +70,10 @@ export default {
         panel: '20px',   // meal cards, feature cards
         frame: '34px',   // the mobile app frame
       },
+      // `touch` in the spacing scale, so h-touch / w-touch / min-h-touch all
+      // resolve from one definition. The 44px minimum is docs/10 §5 and it is
+      // the floor for every interactive box, not just for min-height.
+      spacing: { touch: '44px' },
       minHeight: { touch: '44px', bar: '48px' },  // docs/10 §5
       minWidth: { touch: '44px' },
     },

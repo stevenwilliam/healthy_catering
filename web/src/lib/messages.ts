@@ -66,6 +66,11 @@ export const messages = {
   // which keeps it correct in all three without a plural rule engine.
   'ui.results': { id: 'hasil', en: 'results', zh: '条结果' },
   'ui.all': { id: 'Semua', en: 'All', zh: '全部' },
+  'ui.decrease': { id: 'Kurangi', en: 'Decrease', zh: '减少' },
+  // A row LABEL, so it is capitalised — `menu.savings` is the same word used
+  // mid-sentence and stays lowercase.
+  'c03.saving_label': { id: 'Hemat', en: 'Saving', zh: '优惠' },
+  'ui.increase': { id: 'Tambah', en: 'Increase', zh: '增加' },
   'ui.error': { id: 'Ada yang salah', en: 'Something is wrong', zh: '存在问题' },
   'ui.processing': { id: 'Memproses…', en: 'Processing…', zh: '处理中…' },
   'ui.loading': { id: 'Memuat…', en: 'Loading…', zh: '加载中…' },
@@ -692,6 +697,247 @@ export const messages = {
   'ui.back': { id: 'Kembali', en: 'Back', zh: '返回' },
   'ui.none': { id: 'tidak ada', en: 'none', zh: '无' },
   'ui.today': { id: 'Hari ini', en: 'Today', zh: '今天' },
+
+  // ══ The canvas as the specification (2026-08-31) ═════════════════════════
+  // Steven: the artboards' own Indonesian is the id-ID catalogue. English and
+  // Simplified Chinese are written to match it, and all three move together
+  // (CLAUDE.md §10). Where a string is a RULE the customer is held to — the
+  // cut-off, credit expiry, the exact-amount suffix — the translation says the
+  // same thing, not a softer version of it.
+
+  // ── Back-office rail, the ten items S1 draws ─────────────────────────────
+  'bo.foods': { id: 'Makanan & gizi', en: 'Dishes & nutrition', zh: '菜品与营养' },
+  'bo.orders': { id: 'Pesanan', en: 'Orders', zh: '订单' },
+  'bo.customers': { id: 'Pelanggan', en: 'Customers', zh: '客户' },
+  'bo.packages': { id: 'Paket & kredit', en: 'Packages & credit', zh: '套餐与余额' },
+
+  // ── 01 · menu calendar ───────────────────────────────────────────────────
+  'c01.title': { id: 'Menu minggu ini', en: "This week's menu", zh: '本周菜单' },
+  'c01.published_until': {
+    id: 'Terbit sampai {0}', en: 'Published through {0}', zh: '已发布至 {0}',
+  },
+  'c01.cutoff': {
+    id: 'Batas pesan untuk besok {0} lagi — pukul 15.00 WIB',
+    en: 'Ordering for tomorrow closes in {0} — 15.00 WIB',
+    zh: '明日订单将于 {0} 后截止 —— 15:00（WIB）',
+  },
+  'c01.add': { id: 'Tambah', en: 'Add', zh: '加入' },
+  'c01.incl_tax': { id: 'termasuk PPN', en: 'VAT included', zh: '含增值税' },
+  'c01.cart': { id: 'Keranjang', en: 'Cart', zh: '购物车' },
+  'c01.meals_total': { id: '{0} meal · {1}', en: '{0} meals · {1}', zh: '{0} 份 · {1}' },
+  'c01.summary': {
+    id: 'Komponen dan gizi', en: 'Components and nutrition', zh: '组成与营养',
+  },
+
+  // ── 02 · meal detail ─────────────────────────────────────────────────────
+  'c02.contents': { id: 'Isi meal', en: 'What is in it', zh: '餐品内容' },
+  'c02.role_main': { id: 'Utama', en: 'Main', zh: '主食' },
+  'c02.role_side': { id: 'Pendamping', en: 'Side', zh: '配菜' },
+  'c02.role_dessert': { id: 'Penutup', en: 'Dessert', zh: '甜点' },
+  'c02.role_drink': { id: 'Minuman', en: 'Drink', zh: '饮品' },
+  'c02.nutrition': { id: 'Informasi gizi', en: 'Nutrition', zh: '营养信息' },
+  'c02.per_portion': { id: 'per porsi', en: 'per portion', zh: '每份' },
+  'c02.energy': { id: 'Energi', en: 'Energy', zh: '能量' },
+  'c02.protein': { id: 'Protein', en: 'Protein', zh: '蛋白质' },
+  'c02.carbs': { id: 'Karbohidrat', en: 'Carbohydrate', zh: '碳水化合物' },
+  'c02.fat': { id: 'Lemak', en: 'Fat', zh: '脂肪' },
+  'c02.fibre': { id: 'Serat', en: 'Fibre', zh: '膳食纤维' },
+  'c02.sodium': { id: 'Natrium', en: 'Sodium', zh: '钠' },
+  'c02.sum_note': {
+    id: 'Jumlah dari {0} komponen di atas.',
+    en: 'The sum of the {0} components above.',
+    zh: '以上 {0} 项组成的合计。',
+  },
+  'c02.allergens': { id: 'Alergen', en: 'Allergens', zh: '过敏原' },
+  'c02.no_allergens': { id: 'Tidak ada alergen tercatat', en: 'No allergens recorded', zh: '未记录过敏原' },
+  'c02.add_for': { id: 'Tambah · {0}', en: 'Add · {0}', zh: '加入 · {0}' },
+  'c02.estimated_note': {
+    id: 'Gizi belum lengkap untuk semua komponen, jadi angka ini perkiraan.',
+    en: 'Nutrition is incomplete for some components, so these figures are an estimate.',
+    zh: '部分组成的营养数据尚不完整，因此以上数值为估算值。',
+  },
+
+  // ── 03 · cart ────────────────────────────────────────────────────────────
+  'c03.title': { id: 'Keranjang', en: 'Cart', zh: '购物车' },
+  'c03.empty': {
+    id: 'Keranjang masih kosong.', en: 'Your cart is empty.', zh: '购物车是空的。',
+  },
+  'c03.per_portion_price': { id: 'Harga per porsi', en: 'Price per portion', zh: '每份价格' },
+  'c03.tier_band': { id: '{0} porsi', en: '{0} portions', zh: '{0} 份' },
+  'c03.tier_active': { id: 'berlaku', en: 'applies', zh: '适用' },
+  'c03.upsell': {
+    id: 'Tambah {0} porsi lagi, semua turun ke {1}',
+    en: 'Add {0} more and every portion drops to {1}',
+    zh: '再加 {0} 份，每份将降至 {1}',
+  },
+  'c03.topup': { id: 'Isi ulang', en: 'Top up', zh: '去凑单' },
+  'c03.subtotal': { id: 'Subtotal · {0} porsi', en: 'Subtotal · {0} portions', zh: '小计 · {0} 份' },
+  'c03.shipping': {
+    id: 'Ongkos kirim · {0} pengantaran',
+    en: 'Delivery · {0} drops', zh: '配送费 · {0} 次',
+  },
+  'c03.vat_incl': {
+    id: 'PPN {0}% (sudah termasuk)', en: 'VAT {0}% (included)', zh: '增值税 {0}%（已含）',
+  },
+  'c03.total': { id: 'Total', en: 'Total', zh: '合计' },
+  'c03.checkout': { id: 'Checkout', en: 'Checkout', zh: '去结算' },
+  'c03.remove': { id: 'Hapus', en: 'Remove', zh: '移除' },
+
+  // ── 04 · delivery ────────────────────────────────────────────────────────
+  'c04.title': { id: 'Pengiriman', en: 'Delivery', zh: '配送' },
+  'c04.move_pin': { id: 'Geser pin', en: 'Move pin', zh: '移动定位' },
+  'c04.map_label': { id: 'peta pengantaran', en: 'delivery map', zh: '配送地图' },
+  'c04.primary': { id: 'Utama', en: 'Primary', zh: '默认' },
+  'c04.change': { id: 'Ubah', en: 'Change', zh: '更改' },
+  'c04.slot_for': { id: 'Jam antar · {0}', en: 'Delivery time · {0}', zh: '配送时段 · {0}' },
+  'c04.slot_full': {
+    id: '{0} sudah penuh untuk area ini.',
+    en: '{0} is full for this area.',
+    zh: '{0} 在该区域已约满。',
+  },
+  'c04.kitchen_confirm': { id: 'Konfirmasi dapur', en: 'Kitchen confirmation', zh: '厨房确认' },
+  'c04.kitchen_note': {
+    id: 'Pesanan masuk antrean dapur setelah pembayaran diverifikasi. Kalau satu meal batal, kami hubungi lewat WhatsApp dan kreditkan penuh.',
+    en: 'Your order enters the kitchen queue once payment is verified. If a meal falls through we contact you on WhatsApp and credit it back in full.',
+    zh: '付款核验通过后，订单即进入厨房队列。若某份餐无法供应，我们会通过 WhatsApp 联系您并全额返还余额。',
+  },
+  'c04.courier_note': { id: 'Catatan untuk kurir', en: 'Note for the courier', zh: '给骑手的备注' },
+  'c04.courier_placeholder': {
+    id: 'Tulis patokan atau pesan singkat',
+    en: 'A landmark, or a short message',
+    zh: '填写地标或简短说明',
+  },
+  'c04.pay': { id: 'Bayar', en: 'Pay', zh: '应付' },
+  'c04.continue': { id: 'Lanjut bayar', en: 'Continue to payment', zh: '去付款' },
+  'c04.no_address': {
+    id: 'Tambah alamat dulu sebelum checkout.',
+    en: 'Add an address before checking out.',
+    zh: '请先添加地址再结算。',
+  },
+
+  // ── 05 · manual transfer ─────────────────────────────────────────────────
+  'c05.title': { id: 'Pembayaran', en: 'Payment', zh: '付款' },
+  'c05.order': { id: 'Pesanan {0}', en: 'Order {0}', zh: '订单 {0}' },
+  'c05.transfer': { id: 'Transfer {0}', en: 'Transfer {0}', zh: '转账 {0}' },
+  'c05.deadline': {
+    id: 'Bayar dalam {0}. Lewat batas itu pesanan dibatalkan otomatis dan slot dilepas.',
+    en: 'Pay within {0}. After that the order is cancelled automatically and the slot is released.',
+    zh: '请在 {0} 内付款。逾期订单将自动取消，所占时段一并释放。',
+  },
+  'c05.account': { id: 'Rekening tujuan', en: 'Transfer to', zh: '收款账户' },
+  'c05.exact': {
+    id: 'Nominal tepat sampai 3 digit terakhir',
+    en: 'Exact amount, to the last three digits',
+    zh: '请精确到最后三位数字',
+  },
+  'c05.copy': { id: 'Salin', en: 'Copy', zh: '复制' },
+  'c05.proof': { id: 'Bukti transfer', en: 'Proof of transfer', zh: '转账凭证' },
+  'c05.upload': {
+    id: 'Unggah tangkapan layar mutasi',
+    en: 'Upload a screenshot of the transfer',
+    zh: '上传转账截图',
+  },
+  'c05.formats': { id: 'JPG atau PNG, maks 5 MB', en: 'JPG or PNG, max 5 MB', zh: 'JPG 或 PNG，最大 5 MB' },
+  'c05.waiting': { id: 'Menunggu', en: 'Waiting', zh: '待核验' },
+  'c05.waiting_note': {
+    id: 'Tim keuangan memverifikasi manual pada jam kerja, rata-rata di bawah 30 menit. Status dikirim ke WhatsApp.',
+    en: 'Finance verifies by hand during business hours, typically under 30 minutes. We send the result to WhatsApp.',
+    zh: '财务在工作时间人工核验，通常不超过 30 分钟，结果将通过 WhatsApp 发送。',
+  },
+  'c05.done': { id: 'Saya sudah transfer', en: "I've transferred", zh: '我已完成转账' },
+  'c05.suffix_note': {
+    id: 'Tiga digit terakhir membedakan pembayaranmu dari yang lain. Kirim persis angka ini.',
+    en: 'The last three digits tell your payment apart from everyone else\u2019s. Send exactly this amount.',
+    zh: '最后三位数字用于区分您的付款，请务必按此金额转账。',
+  },
+
+  // ── 06 · package credit ──────────────────────────────────────────────────
+  'c06.title': { id: 'Paket saya', en: 'My packages', zh: '我的套餐' },
+  'c06.balance': { id: '{0} dari {1} porsi', en: '{0} of {1} portions', zh: '{1} 份中剩余 {0} 份' },
+  // The artboard sets the number large and the rest small, so the suffix is
+  // its own string rather than something sliced out of the sentence above.
+  'c06.of_total': { id: 'dari {0} porsi', en: 'of {0} portions', zh: '共 {0} 份' },
+  'credit.purchase': { id: 'Pembelian paket', en: 'Package purchased', zh: '购买套餐' },
+  'credit.used': { id: 'Terpakai', en: 'Used', zh: '已使用' },
+  'credit.refunded': { id: 'Dikembalikan', en: 'Refunded', zh: '已返还' },
+  'credit.expired': { id: 'Hangus', en: 'Expired', zh: '已过期' },
+  'packages.book_failed': {
+    id: 'Slot tidak bisa dikunci. Coba slot lain.',
+    en: 'The slot could not be locked. Try another.',
+    zh: '该时段无法锁定，请选择其他时段。',
+  },
+  'c06.valid_until': {
+    id: 'Berlaku sampai {0} · {1} hari lagi',
+    en: 'Valid until {0} · {1} days left',
+    zh: '有效期至 {0} · 剩余 {1} 天',
+  },
+  'c06.use_credit': {
+    id: 'Pakai kredit untuk minggu depan',
+    en: 'Use credit for next week',
+    zh: '用余额预订下周',
+  },
+  'c06.history': { id: 'Riwayat kredit', en: 'Credit history', zh: '余额记录' },
+  'c06.expiry_note': {
+    id: 'Kredit hangus setelah masa berlaku dan tidak bisa diuangkan.',
+    en: 'Credit expires at the end of its term and cannot be refunded as cash.',
+    zh: '余额到期作废，且不可折现。',
+  },
+  'c06.need_more': { id: 'Butuh lebih banyak?', en: 'Need more?', zh: '需要更多？' },
+  'c06.buy': { id: 'Beli paket', en: 'Buy a package', zh: '购买套餐' },
+  'c06.none': {
+    id: 'Belum ada paket aktif.', en: 'No active package yet.', zh: '暂无有效套餐。',
+  },
+
+  // ── M2 · buy a package ───────────────────────────────────────────────────
+  'm2.title': { id: 'Paket', en: 'Packages', zh: '套餐' },
+  'm2.headline': {
+    id: 'Bayar sekali, pakai 90 hari',
+    en: 'Pay once, use it for 90 days',
+    zh: '一次付费，90 天内使用',
+  },
+  'm2.sub': {
+    id: 'Kredit dipakai pada menu apa pun yang sudah terbit.',
+    en: 'Credit works on any menu that has been published.',
+    zh: '余额可用于任何已发布的菜单。',
+  },
+  'm2.portions': { id: '{0} porsi', en: '{0} portions', zh: '{0} 份' },
+  'm2.per_portion': { id: '{0} per porsi', en: '{0} per portion', zh: '每份 {0}' },
+  'm2.valid_days': { id: 'berlaku {0} hari', en: 'valid {0} days', zh: '有效期 {0} 天' },
+  'm2.bestseller': { id: 'Paling laris', en: 'Most popular', zh: '最受欢迎' },
+  'm2.saving': {
+    id: 'Hemat {0} dibanding harga satuan',
+    en: 'Saves {0} against the single-portion price',
+    zh: '较单份价格节省 {0}',
+  },
+  'm2.terms': {
+    id: 'Kredit tidak bisa diuangkan dan hangus setelah masa berlaku.',
+    en: 'Credit cannot be refunded as cash and expires at the end of its term.',
+    zh: '余额不可折现，到期即作废。',
+  },
+  'm2.buy': { id: 'Beli paket', en: 'Buy package', zh: '购买套餐' },
+
+  // ── M3 · pick a slot from credit ─────────────────────────────────────────
+  'm3.title': { id: 'Pilih slot', en: 'Pick a slot', zh: '选择时段' },
+  'm3.credits': { id: '{0} kredit', en: '{0} credits', zh: '{0} 份余额' },
+  'm3.pick_time': { id: '{0} · pilih jam', en: '{0} · pick a time', zh: '{0} · 选择时间' },
+  'm3.area_full': {
+    id: 'Kapasitas penuh untuk wilayahmu',
+    en: 'At capacity for your area',
+    zh: '您所在区域已约满',
+  },
+  'm3.change_note': {
+    id: 'Slot bisa diubah sampai 15.00 sehari sebelumnya. Setelah itu kredit terkunci pada jadwal ini.',
+    en: 'You can change the slot until 15.00 the day before. After that the credit is locked to this schedule.',
+    zh: '可在前一日 15:00 前更改时段，此后余额将锁定于该安排。',
+  },
+  'm3.selected': { id: '{0} slot dipilih', en: '{0} slot selected', zh: '已选 {0} 个时段' },
+  'm3.remaining': { id: 'sisa {0} kredit', en: '{0} credits left', zh: '剩余 {0} 份' },
+  'm3.lock': { id: 'Kunci jadwal', en: 'Lock the schedule', zh: '锁定安排' },
+  'm3.none_published': {
+    id: 'Belum ada menu terbit untuk minggu ini.',
+    en: 'No menu published for this week yet.',
+    zh: '本周尚未发布菜单。',
+  },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages

@@ -73,7 +73,8 @@ export function detectLocale(): Locale {
 type Ctx = {
   locale: Locale
   setLocale: (l: Locale) => void
-  t: (key: MessageKey) => string
+  /** t(key) — and t(key, a, b) to fill the catalogue's {0}, {1} slots. */
+  t: (key: MessageKey, ...args: (string | number)[]) => string
 }
 
 const I18nContext = createContext<Ctx | null>(null)
@@ -97,10 +98,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const t = useCallback(
-    (key: MessageKey) => {
+    (key: MessageKey, ...args: (string | number)[]) => {
       const entry = messages[key]
       if (!entry) return key
-      return entry[locale] || entry[DEFAULT_LOCALE] || key
+      const s = entry[locale] || entry[DEFAULT_LOCALE] || key
+      if (args.length === 0) return s
+      // Positional {0}, {1}, … rather than named or concatenated fragments.
+      // Concatenation is what forces a translator to accept the Indonesian
+      // word order; a placeholder lets Chinese put the number where Chinese
+      // puts numbers ("{1} 份中剩余 {0} 份"), which is why some catalogue
+      // strings use their slots in a different order (CLAUDE.md §10).
+      return s.replace(/\{(\d+)\}/g, (m, i) => {
+        const v = args[Number(i)]
+        return v === undefined ? m : String(v)
+      })
     },
     [locale],
   )

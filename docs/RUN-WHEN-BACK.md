@@ -208,6 +208,30 @@ nothing and the page is a hero plus the price table. To see the band, publish a
 current week from the back office (`/app/admin/calendar` → **Publish this
 week**) and reload `/`.
 
+### B4. The seeded menu photography is not food · DECIDE THIS
+
+Every image in `web/public/images/menu/` is generic stock landscape, and the
+public menu pages render them today:
+
+```bash
+cd /home/dev/projects/healthy_catering
+# Look at any two:
+#   ayam-panggang-brokoli.jpg   ("grilled chicken & broccoli")  -> a suspension bridge
+#   udang-padang-nasi-merah.jpg ("Padang prawns, red rice")     -> a muddy road at sunset
+ls web/public/images/menu/          # 19 files, all distinct, all wrong
+```
+
+The illustrated diet-tint fallback is already in place (`MealPhoto`), so the
+honest interim is to clear the keys and let it show:
+
+```sql
+UPDATE scheduled_meal SET hero_photo_key = NULL;
+```
+
+That is a data decision and a brand one, so it is yours. A bridge captioned
+"ayam panggang" is worse than a coloured tile, but neither is a photograph of
+the food, and only you know when real photography lands.
+
 ### B3. The coverage map is a schematic, not Google Maps
 
 `/app/admin/coverage` plots the real kitchen coordinates and service radii to

@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 Everything marked ✅ below was **run**, not just written. Where something was
 written but not executed, it is 🟡 and says what is missing.
 
-_Last updated: 2026-08-31 — the design canvas built out (M17)._
+_Last updated: 2026-08-31 — M17 phase 2: the canvas as the specification._
 
 ---
 
@@ -315,6 +315,59 @@ account, which needs a database write this environment does not grant.
 🟡 **S5's map is a schematic**, not a tile layer: real coordinates and radii
 projected to scale, no streets. Needs the browser Maps key handed to the SPA.
 §B3 and `docs/10` §4.12.
+
+## M17b — The canvas as the specification (phase 1 of 2) 🟡
+Steven, 2026-08-31: **"100% like the canvas — forget the last design."** Four
+decisions taken up front, all four his:
+
+1. **Colour is the canvas's; SIZE carries AA.** Not one hex altered. Where a
+   pairing measures under AA at the size drawn, the type moves to 19px/700 —
+   WCAG's large-text threshold — which drops the requirement from 4.5 to 3.0
+   and makes the artboard's own colour legal. `#CC6883` capacity pills and
+   `#468973` selected rows are back exactly as drawn. §4.1 is the table.
+   **Three inks could not be saved**: `#CCBDAA` on `#468973` is **2.25**,
+   under the floor large text itself has to clear, so the rail's kicker, the
+   staff sub-label and S3's tax note are beige.
+2. **Responsive**, exact at 390 and 1440.
+3. **Photo upload**, with the illustrated fallback until filled.
+4. **Canvas copy is the spec** — its Indonesian is now the `id-ID` catalogue,
+   with English and Chinese written to match. ~120 new keys across three
+   languages, and `t()` grew positional `{0}` slots so Chinese can put the
+   number where Chinese puts numbers.
+
+✅ **The customer flow, which did not exist.** Artboards 01–06, M2 and M3:
+menu calendar with day chips and the live cut-off countdown · meal detail with
+the six-cell nutrition panel and allergen chips · cart with the tier ladder and
+the "tambah 4 porsi lagi" nudge · checkout with slot chips, struck-through full
+slots and a courier note · manual transfer with the three-digit suffix picked
+out · package purchase · credit balance and ledger · booking a slot from
+credit. A client-side cart (`lib/cart.tsx`) and the phone shell
+(`components/mobile.tsx`) underpin them; the artboards mount ABOVE the app
+shell, because the desktop masthead sat as a dead band over the design and the
+fixed footer printed across the sticky total.
+
+✅ **Backend, five additions.** `GET /api/v1/public/prices` (the tier ladder a
+customer may see — DEFAULT scope filtered in the query, so it cannot leak a
+negotiated corporate rate) · `GET /delivery-slots/availability` (per-slot
+routing for one address and date, with `CheckInput.NoLog` so asking four times
+per page view does not turn the coverage report into a page-view counter) ·
+`portion_size` and `allergens` on the meal read path · a per-delivery courier
+note that overrides the address's standing one without erasing it.
+
+🟡 **Phase 2 not started** — the back office (S1–S5) still wears the chrome
+from the first pass, not the canvas's: S2–S5 need the top-bar variant, S1 the
+five-tile row, S4 its detail panel with the proof image. The public home needs
+M1's nav and the "Antar hari ini" card. Meal-photo upload is specified and not
+built.
+
+⬜ **The seeded menu photography is wrong** and this is live today. Every file
+in `web/public/images/menu/` is generic stock landscape, not food:
+`ayam-panggang-brokoli.jpg` is a suspension bridge,
+`udang-padang-nasi-merah.jpg` is a muddy road at sunset. Nineteen files, all
+distinct, all wrong. The public menu pages render them now. The illustrated
+diet-tint fallback already exists, so clearing `hero_photo_key` is a one-line
+UPDATE and is better than what ships today — but it is Steven's data decision,
+not mine. `RUN-WHEN-BACK.md` §B4.
 
 ## M16 — Documents ✅ / 🟡
 ✅ `12-security` (control map with the test that proves each) ·

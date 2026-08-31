@@ -1,142 +1,194 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ApiFailure, newIdempotencyKey, Page, request } from '../lib/api'
-import { SearchBox, State, SubmitButton } from '../components/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ApiFailure, Page, newIdempotencyKey, request } from '../lib/api'
+import { Money as MoneyView, State, SubmitButton } from '../components/ui'
+import { AppBar, BottomBar, Phone } from '../components/mobile'
 import { useT } from '../lib/i18n'
 
-type Pkg = { id: string; name: string; description: string; meal_credits: number; validity_days: number }
-type Mine = {
-  id: string; package_name: string; status: string
-  purchased_credits: number; remaining_credits: number
-  expires_at?: string; price_paid: string
+/** Artboard M2 — buying prepaid meal credit.
+ *
+ * Three things on this screen are commitments rather than marketing, and all
+ * three are stated before the button, not after it: what a portion costs in
+ * this bundle, how long the credit lasts, and that it is neither refundable
+ * nor extendable. A customer who only reads the price and the CTA has still
+ * seen the expiry, because it sits inside the card they are choosing.
+ *
+ * The saving is computed from integer rupiah the server sent — a subtraction
+ * of two prices, never a percentage of one (CLAUDE.md §4).
+ */
+
+type Pkg = {
+  id: string
+  name: string
+  description: string
+  meal_credits: number
+  validity_days: number
 }
-type Entry = { entry_type: string; qty: number; running_balance: number; note: string; occurred_at: string }
+
+type PublicPrices = {
+  packages: {
+    name: string; meal_credits: number; validity_days: number; price_idr?: number
+  }[]
+  prices: { tier_min_qty: number; unit_price_idr: number }[]
+}
 
 export default function Packages() {
   const t = useT()
   const nav = useNavigate()
   const [available, setAvailable] = useState<Pkg[]>([])
-  const [mine, setMine] = useState<Mine[]>([])
-  const [ledger, setLedger] = useState<Record<string, Entry[]>>({})
-  const [q, setQ] = useState('')
+  const [pub, setPub] = useState<PublicPrices | null>(null)
+  const [chosen, setChosen] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [buying, setBuying] = useState<string | null>(null)
+  const [buying, setBuying] = useState(false)
 
-  function load() {
+  useEffect(() => {
     Promise.all([
-      request<Page<Pkg>>(`/packages?q=${encodeURIComponent(q)}`),
-      request<Page<Mine>>('/my/packages'),
+      request<Page<Pkg>>('/packages'),
+      request<PublicPrices>('/public/prices'),
     ])
-      .then(([a, m]) => { setAvailable(a.items); setMine(m.items) })
+      .then(([a, p]) => {
+        // Same reasoning as the cart: an odd /public/prices body costs the
+        // savings line, never the list of packages.
+        const items = Array.isArray(a?.items) ? a.items : []
+        setAvailable(items)
+        setPub(Array.isArray(p?.packages) && Array.isArray(p?.prices) ? p : null)
+        setChosen(items[1]?.id ?? items[0]?.id ?? '')
+      })
       .catch((e) => setError(e instanceof ApiFailure ? e.message : t('packages.load_failed')))
       .finally(() => setLoading(false))
-  }
-  useEffect(load, [q]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function buy(id: string) {
-    setBuying(id); setError(null)
+  // The single-portion price is the FIRST tier's — that is what a package is
+  // being compared against, and it is what "hemat X dibanding harga satuan"
+  // means. Missing prices simply hide the saving rather than guessing at it.
+  const singleIDR = useMemo(
+    () => pub?.prices?.length
+      ? [...pub.prices].sort((a, b) => a.tier_min_qty - b.tier_min_qty)[0]?.unit_price_idr
+      : undefined,
+    [pub],
+  )
+
+  const priceOf = (p: Pkg) =>
+    pub?.packages?.find((x) => x.name === p.name)?.price_idr
+
+  // The artboard marks the middle bundle "Paling laris". It is the one most
+  // people buy, and it is marked from position rather than from a flag the
+  // schema does not have — recorded as such rather than pretending it is data.
+  const bestseller = available.length >= 3 ? available[1]?.id : undefined
+
+  const selected = available.find((p) => p.id === chosen)
+  const selectedPrice = selected ? priceOf(selected) : undefined
+
+  async function buy() {
+    if (!chosen) return
+    setBuying(true)
+    setError(null)
     try {
-      const out = await request<{ order_id: string }>(`/packages/${id}/buy`, {
+      const out = await request<{ order_id: string }>(`/packages/${chosen}/buy`, {
         method: 'POST',
+        body: {},
         idempotencyKey: newIdempotencyKey(),
       })
       nav(`/orders/${out.order_id}`)
     } catch (e) {
       setError(e instanceof ApiFailure ? e.message : t('packages.buy_failed'))
     } finally {
-      setBuying(null)
+      setBuying(false)
     }
   }
 
-  async function showLedger(id: string) {
-    if (ledger[id]) { setLedger({ ...ledger, [id]: [] }); return }
-    const entries = await request<Entry[]>(`/my/packages/${id}/ledger`)
-    setLedger({ ...ledger, [id]: entries })
-  }
-
   return (
-    <div>
-      <h1 className="text-3xl mb-6">{t('packages.title')}</h1>
+    <Phone>
+      <AppBar
+        title={t('m2.title')}
+        trailing={<Link to="/credits" className="btn-ghost">{t('c06.title')}</Link>}
+      />
 
-      <State loading={loading} error={error} empty={false}>
-        {mine.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-xl mb-3">{t('packages.mine')}</h2>
-            <ul className="grid gap-3">
-              {mine.map((p) => (
-                <li key={p.id} className="card">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-display text-lg">{p.package_name}</span>
-                    <span className="badge">{p.status}</span>
-                    <span>{p.remaining_credits} / {p.purchased_credits} {t('packages.credits')}</span>
-                    {p.expires_at && (
-                      <span className="text-sm text-beige-deep">{t('packages.valid_until')} {p.expires_at}</span>
-                    )}
-                    <button className="btn-ghost ml-auto" onClick={() => showLedger(p.id)}>
-                      {t('packages.ledger')}
-                    </button>
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+        <div>
+          <h2 className="text-2xl leading-tight">{t('m2.headline')}</h2>
+          <p className="mt-1 text-sm text-beige-deep">{t('m2.sub')}</p>
+        </div>
+
+        <State loading={loading} error={error} empty={available.length === 0}>
+          <div className="flex flex-col gap-3" role="radiogroup" aria-label={t('m2.title')}>
+            {available.map((p) => {
+              const price = priceOf(p)
+              const perPortion = price !== undefined && p.meal_credits > 0
+                // Integer division, floored: the per-portion figure shown can
+                // never overstate what a portion costs.
+                ? Math.floor(price / p.meal_credits)
+                : undefined
+              const saving = price !== undefined && singleIDR !== undefined
+                ? singleIDR * p.meal_credits - price
+                : undefined
+              const on = p.id === chosen
+
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setChosen(p.id)}
+                  className={`relative rounded-card p-4 text-left ${
+                    on ? 'border-2 border-beige' : 'border border-rule'}`}
+                >
+                  {p.id === bestseller && (
+                    <span className="pill-emph absolute -top-3 right-4">{t('m2.bestseller')}</span>
+                  )}
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="font-display text-2xl font-bold leading-tight">
+                        {t('m2.portions', p.meal_credits)}
+                      </div>
+                      {perPortion !== undefined && (
+                        <div className="mt-1 text-sm text-beige-deep">
+                          {t('m2.per_portion', idr(perPortion))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-display text-xl font-bold">
+                        {price !== undefined ? <MoneyView amount={price} /> : '—'}
+                      </div>
+                      <div className="text-xs text-beige-deep">
+                        {t('m2.valid_days', p.validity_days)}
+                      </div>
+                    </div>
                   </div>
+                  {saving !== undefined && saving > 0 && (
+                    <div className="mt-3 rounded bg-ocean-light/10 px-3 py-2 text-sm font-medium">
+                      {t('m2.saving', idr(saving))}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-                  {/* The ledger drill-down PROMPT §7 asks for: every movement,
-                      with a running balance, so a disputed number can be
-                      traced rather than argued about. */}
-                  {ledger[p.id]?.length ? (
-                    <table className="mt-4 w-full text-sm">
-                      <caption className="sr-only">{t('packages.ledger')} — {p.package_name}</caption>
-                      <thead>
-                        <tr className="text-left border-b border-edge">
-                          <th scope="col" className="py-1">{t('packages.col_time')}</th>
-                          <th scope="col">{t('packages.col_type')}</th>
-                          <th scope="col" className="text-right">{t('packages.col_change')}</th>
-                          <th scope="col" className="text-right">{t('packages.col_balance')}</th>
-                          <th scope="col">{t('packages.col_note')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ledger[p.id]!.map((e, i) => (
-                          <tr key={i} className="border-b border-rule">
-                            <td className="py-1">{e.occurred_at.slice(0, 16)}</td>
-                            <td>{e.entry_type}</td>
-                            <td className="text-right tabular-nums">{e.qty > 0 ? `+${e.qty}` : e.qty}</td>
-                            <td className="text-right tabular-nums">{e.running_balance}</td>
-                            <td className="text-beige-deep">{e.note}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+          {/* Non-refundable and time-limited, said before the button. */}
+          <div className="note-emph mt-4">{t('m2.terms')}</div>
+        </State>
 
-        <h2 className="text-xl mb-3">{t('packages.buy')}</h2>
-        <SearchBox value={q} onChange={setQ} placeholder={t('packages.search_placeholder')} resultCount={available.length} />
-        <ul className="grid gap-4 sm:grid-cols-3">
-          {available.map((p) => (
-            <li key={p.id} className="card">
-              <h3 className="text-lg">{p.name}</h3>
-              <p className="text-sm text-beige-deep mb-2">{p.description}</p>
-              <p className="text-sm mb-3">
-                {p.meal_credits} {t('packages.credits')}
-              </p>
-              <SubmitButton pending={buying === p.id} type="button" onClick={() => buy(p.id)}>
-                {t('packages.buy_button')}
-              </SubmitButton>
-            </li>
-          ))}
-        </ul>
+        {error && <p className="error" role="alert">{error}</p>}
+      </div>
 
-        {/* D-31 stated where a customer will actually read it, not only in the
-            terms page they never open. */}
-        <p className="mt-6 text-sm text-beige-deep max-w-prose">
-          Satu kredit berlaku untuk satu paket makan, berapa pun jumlah lauknya.
-          Masa aktif dimulai saat pembayaran kami konfirmasi. Kredit yang tidak
-          terpakai hangus saat masa aktif berakhir dan tidak dapat diuangkan.
-        </p>
-      </State>
-    </div>
+      {selected && (
+        <BottomBar
+          kicker={t('m2.portions', selected.meal_credits)}
+          total={selectedPrice !== undefined ? <MoneyView amount={selectedPrice} /> : <>—</>}
+        >
+          <SubmitButton pending={buying} type="button" onClick={buy}>
+            {t('m2.buy')}
+          </SubmitButton>
+        </BottomBar>
+      )}
+    </Phone>
   )
+}
+
+function idr(v: number): string {
+  return `Rp ${v.toLocaleString('id-ID')}`
 }

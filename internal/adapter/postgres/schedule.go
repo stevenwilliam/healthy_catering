@@ -38,16 +38,41 @@ type Meal struct {
 
 	Items     []MealItem      `json:"items" gorm:"-"`
 	Nutrition nutrition.Facts `json:"nutrition" gorm:"-"`
+	// Allergens is the UNION across every component, deduplicated. A meal is
+	// what the customer eats, so an allergen in any one part of it is an
+	// allergen in the meal — reporting them per component would leave the
+	// reader to do the union, which is the one thing a person with an allergy
+	// must not be asked to do. Never nil: a JSON null here would crash a
+	// client iterating it, and "no allergens recorded" is a different claim
+	// from "no allergens".
+	Allergens []MealAllergen `json:"allergens" gorm:"-"`
+}
+
+// MealAllergen carries BOTH stored names rather than one resolved server-side.
+//
+// `allergen` is one of the few tables that is genuinely bilingual — name_id
+// and name_en are columns (migration 0004) — so resolving here would throw
+// away the other language and make the response locale-dependent for no
+// reason. There is no Chinese column; a Chinese reader gets the English name,
+// which is the same limitation docs/03 Q-24 records for catalogue content.
+type MealAllergen struct {
+	Code   string `json:"code"`
+	NameID string `json:"name_id"`
+	NameEN string `json:"name_en"`
 }
 
 // MealItem is one food in a meal.
 type MealItem struct {
-	ID        uuid.UUID `json:"id"`
-	FoodID    uuid.UUID `json:"food_id"`
-	FoodName  string    `json:"food_name"`
-	FoodSlug  string    `json:"food_slug"`
-	ItemRole  string    `json:"item_role"`
-	SortOrder int       `json:"sort_order"`
+	ID       uuid.UUID `json:"id"`
+	FoodID   uuid.UUID `json:"food_id"`
+	FoodName string    `json:"food_name"`
+	FoodSlug string    `json:"food_slug"`
+	// PortionSize is free text on `food` — "150 g", "250 ml". Artboard 02
+	// prints it beside every component, and the packing label depends on it
+	// being the kitchen's own wording rather than a number we format.
+	PortionSize string `json:"portion_size"`
+	ItemRole    string `json:"item_role"`
+	SortOrder   int    `json:"sort_order"`
 
 	CaloriesKcal   int  `json:"calories_kcal"`
 	ProteinMg      int  `json:"protein_mg"`
@@ -140,7 +165,7 @@ func (r *ScheduleRepo) ListMeals(ctx context.Context, q MealQuery) ([]Meal, erro
 	}
 	err = r.db.WithContext(ctx).Raw(`
 		SELECT mi.id, mi.scheduled_meal_id, mi.food_id, f.name AS food_name, f.slug AS food_slug,
-		       mi.item_role, mi.sort_order,
+		       f.portion_size, mi.item_role, mi.sort_order,
 		       COALESCE(n.calories_kcal,0) AS calories_kcal, COALESCE(n.protein_mg,0) AS protein_mg,
 		       COALESCE(n.fat_mg,0) AS fat_mg, COALESCE(n.saturated_fat_mg,0) AS saturated_fat_mg,
 		       COALESCE(n.carbohydrate_mg,0) AS carbohydrate_mg, COALESCE(n.sugar_mg,0) AS sugar_mg,
@@ -160,8 +185,35 @@ func (r *ScheduleRepo) ListMeals(ctx context.Context, q MealQuery) ([]Meal, erro
 	for _, it := range items {
 		byMeal[it.ScheduledMealID] = append(byMeal[it.ScheduledMealID], it.MealItem)
 	}
+
+	// Allergens, in the same one round trip. Ordered by name so the chips read
+	// the same on every render and in every export.
+	var allergenRows []struct {
+		ScheduledMealID uuid.UUID
+		Code            string
+		NameID          string
+		NameEN          string
+	}
+	if err := r.db.WithContext(ctx).Raw(`
+		SELECT DISTINCT mi.scheduled_meal_id, a.code, a.name_id, a.name_en
+		  FROM scheduled_meal_item mi
+		  JOIN food_allergen fa ON fa.food_id = mi.food_id
+		  JOIN allergen a ON a.id = fa.allergen_id
+		 WHERE mi.scheduled_meal_id IN ? AND a.is_active
+		 ORDER BY a.name_id`, ids).Scan(&allergenRows).Error; err != nil {
+		return nil, fmt.Errorf("postgres: meal allergens: %w", err)
+	}
+	allergensByMeal := map[uuid.UUID][]MealAllergen{}
+	for _, a := range allergenRows {
+		allergensByMeal[a.ScheduledMealID] = append(allergensByMeal[a.ScheduledMealID],
+			MealAllergen{Code: a.Code, NameID: a.NameID, NameEN: a.NameEN})
+	}
 	for i := range meals {
 		meals[i].Items = byMeal[meals[i].ID]
+		meals[i].Allergens = allergensByMeal[meals[i].ID]
+		if meals[i].Allergens == nil {
+			meals[i].Allergens = []MealAllergen{}
+		}
 		meals[i].Nutrition = aggregateItems(meals[i].Items).Total
 	}
 	return meals, nil

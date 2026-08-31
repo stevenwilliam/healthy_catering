@@ -71,6 +71,12 @@ type CheckInput struct {
 	Source     string // WIDGET | ADDRESS_FORM | CHECKOUT
 	CustomerID *uuid.UUID
 	OrderValue money.IDR
+	// NoLog suppresses the out-of-range record. Set ONLY by callers that ask
+	// the same question many times for one customer intent — the slot picker
+	// asks it once per slot, and four rows per page view would turn the
+	// coverage report (artboard S5) from "where demand exists that we cannot
+	// serve" into a page-view counter. A real checkout attempt always logs.
+	NoLog bool
 }
 
 // Check resolves the kitchen, or logs why it could not.
@@ -100,7 +106,9 @@ func (s *Serviceability) Check(ctx context.Context, in CheckInput) (Serviceabili
 	assignment, err := routing.Route(routing.Request{To: at, ServiceDate: in.Date, QtyNeeded: qty}, candidates)
 	if err != nil {
 		if errors.Is(err, routing.ErrNotServiceable) {
-			s.logMiss(ctx, in, at, candidates)
+			if !in.NoLog {
+				s.logMiss(ctx, in, at, candidates)
+			}
 			return ServiceabilityResult{
 				Serviceable: false,
 				Message:     "We do not deliver to this address yet. Leave your email and we will tell you when we do.",
@@ -183,6 +191,61 @@ func (s *Serviceability) envelope(ctx context.Context) routing.Envelope {
 }
 
 // Slots exposes the customer-facing delivery slots.
+// SlotOffer is one delivery slot as the customer sees it on artboards 04 and
+// M3: the alias, and whether this address can actually take it on that date.
+type SlotOffer struct {
+	SlotID      uuid.UUID `json:"slot_id"`
+	Alias       string    `json:"alias"`
+	Serviceable bool      `json:"serviceable"`
+	KitchenName string    `json:"kitchen_name,omitempty"`
+	DeliveryFee string    `json:"delivery_fee,omitempty"`
+	// Reason is why not, for the customer. Artboard 04 strikes the slot
+	// through and says "12.30 sudah penuh untuk area ini" rather than hiding
+	// it — a slot that silently disappears reads as a bug, and the customer
+	// cannot tell "full" from "we never deliver then".
+	Reason string `json:"reason,omitempty"`
+}
+
+// SlotAvailability answers, for one address and one service date, which slots
+// can be booked. One Check per active slot: the routing already accounts for
+// the kitchen's capacity on that date and slot, so asking it per slot is the
+// same question the checkout will ask when it commits.
+//
+// It never logs a miss. See CheckInput.NoLog.
+func (s *Serviceability) SlotAvailability(
+	ctx context.Context, lat, lng float64, on time.Time, qty int,
+) ([]SlotOffer, error) {
+	slots, err := s.Slots(ctx)
+	if err != nil {
+		return nil, apierror.Internal(err)
+	}
+	out := make([]SlotOffer, 0, len(slots))
+	for _, sl := range slots {
+		res, err := s.Check(ctx, CheckInput{
+			Lat: lat, Lng: lng, SlotID: sl.ID, Date: on, Qty: qty,
+			Source: "CHECKOUT", NoLog: true,
+		})
+		if err != nil {
+			// One unroutable slot must not blank the whole picker: the
+			// customer still needs to see the slots that DO work.
+			out = append(out, SlotOffer{SlotID: sl.ID, Alias: sl.Alias, Reason: "UNAVAILABLE"})
+			continue
+		}
+		out = append(out, SlotOffer{
+			SlotID: sl.ID, Alias: sl.Alias,
+			Serviceable: res.Serviceable, KitchenName: res.KitchenName,
+			DeliveryFee: res.DeliveryFeeFmt,
+			Reason: func() string {
+				if res.Serviceable {
+					return ""
+				}
+				return "FULL_OR_OUT_OF_RANGE"
+			}(),
+		})
+	}
+	return out, nil
+}
+
 func (s *Serviceability) Slots(ctx context.Context) ([]postgres.Slot, error) {
 	return s.kitchens.ActiveSlots(ctx)
 }
