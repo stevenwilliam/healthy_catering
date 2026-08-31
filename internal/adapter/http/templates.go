@@ -323,10 +323,14 @@ const publicTemplates = `
         <h2>{{t .L "home.menu_h2"}}</h2>
         <p>{{t .L "home.menu_sub"}}</p>
       </div>
-      <p class="deliver-now">
-        <span class="kicker">{{t .L "home.deliver_today"}}</span>
-        <strong>{{t .L "home.deliver_cutoff"}}</strong>
-      </p>
+      <!-- The diet chips M1 puts on the right of the band head. The
+           "Antar hari ini" card is NOT repeated here: it is already on the
+           hero artwork, and two of them on one screen reads as a bug. -->
+      <div class="band-diets">
+        {{range .DietTypes}}
+        <a href="{{path $.L (printf "/menu/%s" .Slug)}}">{{.Name}}</a>
+        {{end}}
+      </div>
     </div>
     <div class="band-grid">
       {{range .Meals}}
@@ -348,7 +352,7 @@ const publicTemplates = `
       <article class="card pkg-card">
         <p class="kicker kicker-info">{{t .L "home.pkg_kicker"}}</p>
         <h3>{{t .L "price.packages_h2"}}</h3>
-        <p>{{t .L "home.menu_sub"}}</p>
+        <p>{{t .L "home.pkg_body"}}</p>
         <a class="cta cta-ghost" href="{{path .L "/price-list"}}">{{t .L "home.pkg_cta"}}</a>
       </article>
     </div>

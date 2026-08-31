@@ -135,6 +135,13 @@ var publicMessages = i18n.Catalog{
 		i18n.EN: "Better value",
 		i18n.ZH: "更划算",
 	},
+	"home.pkg_body": {
+		i18n.ID: "Bayar sekali, pakai kapan saja pada menu yang sudah terbit. " +
+			"Harga per porsi turun mengikuti ukuran paket.",
+		i18n.EN: "Pay once and use it on any published menu. The per-portion " +
+			"price falls with the size of the package.",
+		i18n.ZH: "一次付费，可用于任何已发布的菜单。套餐越大，每份价格越低。",
+	},
 	"home.pkg_cta": {
 		i18n.ID: "Lihat paket",
 		i18n.EN: "See packages",

@@ -107,11 +107,21 @@ func run() error {
 			return err
 		}
 		return runSeedMenu(ctx, gdb, log, days)
+	case "seed-prices":
+		// `seed-prices replace` supersedes the seed rows already there. Needed
+		// when reference data and this seeder together leave an incoherent
+		// ladder; the seeder refuses to finish on one either way.
+		replace := len(os.Args) > 2 && os.Args[2] == "replace"
+		if err := runSeedPrices(ctx, gdb, log, replace); err != nil {
+			return err
+		}
+		return nil
+
 	case "seed-menu-images":
 		return runSeedMenuImages(ctx, gdb, log)
 	default:
 		return fmt.Errorf("unknown command %q "+
-			"(serve|migrate|create-staff|seed-menu|seed-menu-images|version)", cmd)
+			"(serve|migrate|create-staff|seed-menu|seed-prices|seed-menu-images|version)", cmd)
 	}
 }
 

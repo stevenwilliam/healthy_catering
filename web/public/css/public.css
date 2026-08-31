@@ -1479,9 +1479,37 @@ main > section + section { margin-top: var(--space-16); }
 .band-grid {
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  /* FOUR across, as M1 draws it: three dishes and the package card. auto-fill
+     at 17rem wrapped the package onto a row of its own at 1440, which reads as
+     an afterthought rather than the fourth member of the set. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: var(--space-6);
 }
+@media (max-width: 72rem) { .band-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .band-grid { grid-template-columns: 1fr; } }
+
+/* The diet chips on the right of the band head. They sit on the mid-green
+   band, where beige is 3.93 — so each is a beige FILL with deep ink (11.32)
+   rather than beige text on the green. */
+.band-diets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.band-diets a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--beige);
+  color: var(--nourish-deep);      /* 11.32 on the beige fill ✓ */
+  font-size: var(--text-sm);
+  font-weight: var(--w-eyebrow);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.band-diets a:hover { text-decoration: none; transform: translateY(-1px); }
 /* A card in the band keeps the site's white surface, so its ink is unchanged
    at 11.89 — the band colour never touches the text inside a card. */
 .band-meal { border-radius: var(--radius-panel); }

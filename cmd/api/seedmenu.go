@@ -122,18 +122,65 @@ func runSeedMenu(ctx context.Context, gdb *gorm.DB, log *slog.Logger, days int) 
 			}
 		}
 
-		// ── The lunch slot ──────────────────────────────────────────────────
+		// ── Slots ───────────────────────────────────────────────────────────
+		//
+		// The canvas serves four (07.00 breakfast, 11.30 and 12.00 lunch,
+		// 18.00 dinner) and migration 0011 seeded two. The missing pair is
+		// added here rather than in a migration because it is DEMO shape, not
+		// a decision about what the business sells — production slot
+		// configuration is Steven's, and this command says so in its log.
+		for _, sl := range []struct {
+			alias, at string
+			order     int
+		}{
+			{"Breakfast", "07:00", 0},
+			{"Lunch late", "12:00", 2},
+		} {
+			if err := tx.Exec(`
+				INSERT INTO delivery_time_slot (id, alias, slot_time, sort_order, is_active)
+				SELECT ?, ?, ?::time, ?, TRUE
+				 WHERE NOT EXISTS (
+				   SELECT 1 FROM delivery_time_slot WHERE slot_time = ?::time)`,
+				uuid.Must(uuid.NewV7()), sl.alias, sl.at, sl.order, sl.at).Error; err != nil {
+				return fmt.Errorf("seed slot %s: %w", sl.at, err)
+			}
+			// A slot at that time may already exist and be INACTIVE — 07:00
+			// did, seeded dormant by migration 0011 — in which case the insert
+			// above correctly skips and the slot stays invisible. Activating it
+			// is the point: a "breakfast" the canvas serves and the database
+			// refuses is not a menu.
+			//
+			// Only these two times, never a blanket UPDATE: 10:00 and 15:00 are
+			// also dormant in the reference data and turning them on would
+			// invent two services nobody asked for.
+			if err := tx.Exec(`
+				UPDATE delivery_time_slot SET is_active = TRUE, updated_at = now()
+				 WHERE slot_time = ?::time AND NOT is_active`, sl.at).Error; err != nil {
+				return fmt.Errorf("seed slot activate %s: %w", sl.at, err)
+			}
+		}
+
+		// Every kitchen serves every active slot, so the demo has no dead
+		// combinations to explain.
+		if err := tx.Exec(`
+			INSERT INTO kitchen_slot (kitchen_id, slot_id)
+			SELECT k.id, s.id FROM kitchen k CROSS JOIN delivery_time_slot s
+			 WHERE k.is_active AND s.is_active
+			ON CONFLICT DO NOTHING`).Error; err != nil {
+			return fmt.Errorf("seed kitchen_slot: %w", err)
+		}
+
 		// Scanned as text, not uuid.UUID: gorm's Raw().Scan() into a bare
 		// non-struct destination hands the driver string straight to a
 		// numeric conversion and fails.
-		var slotID string
+		var slotIDs []string
 		if err := tx.Raw(`
 			SELECT id::text FROM delivery_time_slot
-			 WHERE is_active ORDER BY sort_order, slot_time LIMIT 1`).
-			Scan(&slotID).Error; err != nil {
-			return fmt.Errorf("seed: reading the delivery slot: %w", err)
+			 WHERE is_active ORDER BY sort_order, slot_time`).
+			Scan(&slotIDs).Error; err != nil {
+			return fmt.Errorf("seed: reading the delivery slots: %w", err)
 		}
-		if slotID == "" {
+		if len(slotIDs) == 0 {
 			return fmt.Errorf("seed: no active delivery slot — seed the slots first")
 		}
 
@@ -157,9 +204,30 @@ func runSeedMenu(ctx context.Context, gdb *gorm.DB, log *slog.Logger, days int) 
 		}
 		today := time.Now().In(loc)
 
-		created := 0
+		created, capacity := 0, 0
 		for d := 0; d < days; d++ {
 			date := today.AddDate(0, 0, d).Format("2006-01-02")
+
+			// ── Capacity ────────────────────────────────────────────────────
+			// Without a kitchen_capacity row a slot is not OPEN on that date,
+			// which is a different thing from being full — the dashboard shows
+			// it as "closed" and the slot picker refuses it. The table was
+			// empty, so nothing seeded was actually orderable.
+			res := tx.Exec(`
+				INSERT INTO kitchen_capacity
+				  (id, kitchen_id, service_date, slot_id, max_portions, reserved_portions)
+				SELECT gen_random_uuid(), ks.kitchen_id, ?::date, ks.slot_id,
+				       COALESCE(k.default_slot_capacity, 40), 0
+				  FROM kitchen_slot ks
+				  JOIN kitchen k ON k.id = ks.kitchen_id AND k.is_active
+				  JOIN delivery_time_slot s ON s.id = ks.slot_id AND s.is_active
+				ON CONFLICT (kitchen_id, service_date, slot_id) DO NOTHING`, date)
+			if res.Error != nil {
+				return fmt.Errorf("seed capacity %s: %w", date, res.Error)
+			}
+			capacity += int(res.RowsAffected)
+
+			// ── Meals: every diet, in every slot ────────────────────────────
 			for _, diet := range diets {
 				variants, ok := menus[diet.Slug]
 				if !ok || len(variants) == 0 {
@@ -168,44 +236,85 @@ func runSeedMenu(ctx context.Context, gdb *gorm.DB, log *slog.Logger, days int) 
 					log.Warn("seed-menu: no sample menu for diet type", "slug", diet.Slug)
 					continue
 				}
-				m := variants[d%len(variants)]
+				for si, slotID := range slotIDs {
+					// Offset by the slot as well as the day, so breakfast and
+					// dinner are not the same plate.
+					m := variants[(d+si)%len(variants)]
 
-				mealID := uuid.Must(uuid.NewV7())
-				res := tx.Exec(`
-					INSERT INTO scheduled_meal
-					  (id, service_date, diet_type_id, slot_id, name, qty_capacity,
-					   status, published_at)
-					VALUES (?, ?, ?, ?, ?, 40, 'PUBLISHED', now())
-					ON CONFLICT (service_date, diet_type_id, slot_id) DO NOTHING`,
-					mealID, date, diet.ID, slotID, m.name)
-				if res.Error != nil {
-					return fmt.Errorf("seed meal %s/%s: %w", date, diet.Slug, res.Error)
-				}
-				if res.RowsAffected == 0 {
-					continue // already scheduled; leave the real one alone
-				}
-				created++
-
-				for i, slug := range m.items {
-					role := "SIDE"
-					if i == 0 {
-						role = "MAIN"
+					mealID := uuid.Must(uuid.NewV7())
+					res := tx.Exec(`
+						INSERT INTO scheduled_meal
+						  (id, service_date, diet_type_id, slot_id, name, qty_capacity,
+						   status, published_at)
+						VALUES (?, ?, ?, ?, ?, 40, 'PUBLISHED', now())
+						ON CONFLICT (service_date, diet_type_id, slot_id) DO NOTHING`,
+						mealID, date, diet.ID, slotID, m.name)
+					if res.Error != nil {
+						return fmt.Errorf("seed meal %s/%s: %w", date, diet.Slug, res.Error)
 					}
-					if err := tx.Exec(`
-						INSERT INTO scheduled_meal_item
-						  (id, scheduled_meal_id, food_id, item_role, sort_order)
-						SELECT ?, ?, f.id, ?, ? FROM food f WHERE f.slug = ?
-						ON CONFLICT (scheduled_meal_id, food_id) DO NOTHING`,
-						uuid.Must(uuid.NewV7()), mealID, role, i, slug).Error; err != nil {
-						return fmt.Errorf("seed item %s on %s: %w", slug, m.name, err)
+					if res.RowsAffected == 0 {
+						continue // already scheduled; leave the real one alone
+					}
+					created++
+
+					for i, slug := range m.items {
+						role := "SIDE"
+						if i == 0 {
+							role = "MAIN"
+						}
+						if err := tx.Exec(`
+							INSERT INTO scheduled_meal_item
+							  (id, scheduled_meal_id, food_id, item_role, sort_order)
+							SELECT ?, ?, f.id, ?, ? FROM food f WHERE f.slug = ?
+							ON CONFLICT (scheduled_meal_id, food_id) DO NOTHING`,
+							uuid.Must(uuid.NewV7()), mealID, role, i, slug).Error; err != nil {
+							return fmt.Errorf("seed item %s on %s: %w", slug, m.name, err)
+						}
 					}
 				}
 			}
 		}
 
+		// ── Allergens ───────────────────────────────────────────────────────
+		//
+		// food_allergen was EMPTY, so every meal reported "no allergens
+		// recorded" and every packing label printed a blank allergen line.
+		// That is a regulated claim on a food package: an empty line reads as
+		// "none", which is a different statement from "not yet recorded" and
+		// is the one that gets somebody hurt.
+		allergens := map[string][]string{
+			"telur-rebus":            {"egg"},
+			"tempe-bacem":            {"soy"},
+			"tahu-kukus-jamur":       {"soy"},
+			"mie-shirataki-ayam":     {"soy"},
+			"salad-sayur-wijen":      {"sesame", "soy"},
+			"ikan-dori-lemon":        {"fish"},
+			"udang-saus-padang":      {"shellfish"},
+			"keju-cheddar":           {"milk"},
+			"daging-sapi-lada-hitam": {"soy"},
+			"smoothie-buah-naga":     {"milk"},
+		}
+		links := 0
+		for slug, codes := range allergens {
+			for _, code := range codes {
+				res := tx.Exec(`
+					INSERT INTO food_allergen (food_id, allergen_id)
+					SELECT f.id, a.id FROM food f, allergen a
+					 WHERE f.slug = ? AND a.code = ?
+					ON CONFLICT DO NOTHING`, slug, code)
+				if res.Error != nil {
+					return fmt.Errorf("seed allergen %s/%s: %w", slug, code, res.Error)
+				}
+				links += int(res.RowsAffected)
+			}
+		}
+
 		log.Info("seed-menu complete",
-			"days", days, "diet_types", len(diets), "meals_created", created,
-			"note", "existing meals were left untouched")
+			"days", days, "diet_types", len(diets), "slots", len(slotIDs),
+			"meals_created", created, "capacity_rows", capacity,
+			"allergen_links", links,
+			"note", "existing rows were left untouched; slot configuration in "+
+				"production is a business decision, not this command's")
 		return nil
 	})
 }

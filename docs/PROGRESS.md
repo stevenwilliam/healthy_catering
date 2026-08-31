@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 Everything marked ✅ below was **run**, not just written. Where something was
 written but not executed, it is 🟡 and says what is missing.
 
-_Last updated: 2026-08-31 — M17 complete: the canvas is the specification._
+_Last updated: 2026-08-31 — M17 complete, and the demo data populated._
 
 ---
 
@@ -396,6 +396,47 @@ distinct, all wrong. The public menu pages render them now. The illustrated
 diet-tint fallback already exists, so clearing `hero_photo_key` is a one-line
 UPDATE and is better than what ships today — but it is Steven's data decision,
 not mine. `RUN-WHEN-BACK.md` §B4.
+
+## M18 — Demo data ✅
+Steven: "populate dummy data, all menu all price." Two re-runnable commands,
+both idempotent, neither destructive by default.
+
+```bash
+./bin/api seed-menu 14        # menu, capacity, allergens
+./bin/api seed-prices         # all four price tables
+./bin/api seed-prices replace # …superseding what is already there
+```
+
+**What was actually missing, beyond prices.** `kitchen_capacity` was
+**empty** — so no slot was OPEN on any date, the dashboard read "closed"
+everywhere and the slot picker refused every booking. Nothing seeded was
+orderable. `food_allergen` was **empty** too, so every meal reported "no
+allergens recorded" and every packing label printed a blank allergen line —
+which reads as "none", a different claim from "not yet recorded", and the one
+that gets somebody hurt. And only 2 of the canvas's 4 slots existed: 07.00 was
+in the reference data but **inactive**, so a breakfast the design serves the
+database refused.
+
+**Now in place:** 355 published meals across 6 diets × 4 slots × 14 days ·
+1,070 meal items · 280 capacity rows · 11 allergen links · **96 active meal
+prices** (4 scopes × 6 diets × 4 tiers, no gaps) · 2 live meal promos · 3
+package prices · 1 package promo. 96 superseded rows remain as `is_active =
+FALSE`, which is also what gives artboard S3 its "Arsip" state real rows.
+
+**The seeder verifies its own claims and refuses to finish otherwise.** Two
+invariants are re-read from the table after writing: every tier ladder must get
+CHEAPER with quantity, and every diet × tier must have a DEFAULT price. Both
+caught a real fault on the first run — reference data priced healthy at 55.000
+for 1–4 and 48.000 for 10–19, the seeder filled the two gaps at 75.000 and
+68.000, and the resulting ladder charged **more per portion for five meals than
+for one**. The cart's "add four more and every portion drops" nudge would have
+been a lie on screen. `seed-prices` now aborts on that and names the rows.
+
+`replace` deliberately supersedes EVERY active row rather than sparing those
+with a `created_by`. The first version spared them — and the two rows that made
+the ladder incoherent had one, so `replace` achieved nothing while looking like
+it had. A discriminator that does not separate seed data from real data is
+worse than none.
 
 ## M16 — Documents ✅ / 🟡
 ✅ `12-security` (control map with the test that proves each) ·
