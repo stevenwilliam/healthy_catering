@@ -4,6 +4,7 @@ import { Money as MoneyView, SearchBox, State, SubmitButton } from '../component
 import ExportCsv from '../components/ExportCsv'
 import { useT } from '../lib/i18n'
 import { serviceDateWIB } from './AdminDashboard'
+import { Board, TopBar, Tabs } from '../components/backoffice'
 
 /** S3 — the four price tables, and the resolver you can point at them.
  *
@@ -83,23 +84,21 @@ export default function AdminPricing() {
   const ladder = useMemo(() => checkTiers(tiers), [tiers])
 
   return (
-    <div>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <h1>{t('price.title')}</h1>
-        <p className="max-w-xl text-sm text-beige-deep">{t('price.tax_note')}</p>
-      </div>
+    <Board>
+      {/* The artboard puts the tax note ON the bar in 14px #CCBDAA, which is
+          2.25 there. It keeps that exact colour and size and drops one row
+          onto the ground, where it is 6.47 (docs/10 §4.1). */}
+      <TopBar title={t('price.title')} note={t('price.tax_note')} />
 
-      {/* The four tables as chips (docs/10 §4.9). */}
-      <div className="mb-5 flex flex-wrap gap-2">
-        {TABLES.map((tb) => (
-          <button
-            key={tb.key}
-            className={table === tb.key ? 'chip-on' : 'chip-off'}
-            onClick={() => setTable(tb.key)}
-          >
-            {t(tb.label)}
-          </button>
-        ))}
+      <div className="p-6">
+      {/* The four tables as tabs (docs/10 §4.9). */}
+      <div className="mb-5">
+        <Tabs
+          label={t('price.title')}
+          value={table}
+          onChange={setTable}
+          options={TABLES.map((tb) => ({ id: tb.key, name: t(tb.label) }))}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_400px] xl:items-start">
@@ -189,7 +188,8 @@ export default function AdminPricing() {
             server will actually charge. */}
         <Resolver diets={diets} />
       </div>
-    </div>
+      </div>
+    </Board>
   )
 }
 

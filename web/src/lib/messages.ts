@@ -938,6 +938,91 @@ export const messages = {
     en: 'No menu published for this week yet.',
     zh: '本周尚未发布菜单。',
   },
+
+  // ── S1–S5, the canvas's own back-office wording ─────────────────────────
+  'dash.revenue_sub': { id: 'termasuk PPN', en: 'VAT included', zh: '含增值税' },
+  'dash.deliveries_sub': { id: '{0} terkirim · {1} di jalan', en: '{0} delivered · {1} en route', zh: '{0} 已送达 · {1} 配送中' },
+  'dash.meals_sub': { id: '{0} dapur · {1} slot', en: '{0} kitchens · {1} slots', zh: '{0} 间厨房 · {1} 个时段' },
+  'dash.action_draft': {
+    id: 'Menu {0} masih DRAFT', en: 'Menu for {0} is still DRAFT', zh: '{0} 的菜单仍为草稿',
+  },
+  'dash.action_price': {
+    id: 'Harga {0} belum diisi', en: 'No price set for {0}', zh: '{0} 尚未设置价格',
+  },
+  'dash.action_price_sub': {
+    id: 'blokir checkout — PRICE_NOT_CONFIGURED',
+    en: 'blocks checkout — PRICE_NOT_CONFIGURED',
+    zh: '将阻止结算 —— PRICE_NOT_CONFIGURED',
+  },
+  'dash.review': { id: 'Tinjau', en: 'Review', zh: '查看' },
+  'dash.fill': { id: 'Isi', en: 'Fill in', zh: '补充' },
+  'dash.arrange': { id: 'Atur', en: 'Arrange', zh: '调整' },
+
+  'pay.tab_waiting': { id: 'Menunggu · {0}', en: 'Waiting · {0}', zh: '待核验 · {0}' },
+  'pay.tab_rejected': { id: 'Ditolak · {0}', en: 'Rejected · {0}', zh: '已驳回 · {0}' },
+  'pay.tab_verified': { id: 'Terverifikasi hari ini · {0}', en: 'Verified today · {0}', zh: '今日已核验 · {0}' },
+  'pay.audit_note': {
+    id: 'Setiap keputusan tercatat di audit log dengan aktor dan alasan.',
+    en: 'Every decision is written to the audit log with its actor and reason.',
+    zh: '每次决定都会连同操作人与原因写入审计日志。',
+  },
+  'pay.col_order': { id: 'Pesanan', en: 'Order', zh: '订单' },
+  'pay.col_customer': { id: 'Pelanggan', en: 'Customer', zh: '客户' },
+  'pay.col_amount': { id: 'Nominal', en: 'Amount', zh: '金额' },
+  'pay.col_waiting': { id: 'Menunggu', en: 'Waiting', zh: '已等待' },
+  'pay.col_match': { id: 'Kecocokan', en: 'Match', zh: '匹配' },
+  'pay.match_ok': { id: 'Cocok', en: 'Match', zh: '一致' },
+  'pay.match_none': { id: 'Belum ada bukti', en: 'No proof yet', zh: '暂无凭证' },
+  'pay.proof_label': { id: 'bukti transfer · unggahan pelanggan', en: 'transfer proof · customer upload', zh: '转账凭证 · 客户上传' },
+  'pay.billed': { id: 'Tagihan', en: 'Billed', zh: '应收' },
+  'pay.suffix_match': {
+    id: 'Tiga digit terakhir {0} cocok dengan sufiks pesanan. Sufiks tidak masuk basis pajak.',
+    en: 'The last three digits {0} match the order suffix. The suffix is not part of the tax base.',
+    zh: '末三位 {0} 与订单后缀一致。该后缀不计入税基。',
+  },
+  'pay.retail': { id: 'Retail', en: 'Retail', zh: '零售' },
+  'pay.select_row': { id: 'Pilih pesanan untuk ditinjau', en: 'Select an order to review', zh: '请选择要审核的订单' },
+
+  'cov.save_area': { id: 'Simpan wilayah', en: 'Save area', zh: '保存配送区' },
+  'cov.deactivate': { id: 'Nonaktifkan', en: 'Deactivate', zh: '停用' },
+  'cov.legend': { id: 'Legenda', en: 'Legend', zh: '图例' },
+  'cov.not_editable': {
+    id: 'Wilayah masih diubah lewat data dapur — belum ada endpoint tulis.',
+    en: 'Coverage is still edited through the kitchen record — there is no write endpoint yet.',
+    zh: '配送区目前仍需通过厨房数据修改 —— 尚无写入接口。',
+  },
+  'cov.legend_radius': { id: 'Radius layanan', en: 'Service radius', zh: '服务半径' },
+  'cov.legend_polygon': { id: 'Poligon aktif', en: 'Active polygon', zh: '启用的多边形' },
+  'cov.legend_rejected': { id: 'Checkout ditolak', en: 'Checkout refused', zh: '结算被拒' },
+
+  'price.save_row': { id: 'Simpan baris', en: 'Save row', zh: '保存该行' },
+  'price.validation': { id: 'Validasi tier', en: 'Tier validation', zh: '档位校验' },
+  'price.no_end': { id: 'tanpa akhir', en: 'no end date', zh: '无结束日期' },
+
+  'cal.publish_all': { id: 'Terbitkan minggu ini', en: 'Publish this week', zh: '发布本周' },
+  'cal.d_minus': { id: 'D-{0}', en: 'D-{0}', zh: 'D-{0}' },
+
+  // ── M1, the home page's own navigation ──────────────────────────────────
+  'm1.nav_menu': { id: 'Menu minggu ini', en: "This week's menu", zh: '本周菜单' },
+  'm1.nav_how': { id: 'Cara kerja', en: 'How it works', zh: '服务流程' },
+  'm1.nav_packages': { id: 'Paket', en: 'Packages', zh: '套餐' },
+  'm1.nav_corporate': { id: 'Untuk kantor', en: 'For offices', zh: '企业订餐' },
+  'm1.nav_areas': { id: 'Wilayah antar', en: 'Delivery areas', zh: '配送范围' },
+  'm1.sign_in': { id: 'Masuk', en: 'Sign in', zh: '登录' },
+  'm1.see_menu': { id: 'Lihat menu', en: 'See the menu', zh: '查看菜单' },
+
+  // ── Meal photo upload ───────────────────────────────────────────────────
+  'photo.title': { id: 'Foto meal', en: 'Meal photo', zh: '餐品照片' },
+  'photo.upload': { id: 'Unggah foto', en: 'Upload photo', zh: '上传照片' },
+  'photo.replace': { id: 'Ganti foto', en: 'Replace photo', zh: '更换照片' },
+  'photo.remove': { id: 'Hapus foto', en: 'Remove photo', zh: '删除照片' },
+  'photo.none': {
+    id: 'Belum ada foto — kartu memakai warna tipe diet.',
+    en: 'No photo yet — the card uses the diet-type tint.',
+    zh: '尚无照片 —— 卡片将使用饮食类型底色。',
+  },
+  'photo.formats': { id: 'JPG atau PNG, maks 5 MB', en: 'JPG or PNG, max 5 MB', zh: 'JPG 或 PNG，最大 5 MB' },
+  'photo.failed': { id: 'Unggahan foto gagal.', en: 'The photo upload failed.', zh: '照片上传失败。' },
 } satisfies Record<string, Entry>
 
 export type MessageKey = keyof typeof messages

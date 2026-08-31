@@ -141,7 +141,7 @@ export default function OrderDetail() {
               <h3 className="kicker">{t('c05.proof')}</h3>
               <label className="flex cursor-pointer flex-col items-center gap-3 rounded border-2 border-dashed border-rule p-5 text-center">
                 <span aria-hidden="true"
-                      className="flex h-touch w-touch items-center justify-center rounded border-2 border-beige text-bar font-bold">
+                      className="flex h-touch w-touch items-center justify-center rounded border-2 border-beige text-onbar font-bold">
                   ↑
                 </span>
                 <span className="text-sm font-medium leading-snug">

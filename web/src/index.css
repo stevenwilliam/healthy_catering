@@ -8,7 +8,7 @@
  * Ground rule, same as the public site. Two grounds:
  *   PAGE — deep #1C3D34 on <body>; beige on it is 11.32.
  *   BARS — mid #468973 on the header and footer; beige there is only 3.93,
- *          so every string on a bar is text-bar (19px) at weight 700.
+ *          so every string on a bar is text-onbar (19px) at weight 700.
  * The app's forms and tables were designed against a light surface, so they
  * keep their one beige sheet (App.tsx) with the ground framing it.
  */
@@ -219,7 +219,7 @@
   .stat-danger .stat-label { @apply text-berry-light; }
 
   /* ── The two shells (§4.10) ───────────────────────────────────────────────
-     Every string on a bar is text-bar (19px/700) or larger — beige there is
+     Every string on a bar is text-onbar (19px/700) or larger — beige there is
      3.93, which is AA for large text and nothing else (§2.7). */
   /* on-fill: the single rule for text sitting on #468973 — a bar, a rail, a
      selected row, a filled pill. Beige there is 3.93, legal only as large
@@ -309,11 +309,11 @@
   .rich-area a { @apply underline; }
 
   /* ── Language selector ─────────────────────────────────────────────────
-     Sits on the mid-green bar, so its label is text-bar and its border is
+     Sits on the mid-green bar, so its label is text-onbar and its border is
      beige — #CCBDAA measures 2.25 there and would vanish. */
   .langpick-trigger {
     @apply inline-flex items-center gap-2 min-h-touch rounded-full border
-           border-beige px-3 text-bar font-bold text-beige hover:bg-beige/10;
+           border-beige px-3 text-onbar font-bold text-beige hover:bg-beige/10;
   }
   .langpick-list {
     @apply absolute right-0 z-50 mt-2 min-w-[13rem] rounded-xl bg-sheet p-2

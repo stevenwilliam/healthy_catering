@@ -6,7 +6,7 @@ Live status. Legend: ✅ done & tested · 🟡 partial · ⬜ not started.
 Everything marked ✅ below was **run**, not just written. Where something was
 written but not executed, it is 🟡 and says what is missing.
 
-_Last updated: 2026-08-31 — M17 phase 2: the canvas as the specification._
+_Last updated: 2026-08-31 — M17 complete: the canvas is the specification._
 
 ---
 
@@ -354,11 +354,39 @@ per page view does not turn the coverage report into a page-view counter) ·
 `portion_size` and `allergens` on the meal read path · a per-delivery courier
 note that overrides the address's standing one without erasing it.
 
-🟡 **Phase 2 not started** — the back office (S1–S5) still wears the chrome
-from the first pass, not the canvas's: S2–S5 need the top-bar variant, S1 the
-five-tile row, S4 its detail panel with the proof image. The public home needs
-M1's nav and the "Antar hari ini" card. Meal-photo upload is specified and not
-built.
+✅ **Phase 2, the back office and the public home.** S2–S5 moved onto the
+canvas's TOP-BAR variant (`components/backoffice.tsx`), S1 gained the five-tile
+row it draws — meals, deliveries, awaiting verification, verified revenue, out
+of range — and S4 was rebuilt as the queue-plus-detail-panel the artboard
+specifies, with the proof image behind a ten-minute presigned URL and a
+rejection that will not proceed without a reason for the audit row.
+
+✅ **M1's masthead** — the canvas's five nav items and its button pair, from
+migration 0031. The nav stays DATA (migration 0026), so the labels are
+catalogue keys and not typed wording. This SUPERSEDES the 2026-08-19 reduction
+to "Beranda | Menu"; the newer, more specific decision wins.
+
+✅ **Meal photography can now be uploaded** — `POST/DELETE
+/admin/calendar/meals/:id/photo`, audited, with magic-byte sniffing in the
+store so a .jpg that is really a script is refused at the door rather than on
+the page that renders it. `GET /media/:key` presigns for ten minutes. Clearing
+a key leaves the object in the bucket: deleting it would break a packing label
+already printed from a snapshot that referenced it.
+
+**Three invisible-text defects found by looking, none visible in the source:**
+
+1. `.masthead a` at specificity (0,1,1) beat `.cta-bar` at (0,1,0), so
+   "Lihat menu" rendered beige-on-beige at **1.00:1** — an invisible label on
+   the site's primary call to action.
+2. The ≥80rem media query re-placed the language picker into what had become
+   the actions' column, painting the flag on top of that same button.
+3. **`text-bar` was both a colour and a size.** `theme.extend.colors.bar` and
+   `theme.extend.fontSize.bar` both existed — this PREDATES the canvas work —
+   and Tailwind emitted two rules for one utility, so anything using it for
+   size alone was painted `#468973`: **1.00:1 on the mid-green bar**. The
+   stepper's quantity was an empty gap. The size key is now `onbar`, and
+   `scripts/verify-tailwind-keys.js` fails the build on any future collision —
+   checked against the real bug before being trusted. docs/10 §4.1b.
 
 ⬜ **The seeded menu photography is wrong** and this is live today. Every file
 in `web/public/images/menu/` is generic stock landscape, not food:

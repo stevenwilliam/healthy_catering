@@ -36,6 +36,8 @@ type QueueItem = {
 }
 
 type CoverageRow = { attempts: number }
+type SalesRow = { gross: string; gross_idr: number; meals: number; orders: number }
+type Delivery = { id: string; status: string }
 
 /** The service date in the operating timezone, as YYYY-MM-DD.
  *
@@ -56,6 +58,8 @@ export default function AdminDashboard() {
   const [kitchens, setKitchens] = useState<Kitchen[]>([])
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [gaps, setGaps] = useState<CoverageRow[]>([])
+  const [sales, setSales] = useState<SalesRow[]>([])
+  const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,11 +72,20 @@ export default function AdminDashboard() {
       // list, so it is fetched once rather than counted twice.
       request<Page<QueueItem>>('/admin/payments?status=SUBMITTED'),
       request<CoverageRow[]>('/admin/reports/coverage'),
+      // Revenue needs PermReportFinancial, which not every staff role has.
+      // Its failure must cost the TILE, not the dashboard — an ops manager
+      // without finance rights still needs the capacity grid. Same for the
+      // delivery counts, which need PermDeliveryRead.
+      request<SalesRow[]>(`/admin/reports/sales?from=${date}&to=${date}`).catch(() => []),
+      request<Page<Delivery>>(`/admin/deliveries?from=${date}&to=${date}`)
+        .catch(() => ({ items: [], total: 0, page: 1, page_size: 0 })),
     ])
-      .then(([k, p, c]) => {
+      .then(([k, p, c, sl, dl]) => {
         setKitchens(k)
         setQueue(p.items)
         setGaps(c)
+        setSales(Array.isArray(sl) ? sl : [])
+        setDeliveries(Array.isArray(dl?.items) ? dl.items : [])
       })
       .catch((e) => setError(e instanceof ApiFailure ? e.message : t('dash.load_failed')))
       .finally(() => setLoading(false))
@@ -104,6 +117,17 @@ export default function AdminDashboard() {
     [queue, oldest],
   )
   const outOfRange = useMemo(() => gaps.reduce((n, g) => n + g.attempts, 0), [gaps])
+
+  // Summed in INTEGER rupiah and formatted once at the end. No float touches
+  // this (CLAUDE.md §4), and the "jt" abbreviation the artboard uses is a
+  // display transform of that integer, never a rounded value carried forward.
+  const grossIDR = useMemo(
+    () => sales.reduce((n, r) => n + (r.gross_idr ?? 0), 0), [sales])
+  const delivered = useMemo(
+    () => deliveries.filter((d) => d.status === 'DELIVERED').length, [deliveries])
+  const enRoute = useMemo(
+    () => deliveries.filter((d) => d.status === 'OUT_FOR_DELIVERY' || d.status === 'PICKED_UP').length,
+    [deliveries])
   const fullSlots = useMemo(
     () => kitchens.flatMap((k) => k.slots.filter((s) => s.available && s.used >= s.quota)
       .map((s) => ({ kitchen: k.name, slot: s.slot_time }))),
@@ -124,14 +148,16 @@ export default function AdminDashboard() {
       </div>
 
       <State loading={loading} error={error}>
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="stat">
             <div className="stat-label">{t('dash.meals_today')}</div>
             <div className="stat-value">{mealsToday}</div>
-            <div className="stat-sub">
-              {kitchens.length} {t('dash.kitchen').toLowerCase()} · {slotCols.length}{' '}
-              {t('prod.slots').toLowerCase()}
-            </div>
+            <div className="stat-sub">{t('dash.meals_sub', kitchens.length, slotCols.length)}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-label">{t('dash.deliveries')}</div>
+            <div className="stat-value">{deliveries.length}</div>
+            <div className="stat-sub">{t('dash.deliveries_sub', delivered, enRoute)}</div>
           </div>
           <div className={queue.length > 0 ? 'stat-emph' : 'stat'}>
             <div className="stat-label">{t('dash.needs_verify')}</div>
@@ -140,35 +166,18 @@ export default function AdminDashboard() {
               {queue.length > 0 ? `${t('dash.action_oldest')} ${oldest} ${t('pay.minutes')}` : '—'}
             </div>
           </div>
-          <div className={fullSlots.length > 0 ? 'stat-danger' : 'stat'}>
-            <div className="stat-label">{t('cal.at_capacity')}</div>
-            <div className="stat-value">{fullSlots.length}</div>
-            <div className="stat-sub">
-              {fullSlots.length > 0
-                ? fullSlots.map((f) => `${f.kitchen} ${f.slot}`).join(' · ')
-                : '—'}
-            </div>
+          <div className="stat">
+            <div className="stat-label">{t('dash.revenue')}</div>
+            <div className="stat-value">{shortIDR(grossIDR)}</div>
+            <div className="stat-sub">{t('dash.revenue_sub')}</div>
           </div>
-          {/* Out-of-range checkout attempts — where demand exists that no
-              kitchen covers. This tile replaced a "Deliveries" one that was
-              showing the meals figure a second time under a meaningless
-              caption: two tiles reading 250 side by side is worse than three
-              tiles, because it invites the reader to believe they are
-              different numbers. */}
-          <div className={outOfRange > 0 ? 'stat-emph' : 'stat'}>
+          <div className={outOfRange > 0 ? 'stat-danger' : 'stat'}>
             <div className="stat-label">{t('dash.out_of_range')}</div>
             <div className="stat-value">{outOfRange}</div>
             <div className="stat-sub">{t('dash.out_of_range_sub')}</div>
           </div>
         </div>
 
-        {/* Side by side only from 2xl. A grid item defaults to
-            `min-width: auto`, so at 1440px the action panel's longest line set
-            a min-content floor and squeezed the capacity table down to about
-            340px — where its own overflow-hidden then clipped two whole slot
-            columns. `min-w-0` on both children is what lets `fr` actually
-            shrink; stacking below 2xl is what gives the table the width it
-            needs rather than making the reader scroll it sideways. */}
         <div className="grid gap-6 2xl:grid-cols-[1.6fr_1fr]">
           {/* ── Capacity per kitchen and slot ───────────────────────────────
               A framed grid (docs/10 §4.6). The column count comes from the
@@ -335,4 +344,17 @@ export function longDateWIB(iso: string, locale = 'id-ID'): string {
   return new Intl.DateTimeFormat(locale, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   }).format(at)
+}
+
+/** "24,1 jt" — the artboard's abbreviated rupiah for a stat tile.
+ *
+ * A DISPLAY transform of an integer, applied once at the edge. The integer is
+ * what was summed and what any export carries; this never feeds arithmetic
+ * (CLAUDE.md §4). Indonesian uses a comma as the decimal separator.
+ */
+export function shortIDR(v: number): string {
+  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1).replace('.', ',')} m`
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace('.', ',')} jt`
+  if (v >= 1_000) return `${Math.round(v / 1_000)} rb`
+  return String(v)
 }

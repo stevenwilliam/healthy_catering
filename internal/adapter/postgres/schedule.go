@@ -431,3 +431,26 @@ func mustDate(s string) time.Time {
 	}
 	return t
 }
+
+// SetMealPhoto points a scheduled meal at a stored photograph, or clears it.
+//
+// An empty key CLEARS rather than storing "", so the column keeps its NULL
+// meaning: "no photo" is a state the card renders as the diet tint, and an
+// empty string would be a key that resolves to nothing and 404s.
+func (r *ScheduleRepo) SetMealPhoto(ctx context.Context, id uuid.UUID, key string, by uuid.UUID) error {
+	var k any
+	if key != "" {
+		k = key
+	}
+	res := r.db.WithContext(ctx).Exec(`
+		UPDATE scheduled_meal
+		   SET hero_photo_key = ?, updated_at = now(), updated_by = ?
+		 WHERE id = ?`, k, by, id)
+	if res.Error != nil {
+		return fmt.Errorf("postgres: set meal photo: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

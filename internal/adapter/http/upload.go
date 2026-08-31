@@ -91,6 +91,111 @@ func registerUploads(g *gin.RouterGroup, d Deps) {
 			})
 		})
 
+	// ── Meal photography (artboards 01, 02, M1) ─────────────────────────────
+	//
+	// Every artboard reserves a photo band. The library is filled one meal at a
+	// time, so the card falls back to the diet-type tint rather than reflowing
+	// as pictures arrive — which is why this endpoint stores a KEY and the
+	// front end treats "no key" as a normal state, not an error.
+	authed.POST("/admin/calendar/meals/:id/photo",
+		RequirePermission(security.PermScheduleWrite),
+		func(c *gin.Context) {
+			id, ok := pathUUID(c, "id")
+			if !ok {
+				return
+			}
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body,
+				storage.MaxPhotoBytes+(1<<20))
+
+			file, err := c.FormFile("file")
+			if err != nil {
+				// Same trap as the proof upload: MaxBytesReader kills the body
+				// mid-parse, so an over-sized file arrives looking MISSING.
+				var tooLarge *http.MaxBytesError
+				if errors.As(err, &tooLarge) || strings.Contains(err.Error(), "too large") {
+					Fail(c, apierror.New(http.StatusRequestEntityTooLarge,
+						apierror.CodeValidation, "That photo is too large."))
+					return
+				}
+				Fail(c, apierror.Validation("Attach the photo as the file field.",
+					map[string]any{"file": "required"}))
+				return
+			}
+			if file.Size > storage.MaxPhotoBytes {
+				Fail(c, apierror.Validation("The photo is too large.",
+					map[string]any{"file": "too large"}))
+				return
+			}
+
+			src, err := file.Open()
+			if err != nil {
+				Fail(c, apierror.Internal(err))
+				return
+			}
+			defer src.Close()
+
+			// The store sniffs magic bytes rather than trusting the filename or
+			// the declared content type, so a .jpg that is really a script is
+			// refused here and not on the page that renders it.
+			up, err := d.Storage.PutFoodPhoto(c.Request.Context(), id, src, file.Size)
+			if err != nil {
+				Fail(c, uploadError(err))
+				return
+			}
+			if err := d.Catalogue.SetMealPhoto(c.Request.Context(), id, up.Key,
+				actorFrom(c)); err != nil {
+				Fail(c, err)
+				return
+			}
+			OK(c, http.StatusCreated, gin.H{
+				"hero_photo_key": up.Key,
+				"content_type":   up.ContentType,
+				"bytes":          up.Bytes,
+			})
+		})
+
+	authed.DELETE("/admin/calendar/meals/:id/photo",
+		RequirePermission(security.PermScheduleWrite),
+		func(c *gin.Context) {
+			id, ok := pathUUID(c, "id")
+			if !ok {
+				return
+			}
+			// The KEY is cleared; the object is left in the bucket. Deleting it
+			// would break any packing label already printed from a snapshot
+			// that referenced it, and storage is cheap next to that.
+			if err := d.Catalogue.SetMealPhoto(c.Request.Context(), id, "",
+				actorFrom(c)); err != nil {
+				Fail(c, err)
+				return
+			}
+			OK(c, http.StatusOK, gin.H{"hero_photo_key": nil})
+		})
+
+	// Reading a stored photo. Seeded meals carry a SERVED PATH and never reach
+	// this route; uploaded ones carry a storage key and do.
+	//
+	// Authenticated, and deliberately so: the bucket is private, and a public
+	// presigner would turn every key into a permanent open URL. Menu photos are
+	// not secret, but the route that signs them is the same machinery that
+	// signs payment proofs, and one loose end there is a data leak.
+	authed.GET("/media/:key", func(c *gin.Context) {
+		key := c.Param("key")
+		// Never sign an arbitrary path: a key is what the store handed us, and
+		// traversal out of the prefix is exactly how a private bucket leaks.
+		if key == "" || strings.Contains(key, "..") {
+			Fail(c, apierror.Validation("That is not a media key.", nil))
+			return
+		}
+		u, err := d.Storage.PresignedURL(c.Request.Context(), strings.TrimPrefix(key, "/"),
+			10*time.Minute)
+		if err != nil {
+			Fail(c, apierror.Internal(err))
+			return
+		}
+		c.Redirect(http.StatusFound, u)
+	})
+
 	// Finance views a proof through a SHORT-LIVED presigned URL. The bucket is
 	// private, so this is the only way to see one, and a link pasted into a
 	// chat stops working (99 §7).

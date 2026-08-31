@@ -43,7 +43,7 @@ export function AppBar({
                   button already has an accessible name. */}
               <span aria-hidden="true">←</span>
             </button>
-            <h1 className="truncate text-bar font-bold text-beige">{title}</h1>
+            <h1 className="truncate text-onbar font-bold text-beige">{title}</h1>
           </>
         ) : (
           <img
@@ -97,7 +97,7 @@ export function Stepper({
   size?: 'lg' | 'sm'
 }) {
   const t = useT()
-  const box = size === 'lg' ? 'h-touch w-touch text-bar' : 'h-9 w-9 text-base'
+  const box = size === 'lg' ? 'h-touch w-touch text-onbar' : 'h-9 w-9 text-base'
   return (
     <div
       className="inline-flex items-center rounded border-2 border-beige"
@@ -114,7 +114,7 @@ export function Stepper({
         −
       </button>
       <span
-        className={`min-w-[2rem] text-center font-bold ${size === 'lg' ? 'text-bar' : 'text-base'}`}
+        className={`min-w-[2rem] text-center font-bold ${size === 'lg' ? 'text-onbar' : 'text-base'}`}
         aria-live="polite"
       >
         {value}

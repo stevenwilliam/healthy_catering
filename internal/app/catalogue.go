@@ -406,3 +406,25 @@ func orDefault(v, def string) string {
 	}
 	return v
 }
+
+// SetMealPhoto points a scheduled meal at a stored photograph, or clears it
+// when key is empty.
+//
+// Audited like every other back-office write (PROMPT §3): a photograph is what
+// a customer decides from, so "who changed the picture on Monday's lunch" has
+// to be a question with an answer.
+func (c *Catalogue) SetMealPhoto(ctx context.Context, mealID uuid.UUID, key string, by Actor) error {
+	if err := c.sched.SetMealPhoto(ctx, mealID, key, by.UserID); err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return apierror.NotFound("That meal does not exist.")
+		}
+		return apierror.Internal(err)
+	}
+	action := "MEAL_PHOTO_SET"
+	if key == "" {
+		action = "MEAL_PHOTO_CLEARED"
+	}
+	c.log(ctx, by, action, "scheduled_meal", &mealID,
+		nil, map[string]any{"hero_photo_key": key}, "")
+	return nil
+}

@@ -4,6 +4,7 @@ import { SearchBox, State } from '../components/ui'
 import ExportCsv from '../components/ExportCsv'
 import { useT } from '../lib/i18n'
 import { serviceDateWIB } from './AdminDashboard'
+import { Board, LegendItem, TopBar } from '../components/backoffice'
 
 /** S5 — kitchens and their service areas.
  *
@@ -95,12 +96,12 @@ export default function AdminCoverage() {
   }, [gaps, q])
 
   return (
-    <div>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <h1>{t('cov.title')}</h1>
-        <p className="max-w-xl text-sm text-beige-deep">{t('cov.rule')}</p>
-      </div>
+    <Board>
+      {/* Same treatment as S3: the rule keeps its 14px #CCBDAA and sits under
+          the bar rather than on it (docs/10 §4.1). */}
+      <TopBar title={t('cov.title')} note={t('cov.rule')} />
 
+      <div className="p-6">
       <State loading={loading} error={error}>
         <div className="grid gap-6 xl:grid-cols-[1fr_430px] xl:items-start">
           {/* ── The schematic ──────────────────────────────────────────────── */}
@@ -167,6 +168,23 @@ export default function AdminCoverage() {
                   </div>
                 )
               })}
+              {/* The legend the artboard draws bottom-left. Each entry pairs a
+                  swatch with a WORD — the swatch alone would make colour the
+                  only signal (docs/10 §2.4 rule 4). It sits on the deep ground
+                  rather than on the mid-green plot, where 13px would be 3.93. */}
+              <div className="absolute bottom-6 left-6 flex flex-col gap-2 rounded-card border border-edge bg-canvas p-4">
+                <span className="kicker">{t('cov.legend')}</span>
+                <LegendItem swatch={
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-dashed border-beige" />
+                }>{t('cov.legend_radius')}</LegendItem>
+                <LegendItem swatch={
+                  <span className="h-3.5 w-3.5 rounded-full bg-beige/25" />
+                }>{t('cov.legend_polygon')}</LegendItem>
+                <LegendItem swatch={
+                  <span className="h-3 w-3 rounded-full bg-berry-light" />
+                }>{t('cov.legend_rejected')}</LegendItem>
+              </div>
+
               {plot.length === 0 && (
                 <p className="absolute inset-0 flex items-center justify-center text-sm text-beige">
                   {t('ui.empty')}
@@ -243,6 +261,25 @@ export default function AdminCoverage() {
                   <p className="m-0">{t('cov.manual_note')}</p>
                 </div>
               </div>
+
+              {/* The artboard's two actions. Both are disabled: coverage is
+                  edited through the kitchen record and there is no write
+                  endpoint for it yet, and a button that looks live and does
+                  nothing is worse than one that says it is not ready. A
+                  disabled control explains itself (99 §8). */}
+              <div className="flex gap-3 border-t border-rule p-5">
+                <button type="button" className="btn-primary flex-1" disabled
+                        title={t('cov.not_editable')}>
+                  {t('cov.save_area')}
+                </button>
+                <button type="button" className="btn-ghost" disabled
+                        title={t('cov.not_editable')}>
+                  {t('cov.deactivate')}
+                </button>
+              </div>
+              <p className="border-t border-rule px-5 py-3 text-xs text-beige-deep">
+                {t('cov.not_editable')}
+              </p>
             </section>
           )}
         </div>
@@ -287,7 +324,8 @@ export default function AdminCoverage() {
           )}
         </section>
       </State>
-    </div>
+      </div>
+    </Board>
   )
 }
 

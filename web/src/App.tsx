@@ -143,11 +143,11 @@ function Nav() {
             <Wordmark />
           </a>
         )}
-        {/* text-bar, not text-sm: beige on the mid-green bar is 3.93, which is
+        {/* text-onbar, not text-sm: beige on the mid-green bar is 3.93, which is
             AA for LARGE text only (docs/10 §2.7). */}
         {session && (
           <nav
-            className="col-span-full row-start-2 flex flex-wrap gap-4 text-bar font-bold
+            className="col-span-full row-start-2 flex flex-wrap gap-4 text-onbar font-bold
                        xl:col-span-1 xl:col-start-2 xl:row-start-1"
             aria-label={t('nav.aria')}
           >
@@ -166,7 +166,7 @@ function Nav() {
         )}
         <div
           className="col-start-2 row-start-1 flex items-center justify-end gap-3
-                     text-bar font-bold xl:col-start-3"
+                     text-onbar font-bold xl:col-start-3"
         >
           {session ? (
             <>
@@ -257,6 +257,19 @@ function BackOffice() {
       </div>
     </div>
   )
+}
+
+/** The floating contact button, on CUSTOMER surfaces only.
+ *
+ * The canvas draws it on no back-office artboard, and on S1 it sat directly
+ * over the "Dapur & wilayah" action in the needs-action list — a control
+ * covered by a decoration is a defect regardless of what the design says.
+ * Staff have a phone directory; a customer has this button.
+ */
+function CustomerOnlyFloat() {
+  const { pathname } = useLocation()
+  if (pathname.startsWith('/admin')) return null
+  return <WhatsAppFloat />
 }
 
 function NotFound() {
@@ -365,7 +378,7 @@ function Shell() {
           </Route>
         </Routes>
       </main>
-      <WhatsAppFloat />
+      <CustomerOnlyFloat />
       {/* Fixed to the bottom, in the masthead's own fill, thin (Steven,
           2026-08-18). Its height is the --footer-h token, which is also what
           the wrapper above reserves as padding. */}

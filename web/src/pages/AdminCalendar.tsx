@@ -3,6 +3,9 @@ import { ApiFailure, Page, request } from '../lib/api'
 import { SearchBox, State, SubmitButton } from '../components/ui'
 import { useT } from '../lib/i18n'
 import { serviceDateWIB } from './AdminDashboard'
+import { Board, TopBar } from '../components/backoffice'
+import { MealPhoto } from '../components/MealPhoto'
+import { useRef } from 'react'
 
 /** S2 — the menu schedule calendar (docs/10 §4.10).
  *
@@ -25,6 +28,7 @@ type Meal = {
   status: string
   items: { food_name: string }[]
   nutrition: { calories_kcal: number; complete: boolean }
+  hero_photo_key?: string
 }
 
 type DietType = { ID: string; Name: string }
@@ -93,31 +97,36 @@ export default function AdminCalendar() {
   }
 
   return (
-    <div>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <h1>{t('cal.title')}</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <button className="btn-ghost" onClick={() => setWeekStart(addDays(weekStart, -7))}>
-            {t('cal.prev_week')}
-          </button>
-          <span className="text-sm font-semibold">{rangeLabel(from, to)}</span>
-          <button className="btn-ghost" onClick={() => setWeekStart(addDays(weekStart, 7))}>
-            {t('cal.next_week')}
-          </button>
-          {/* A disabled control explains itself rather than being a dead box
-              (99 §8): with nothing in draft there is nothing to publish, and
-              the count says so. */}
-          <SubmitButton
-            pending={publishing}
-            type="button"
-            onClick={publishWeek}
-            disabled={drafts.length === 0}
-          >
-            {t('cal.publish_week')}{drafts.length > 0 ? ` · ${drafts.length}` : ''}
-          </SubmitButton>
-        </div>
-      </div>
+    <Board>
+      <TopBar
+        title={t('cal.title')}
+        actions={
+          <>
+            {/* Week navigation lives ON the bar, as S2 draws it. These are
+                short labels, so 19px is comfortable there. */}
+            <button className="btn-ghost" onClick={() => setWeekStart(addDays(weekStart, -7))}>
+              {t('cal.prev_week')}
+            </button>
+            <span className="text-onbar font-bold text-beige">{rangeLabel(from, to)}</span>
+            <button className="btn-ghost" onClick={() => setWeekStart(addDays(weekStart, 7))}>
+              {t('cal.next_week')}
+            </button>
+            {/* A disabled control explains itself rather than being a dead box
+                (99 §8): with nothing in draft there is nothing to publish, and
+                the count says so. */}
+            <SubmitButton
+              pending={publishing}
+              type="button"
+              onClick={publishWeek}
+              disabled={drafts.length === 0}
+            >
+              {t('cal.publish_week')}{drafts.length > 0 ? ` · ${drafts.length}` : ''}
+            </SubmitButton>
+          </>
+        }
+      />
 
+      <div className="p-6">
       {/* Diet chips (docs/10 §4.9) and the legend. */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -198,7 +207,8 @@ export default function AdminCalendar() {
           </div>
         </div>
       </State>
-    </div>
+      </div>
+    </Board>
   )
 }
 
@@ -210,6 +220,8 @@ export default function AdminCalendar() {
 function MealCell({ meal, onChanged }: { meal: Meal; onChanged: () => void }) {
   const t = useT()
   const [busy, setBusy] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const published = meal.status === 'PUBLISHED'
   const full = meal.qty_capacity !== undefined && meal.qty_reserved >= (meal.qty_capacity ?? 0)
 
@@ -223,9 +235,45 @@ function MealCell({ meal, onChanged }: { meal: Meal; onChanged: () => void }) {
     }
   }
 
+  /** Set or replace the photograph. The card falls back to the diet tint when
+   *  there is none, so this is an improvement to an already-working cell —
+   *  never a prerequisite for publishing. */
+  async function uploadPhoto() {
+    const file = fileRef.current?.files?.[0]
+    if (!file) return
+    setBusy(true)
+    setPhotoError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      await request(`/admin/calendar/meals/${meal.id}/photo`, { method: 'POST', form })
+      onChanged()
+    } catch {
+      setPhotoError(t('photo.failed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const photoControl = (
+    <label className="mt-2 block cursor-pointer text-xs underline">
+      {meal.hero_photo_key ? t('photo.replace') : t('photo.upload')}
+      <input
+        ref={fileRef}
+        type="file"
+        className="sr-only"
+        accept="image/jpeg,image/png"
+        onChange={() => void uploadPhoto()}
+      />
+    </label>
+  )
+
   if (published) {
     return (
-      <div className="on-sheet flex flex-col gap-2 rounded-card bg-sheet p-4 text-ink">
+      <div className="on-sheet flex flex-col gap-2 overflow-hidden rounded-card bg-sheet text-ink">
+        <MealPhoto photoKey={meal.hero_photo_key} diet={meal.diet_type}
+                   alt={meal.name ?? ''} className="h-20" />
+        <div className="flex flex-1 flex-col gap-2 p-4 pt-0">
         <span className="text-xs font-bold uppercase tracking-wider">{t('cal.published')}</span>
         <span className="font-display text-lg font-semibold leading-tight">
           {meal.name ?? meal.items[0]?.food_name}
@@ -245,6 +293,9 @@ function MealCell({ meal, onChanged }: { meal: Meal; onChanged: () => void }) {
             </span>
           )}
         </span>
+        {photoControl}
+        {photoError && <p className="error text-sm" role="alert">{photoError}</p>}
+        </div>
       </div>
     )
   }
@@ -262,6 +313,8 @@ function MealCell({ meal, onChanged }: { meal: Meal; onChanged: () => void }) {
       <SubmitButton pending={busy} type="button" onClick={publish} className="btn-primary mt-auto self-start">
         {t('cal.publish')}
       </SubmitButton>
+      {photoControl}
+      {photoError && <p className="error text-sm" role="alert">{photoError}</p>}
     </div>
   )
 }

@@ -57,7 +57,15 @@ export default {
         // Bar text. 19px is the first whole pixel above WCAG's 18.66px
         // "large text" threshold, which at weight 700 is what makes beige
         // legal on the mid-green masthead and footer at 3.93:1.
-        bar: ['1.1875rem', { lineHeight: '1.2' }],
+        //
+        // NAMED `onbar`, NOT `bar`, and that is load-bearing. `bar` is also a
+        // COLOUR key above, and Tailwind resolves `text-{key}` against both
+        // scales — so `text-bar` emitted TWO rules, a font-size one and
+        // `color: #468973`. Any element using it for size alone was painted
+        // mid-green: 1.00:1 on the mid-green bar, i.e. invisible, and 2.88 on
+        // the ground. scripts/verify-tailwind-keys.js fails the build if a key
+        // ever collides across those two scales again.
+        onbar: ['1.1875rem', { lineHeight: '1.2' }],
       },
       boxShadow: {
         lift: '0 10px 30px rgba(11, 30, 25, 0.22)',   // a surface on the ground

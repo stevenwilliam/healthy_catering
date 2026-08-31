@@ -191,14 +191,18 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   display: grid;
   /* burger | wordmark | picker. The burger collapses to a zero-width column
      above 48rem, where it is display:none. */
-  grid-template-columns: auto 1fr auto;
+  /* burger | wordmark | actions | picker. The burger collapses to a
+     zero-width column above 48rem, where it is display:none, and the actions
+     column collapses on a narrow masthead (see below). */
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: var(--space-3) var(--space-4);
 }
-.masthead .burger   { grid-column: 1; grid-row: 1; }
-.masthead .wordmark { grid-column: 2; grid-row: 1; }
-.masthead .langpick { grid-column: 3; grid-row: 1; justify-self: end; }
-.masthead .nav-wide { grid-column: 1 / -1; grid-row: 2; }
+.masthead .burger          { grid-column: 1; grid-row: 1; }
+.masthead .wordmark        { grid-column: 2; grid-row: 1; }
+.masthead .masthead-actions { grid-column: 3; grid-row: 1; justify-self: end; }
+.masthead .langpick        { grid-column: 4; grid-row: 1; justify-self: end; }
+.masthead .nav-wide        { grid-column: 1 / -1; grid-row: 2; }
 /* Below 80rem the nav sits on its own row, so it gets a rule above it to
    separate it from the wordmark rather than floating in the same block. */
 @media (max-width: 79.99rem) {
@@ -212,14 +216,20 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   }
 }
 
-/* One row only where all three genuinely fit. Measured rather than guessed:
-   the logo is ~290px, the six nav links ~640px at 19px/700, and the picker
-   ~230px, so below 80rem something has to give and it should be the nav
-   dropping to its own row. */
-@media (min-width: 80rem) {
-  .masthead .wordmark { grid-column: 1; }
-  .masthead .nav-wide { grid-column: 2; grid-row: 1; justify-self: start; }
-  .masthead .langpick { grid-column: 3; grid-row: 1; }
+/* One row only where everything genuinely fits. Measured rather than guessed,
+   and re-measured after M1 added the button pair (artboard M1): the logo is
+   ~290px, the five nav links ~700px at 19px/700, the two action pills ~300px,
+   and the picker ~90px — about 1380px plus gaps and the ribbon's 140px
+   reservation, so one row needs 1440. Below that the nav drops to its own row.
+
+   The langpick moves to COLUMN 4 here. It was column 3, which is now the
+   actions' column, and the two rendered stacked in one cell — the flag
+   painted on top of the "Lihat menu" label. */
+@media (min-width: 90rem) {
+  .masthead .wordmark        { grid-column: 1; }
+  .masthead .nav-wide        { grid-column: 2; grid-row: 1; justify-self: start; }
+  .masthead .masthead-actions { grid-column: 3; grid-row: 1; }
+  .masthead .langpick        { grid-column: 4; grid-row: 1; }
 }
 
 /* ── Burger ───────────────────────────────────────────────────────────────
@@ -1519,4 +1529,94 @@ main > section + section { margin-top: var(--space-16); }
   border: 0;
   background: none;
   color: var(--on-canvas-muted);       /* 6.47 ✓ */
+}
+
+/* ── M1's masthead button pair ─────────────────────────────────────────────
+ * Two ACTIONS beside the nav links, as artboard M1 draws them. They sit on the
+ * masthead fill, where beige is 3.93 — AA for large text only — so both are
+ * --text-bar at weight 700. That is the same rule every other string on a bar
+ * follows (docs/10 §2.7, §4.1), not a size preference.
+ */
+.masthead-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.cta-bar {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--beige);
+  color: var(--nourish-deep);         /* 11.32 on the beige fill ✓ */
+  font-size: var(--text-bar);
+  font-weight: var(--w-eyebrow);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cta-bar:hover { text-decoration: none; transform: translateY(-1px); }
+/* `.masthead a` is beige-for-the-bar at specificity (0,1,1) and beats
+   `.cta-bar` at (0,1,0) — which painted beige text on the beige fill and made
+   the label invisible at 1.0:1. This is a CONTRAST fix, not a style
+   preference: do not lower its specificity. */
+.masthead .cta-bar { color: var(--nourish-deep); }
+.masthead .cta-bar-ghost { color: var(--on-bar); }
+.cta-bar-ghost {
+  background: transparent;
+  color: var(--on-bar);               /* 3.93 — legal because it is --text-bar */
+  box-shadow: inset 0 0 0 2px var(--beige);
+}
+.cta-bar-ghost:hover { background: rgba(255, 250, 224, 0.12); }
+
+/* The pair is the first thing to go on a narrow masthead: the burger already
+   reaches every destination, and two 44px pills beside a logo do not fit a
+   phone. "Lihat menu" survives longest because it is the page's purpose. */
+@media (max-width: 60rem) {
+  .cta-bar-ghost { display: none; }
+}
+@media (max-width: 40rem) {
+  .masthead-actions { display: none; }
+}
+
+/* ── M1's "Antar hari ini" card ───────────────────────────────────────────
+ * Anchored to the hero artwork but standing on the DEEP GROUND, never on the
+ * photograph. Text over an unpredictable image has no contrast anyone can
+ * calculate, and this card carries the cut-off — the single fact on the page a
+ * customer is actually held to.
+ */
+.hero-art { position: relative; }
+.deliver-card {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--canvas);
+  box-shadow: var(--shadow-lift);
+}
+.deliver-card .kicker {
+  font-size: var(--text-xs);
+  font-weight: var(--w-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-dark-muted);        /* 6.47 on the deep ground ✓ */
+}
+.deliver-card strong {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--w-display);
+  color: var(--on-canvas);            /* 11.32 ✓ */
+}
+.deliver-card .fine {
+  font-size: var(--text-xs);
+  color: var(--on-dark-muted);
+}
+/* On a phone the artwork is full-bleed and a floating card would cover the
+   food, so it drops into normal flow under the picture. */
+@media (max-width: 48rem) {
+  .deliver-card { position: static; margin-top: var(--space-4); }
 }

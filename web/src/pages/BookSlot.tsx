@@ -124,7 +124,7 @@ export default function BookSlot() {
       <AppBar
         title={t('m3.title')}
         trailing={pkg && (
-          <span className="rounded-full bg-canvas px-4 py-1 text-bar font-bold text-beige">
+          <span className="rounded-full bg-canvas px-4 py-1 text-onbar font-bold text-beige">
             {t('m3.credits', pkg.remaining_credits)}
           </span>
         )}

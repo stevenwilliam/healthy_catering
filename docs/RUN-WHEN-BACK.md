@@ -3,8 +3,8 @@
 Steps needing an interactive terminal, a browser, or credentials that do not
 exist yet. Use `vi` for any edits.
 
-_Updated: 2026-08-31 — §B rewritten (the signed-in screens ARE captured now,
-against fixtures), §B1 and §B2 added by the design-canvas build._
+_Updated: 2026-08-31 — §A6 added: the service must be restarted onto the new
+binary before the canvas rework is visible._
 
 ## A. One command — this is why you still cannot open the site · DO THIS FIRST
 
@@ -157,6 +157,23 @@ OLD markup with the NEW stylesheet. That combination is safe — `.wordmark img`
 carries an 18px fallback height for exactly this window — but the mark is
 absent. Without that fallback the classless `<img>` fell back to its intrinsic
 560×60 and pushed a 390px page out to 717px; measured, on the running service.
+
+## A6. RESTART THE SERVICE · the canvas rework is not live until you do
+
+`systemctl restart` needs interactive auth, which this session does not have,
+so the running process is still the pre-canvas binary. Everything is built,
+migrated and committed; the templates and the masthead simply are not being
+served yet.
+
+```bash
+sudo systemctl restart evermore
+```
+
+Then one hard reload (Ctrl+Shift+R). The asset-version token is computed ONCE
+at boot from the CSS file mtimes (`assetVersion`, a `sync.OnceValue`), so
+without the restart every browser is handed a URL it already has cached and
+keeps the old stylesheet — which is exactly why the last change appeared not to
+have shipped. Migration 0031 is already applied to this database.
 
 ## B. The signed-in screenshots — captured, but READ THIS FIRST
 

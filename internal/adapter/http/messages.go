@@ -422,6 +422,48 @@ var publicMessages = i18n.Catalog{
 
 	"nav.benefits": {i18n.ID: "Keunggulan", i18n.EN: "Benefits", i18n.ZH: "我们的优势"},
 
+	// ── The masthead the canvas draws (artboard M1, migration 0031) ─────────
+	"nav.menu_week": {
+		i18n.ID: "Menu minggu ini",
+		i18n.EN: "This week's menu",
+		i18n.ZH: "本周菜单",
+	},
+	"nav.how": {
+		i18n.ID: "Cara kerja",
+		i18n.EN: "How it works",
+		i18n.ZH: "服务流程",
+	},
+	"nav.packages": {
+		i18n.ID: "Paket",
+		i18n.EN: "Packages",
+		i18n.ZH: "套餐",
+	},
+	"nav.corporate": {
+		i18n.ID: "Untuk kantor",
+		i18n.EN: "For offices",
+		i18n.ZH: "企业订餐",
+	},
+	"nav.areas": {
+		i18n.ID: "Wilayah antar",
+		i18n.EN: "Delivery areas",
+		i18n.ZH: "配送范围",
+	},
+	"nav.sign_in": {
+		i18n.ID: "Masuk",
+		i18n.EN: "Sign in",
+		i18n.ZH: "登录",
+	},
+	"nav.see_menu": {
+		i18n.ID: "Lihat menu",
+		i18n.EN: "See the menu",
+		i18n.ZH: "查看菜单",
+	},
+	"home.deliver_time": {
+		i18n.ID: "11.30 WIB",
+		i18n.EN: "11.30 WIB",
+		i18n.ZH: "11:30（WIB）",
+	},
+
 	// ── Benefits page ───────────────────────────────────────────────────────
 	"benefits.title": {
 		i18n.ID: "Keunggulan — Evermore",

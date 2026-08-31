@@ -295,6 +295,7 @@ const SHOTS = [
   { name: 'public-home-desktop', url: '/', w: 1440, h: 1400, live: true },
   { name: 'public-home-mobile', url: '/', w: 390, h: 1600, live: true },
   { name: 'spa-login', url: '/app/login', w: 1280, h: 900, live: true },
+  { name: 'm1-home-1440', url: '/', w: 1440, h: 1500, live: true },
   // Signed-in — real components, fixture data.
   { name: 'spa-dashboard', url: '/app/admin', w: 1440, h: 1000 },
   { name: 'spa-calendar', url: '/app/admin/calendar', w: 1440, h: 1000 },

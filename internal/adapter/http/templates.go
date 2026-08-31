@@ -132,6 +132,17 @@ const publicTemplates = `
     {{end}}
   </nav>
 
+  <!-- M1's button pair. Two actions, not two more nav links: signing in and
+       seeing the menu are what a visitor does, and the artboard gives them the
+       weight of buttons. The cta-bar class is sized for the masthead fill,
+       where beige is 3.93 and everything must be large text (docs/10 §2.7).
+       NOTE: no backticks anywhere in this constant — it is a Go raw string
+       literal, and one backtick in a comment ends it. -->
+  <div class="masthead-actions">
+    <a class="cta-bar cta-bar-ghost" href="/app/login">{{t .L "nav.sign_in"}}</a>
+    <a class="cta-bar" href="{{path .L "/menu/healthy"}}">{{t .L "nav.see_menu"}}</a>
+  </div>
+
   <details class="burger">
     <summary aria-label="{{t .L "nav.main"}}">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -287,6 +298,15 @@ const publicTemplates = `
       <img src="{{.HeroImage}}" alt="{{t .L "home.hero_alt"}}"
            {{if and .HeroW .HeroH}}width="{{.HeroW}}" height="{{.HeroH}}"{{end}}
            fetchpriority="high" decoding="async">
+      <!-- M1's "Antar hari ini" card. It sits on the deep ground rather than
+           on the photograph: text over an unpredictable image has no contrast
+           anyone can calculate, and this card carries the cut-off — the one
+           fact on the page a customer is held to. -->
+      <div class="deliver-card">
+        <span class="kicker">{{t .L "home.deliver_today"}}</span>
+        <strong>{{t .L "home.deliver_time"}}</strong>
+        <span class="fine">{{t .L "home.deliver_cutoff"}}</span>
+      </div>
     </div>
     {{end}}
   </section>

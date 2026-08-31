@@ -395,16 +395,26 @@ size the canvas draws it.
 | Sticky bottom-bar kicker | beige on bar, 12px/700 | **3.93** | 4.5 | **19px/700** ✓ |
 | Sidebar nav, inactive (S1) | beige on bar, 15px/500 | **3.93** | 4.5 | **19px/700** ✓ |
 
-**Three inks cannot be saved by size.** `#CCBDAA` on `#468973` is **2.25**,
-under the 3:1 floor that large text itself has to clear — there is no size at
-which it is legal. These are the only three places a colour changes, and each
-becomes `#FFFAE0` at 19px/700:
+**`#CCBDAA` can never sit on `#468973`.** It measures **2.25** — under the 3:1
+floor that large text itself has to clear, so there is no size at which it is
+legal. Two responses, and which one applies depends on whether the element can
+move:
 
-| Element | Canvas | Measured |
-|---|---|---:|
-| Sidebar "BACK OFFICE" kicker (S1) | `#CCBDAA` on the bar | **2.25** ✗ |
-| Sidebar staff sub-label (S1) | `#CCBDAA` on the bar | **2.25** ✗ |
-| Top-bar tax note (S3) | `#CCBDAA` on the bar | **2.25** ✗ |
+*Short labels locked inside the rail become beige at 19px/700.* These are the
+only two places a colour changes:
+
+| Element | Canvas | Measured | Ships as |
+|---|---|---:|---|
+| Sidebar "BACK OFFICE" kicker (S1) | `#CCBDAA` on the bar | **2.25** ✗ | `#FFFAE0`, 19px/700 |
+| Sidebar staff sub-label (S1) | `#CCBDAA` on the bar | **2.25** ✗ | `#FFFAE0`, 19px/700 |
+
+*Long supporting text moves off the bar instead.* S3's tax note and S5's
+polygon rule are sentences, not labels; blown up to 19px beige they would
+dominate the bar they are subordinate to. They keep the canvas's **exact
+colour and exact size** and drop one row, onto the deep ground, where
+`#CCBDAA` is **6.47** ✓. A 40px relocation is a smaller departure from the
+artboard than a 36% type increase, and it is the reading of "exact colours,
+legal sizes" that costs the design least.
 
 **One border stays as drawn.** `1px solid #468973` on the ground is **2.88**,
 under 1.4.11's 3:1. It is kept — because in every place the canvas uses it the
@@ -424,6 +434,34 @@ canvas's type but change a fill, so it was not taken. Worth revisiting.
 13px on the bar measures 3.93 and fails, but it is the artboard's drawing of
 the *phone's own* status bar, not product UI. It has no implementation to make
 compliant.
+
+### 4.1b The `text-bar` collision — a latent invisible-text bug
+
+Found 2026-08-31 while building the stepper, and it predates the canvas work.
+
+`theme.extend.colors` carried a key `bar` (`#468973`, the masthead fill) and
+`theme.extend.fontSize` carried a key `bar` (19px, the size that makes beige
+legal on that fill). Tailwind resolves `text-{key}` against **both** scales, so
+one utility emitted two rules:
+
+```css
+.text-bar { font-size: 1.1875rem; line-height: 1.2 }
+.text-bar { color: rgb(70 137 115) }        /* #468973 */
+```
+
+Any element using it for size alone was painted mid-green — **1.00:1 on the
+mid-green bar**. Not low-contrast: absent. The quantity in the meal-detail
+stepper rendered as an empty gap, and it took a computed-style probe to see
+why, because the source reads `text-bar font-bold` and looks like a size.
+
+The size key is now **`onbar`**; `text-onbar` emits font-size only.
+`scripts/verify-tailwind-keys.js` fails if any key ever appears in both scales
+again — it was checked against the real bug before being trusted.
+
+The lesson generalises: a design token name that is meaningful in two scales is
+a name that will eventually be used in the wrong one, and the failure is
+silent. Nothing in review catches it, because the collision exists only in the
+generated CSS.
 
 ### 4.2 Buttons — pills, and the CTA is beige
 
@@ -563,69 +601,47 @@ every morning.
 
 ### 4.12 Where the build departs from the canvas, and why
 
-Beyond the four AA substitutions in §4.1, five deliberate departures. Each is a
-decision, not a shortfall — but none of them is invisible, so they are written
-down rather than left for someone to "fix" back.
+Beyond §4.1's size rule, these are the deliberate departures. Each is a
+decision, not a shortfall — and none is invisible, so it is written down rather
+than left for someone to "fix" back.
 
-1. **The back-office sidebar does not repeat the wordmark or the user's name.**
-   Each artboard is a whole window, so S1 draws both inside the rail. The app
-   already has a masthead carrying the wordmark, the language picker and sign
-   out; a second wordmark 22px below the first reads as a bug. The rail keeps
-   navigation and the staff identity block.
-2. **The sidebar is hidden below `lg` rather than reflowed.** A 228px rail on a
-   390px phone leaves 162px of content. The staff screens are drawn at
-   1440×900 and are desktop screens; the masthead still reaches every route on
-   a phone.
-3. **`.btn-quiet` is 44px, not the canvas's 40px.** The touch-target floor in
-   §5 is not negotiable against a style.
-4. **S5's map is a schematic, not Google Maps.** Kitchen positions and service
-   radii are the live values, projected with one kilometre scale on both axes
-   and drawn to scale — so the relative geography is truthful. What it does not
-   show is streets. The tile layer needs the browser Maps key plumbed to the
-   SPA; the public pages get one (`PageData.MapsKey`), the SPA does not. In
-   `RUN-WHEN-BACK.md`, not faked with a picture of a map.
-5. **Two of the canvas's columns had no data behind them and were renamed
-   rather than invented.** S3's "Basis + pajak (11%)" column: `PriceRow` has no
-   base/tax split, because that division is integer arithmetic performed when
-   an *order* is priced, not a property of a price row — which is what the note
-   above the table already says. It now reads "Promo". P1's second component
-   column showed `item_role`, so it is headed "Role". A header that disagrees
-   with the cell under it is a defect, and both shipped that way for one build
-   before the screenshots caught them.
+1. **The back-office rail is heavier than the artboard.** Ten items at
+   19px/700 rather than 15px/500, because beige on `#468973` is 3.93 and the
+   rail fill is the canvas's (§4.1). The alternative — moving the rail to the
+   deep ground, where 15px beige is 11.32 — would keep the canvas's type at the
+   cost of one fill. Worth revisiting; it was not taken because the fill is
+   drawn.
+2. **The rail is hidden below `lg`, not reflowed.** A 228px rail on a 390px
+   phone leaves 162px of content. The staff artboards are drawn at 1440×900.
+3. **`.btn-quiet` is 44px, not the canvas's 40px.** The touch floor in §5 is
+   not negotiable against a style.
+4. **S5's map is a schematic.** Real coordinates and radii, projected with one
+   kilometre scale on both axes and drawn to scale, so the relative geography
+   is truthful. No streets: the tile layer needs the browser Maps key handed to
+   the SPA, which `RUN-WHEN-BACK.md` §B3 records.
+5. **Two columns were renamed rather than filled with invented data.** S3's
+   "Basis + pajak" column: `PriceRow` carries no base/tax split, because that
+   division happens when an *order* is priced, not on a price row — which is
+   what the note above the table already says. It reads "Promo". P1's second
+   component column showed `item_role`, so it is headed "Role".
+6. **The phone artboards render with no masthead and no fixed footer.** Each is
+   a whole screen with its own bars. Stacked under the desktop masthead, the
+   artboard sat below a dead green band and the fixed footer printed across its
+   sticky total.
+7. **The floating WhatsApp button is absent from the customer artboards and the
+   back office.** The canvas draws it on neither, and on S1 it covered the
+   needs-action list's own button. It remains on every public page.
+8. **The artboards' 44px device status strip is not built.** "09.41 ·
+   evermore.co.id" is the phone's own status bar, not product UI.
+9. **Two of M1's five nav destinations have no page of their own.** "Untuk
+   kantor" points at the contact page, where a corporate enquiry already lands;
+   "Wilayah antar" points at the home page's coverage checker. What a dedicated
+   corporate page should *say* is a business question, and migration 0031 sends
+   it to `docs/03-open-questions.md` rather than inventing copy for it.
+10. **M2's "Paling laris" badge is positional, not data.** It marks the middle
+    bundle. There is no bestseller flag in the schema, and inventing one from
+    sales figures would be a different claim than the artboard makes.
 
-The M1 menu band renders nothing when no meal is published for the coming
-seven days. That is its correct state, not a bug — the home page has to render
-on a Thursday when next week's menu is still in draft.
-
-## 5. Conventions carried in
-
-From `99-steven-preference.md`, applied here:
-
-- **Search box on every list.**
-- Focus rings always visible; **minimum 44×44px touch targets**.
-- Motion is one subtle tier: 200–400ms, ease-out, ≤12px travel, transform and
-  opacity only, and `prefers-reduced-motion` zeroes **delays as well as
-  durations**. **Exception, home page only (§2.9):** 400–560ms and 28px, plus
-  a scroll-driven parallax and hover lift. Nowhere else.
-- Anything that writes to the server is a button that **disables itself for the
-  life of the request** and **confirms before anything irreversible**.
-- Every public page ships the SEO baseline (§13 of the preference file).
-
-## 6. Open — needs Steven or a designer
-
-- [x] **Reversed-out logo** for dark and Nourish-Green fills. Derived from the
-      supplied artwork by `scripts/mklogo.py` rather than waiting on one —
-      see §3.2. Worth a designer's eye, but it is no longer a blocker.
-- [x] **Is Evermore the customer-facing name** — yes; `healthy_catering` is the
-      repo codename only (CLAUDE.md §10).
-- [x] **Erode licence** confirmed for web embedding (Steven, 2026-08-13); the
-      terms and the no-subsetting constraint are in `web/public/fonts/fonts.css`.
-- [ ] **Logo clear-space** is being approximated. The masthead gives the
-      wordmark its own flex cell and the artwork is trimmed to its bounding box,
-      so clear space is whatever the layout gap happens to be — page 13 of the
-      guidelines would settle it.
-- [ ] Dark mode: the guidelines describe one light palette. A dark theme needs
-      its own token set and its own contrast pass, not an inversion.
-- [ ] Logo clear-space and minimum size — not in the supplied pages.
-- [ ] Page 13 of the guidelines ("Logo on Color Palette") is referenced by the
-      colour page for recommended combinations, and was not supplied.
+The M1 menu band renders nothing when no meal is published for the coming seven
+days. That is its correct state: the home page has to render on a Thursday when
+next week's menu is still in draft.
