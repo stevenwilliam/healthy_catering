@@ -24,7 +24,10 @@ decision.
 à-la-carte meal ordering and prepaid meal-credit packages, manual bank-transfer
 payment, automatic routing of every delivery to one of several kitchens by
 address coordinates, and a full staff back office. Phase 1 is web only, no PWA;
-phase 2 is native mobile against the same versioned REST API.
+phase 2 is a **Flutter** app against the same versioned REST API — one
+codebase for Android and iOS, per `99-steven-preference.md` §5. The brief in
+`docs/PROMPT.md` says "native Android + iOS apps"; that is the brief's own
+wording and stands as written, but the house answer for it is now Flutter.
 
 **Status:** brief received 2026-08-12 (`docs/PROMPT.md`). Planning documents
 `01`–`04` are written and **awaiting Steven's confirmation**. **No application
